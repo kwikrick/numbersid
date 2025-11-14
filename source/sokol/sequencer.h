@@ -56,7 +56,8 @@ typedef struct {
 #define NUM_SEQUENCES  16
 
 typedef struct {
-    c64_t* c64;
+    //c64_t* c64;
+    m6581_t* sid;
     bool running;
     bool muted;
     int frame;
@@ -74,8 +75,9 @@ typedef struct {
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 #ifdef CHIPS_IMPL
 
-void sequencer_init(sequencer_t* sequencer, c64_t* c64) {
-    sequencer->c64 = c64;
+void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
+    //sequencer->c64 = c64;
+    sequencer->sid = sid;
     sequencer->frame = 0;
     sequencer->running = true;
     sequencer->muted = false;
@@ -237,7 +239,7 @@ void update_sid(sequencer_t* sequencer)
         int16_t sync = varonum_eval(&sequencer->voices[v].sync, sequencer);
         int16_t ring = varonum_eval(&sequencer->voices[v].ring, sequencer);
         int16_t wave = varonum_eval(&sequencer->voices[v].waveform, sequencer);
-        _m6581_set_ctrl(&sequencer->c64->sid.voice[v], (gate&1) + ((sync&1)<<1) + ((ring&1)<<2 ) + ((wave&15)<<4));
+        _m6581_set_ctrl(&sequencer->sid->voice[v], (gate&1) + ((sync&1)<<1) + ((ring&1)<<2 ) + ((wave&15)<<4));
 
         // compute freqence from  note, scale,trans,pitch
         int16_t note = varonum_eval(&sequencer->voices[v].note, sequencer);
@@ -258,39 +260,39 @@ void update_sid(sequencer_t* sequencer)
         float freq = note_freq(440.0, (float)semitone + (float)pitch/100);
         
         int16_t sid_freq_value = freq_to_sid_value_pal(freq);
-        _m6581_set_freq_hi(&sequencer->c64->sid.voice[v], (sid_freq_value>>8));
-        _m6581_set_freq_lo(&sequencer->c64->sid.voice[v], (sid_freq_value&0xFF));
+        _m6581_set_freq_hi(&sequencer->sid->voice[v], (sid_freq_value>>8));
+        _m6581_set_freq_lo(&sequencer->sid->voice[v], (sid_freq_value&0xFF));
 
         // pulsewidth
         int16_t pulsewidth = varonum_eval(&sequencer->voices[v].pulsewidth, sequencer);
-        _m6581_set_pw_lo(&sequencer->c64->sid.voice[v], (pulsewidth&0xFF));
-        _m6581_set_pw_hi(&sequencer->c64->sid.voice[v], (pulsewidth>>8));
+        _m6581_set_pw_lo(&sequencer->sid->voice[v], (pulsewidth&0xFF));
+        _m6581_set_pw_hi(&sequencer->sid->voice[v], (pulsewidth>>8));
 
         // envelope
         int16_t attack = varonum_eval(&sequencer->voices[v].attack, sequencer);
         int16_t decay = varonum_eval(&sequencer->voices[v].decay, sequencer);
         int16_t sustain = varonum_eval(&sequencer->voices[v].sustain, sequencer);
         int16_t release = varonum_eval(&sequencer->voices[v].release, sequencer);
-        _m6581_set_atkdec(&sequencer->c64->sid.voice[v], ((attack&15)<<4) + (decay&15));
-        _m6581_set_susrel(&sequencer->c64->sid.voice[v], ((sustain&15)<<4) + (release&15));
+        _m6581_set_atkdec(&sequencer->sid->voice[v], ((attack&15)<<4) + (decay&15));
+        _m6581_set_susrel(&sequencer->sid->voice[v], ((sustain&15)<<4) + (release&15));
         
     }
 
     int16_t cutoff = varonum_eval(&sequencer->cutoff, sequencer);
-    _m6581_set_cutoff_lo(&sequencer->c64->sid.filter, (cutoff&0xFF));
-    _m6581_set_cutoff_hi(&sequencer->c64->sid.filter, (cutoff>>8));
+    _m6581_set_cutoff_lo(&sequencer->sid->filter, (cutoff&0xFF));
+    _m6581_set_cutoff_hi(&sequencer->sid->filter, (cutoff>>8));
 
     int16_t resonance = varonum_eval(&sequencer->resonance, sequencer);
     int16_t filter1 = varonum_eval(&sequencer->voices[0].filter, sequencer);
     int16_t filter2 = varonum_eval(&sequencer->voices[1].filter, sequencer);
     int16_t filter3 = varonum_eval(&sequencer->voices[2].filter, sequencer);
     
-    _m6581_set_resfilt(&sequencer->c64->sid.filter, 
+    _m6581_set_resfilt(&sequencer->sid->filter, 
         ((resonance&15)<<4)  + (filter1&1) + ((filter2&1)<<1) + ((filter3&1)<<2));
 
      int16_t volume = varonum_eval(&sequencer->volume, sequencer);
      int16_t filter_mode = varonum_eval(&sequencer->filter_mode, sequencer);
-    _m6581_set_modevol(&sequencer->c64->sid, (volume&15) + ((filter_mode&15)<<4));
+    _m6581_set_modevol(sequencer->sid, (volume&15) + ((filter_mode&15)<<4));
     
 }
 
@@ -365,7 +367,7 @@ void update_sequencer(sequencer_t* sequencer, uint32_t)
     else {
         int16_t volume = 0;
         int16_t filter_mode = varonum_eval(&sequencer->filter_mode, sequencer);
-        _m6581_set_modevol(&sequencer->c64->sid, (volume&15) + ((filter_mode&15)<<4));
+        _m6581_set_modevol(sequencer->sid, (volume&15) + ((filter_mode&15)<<4));
     }
 
     if (sequencer->running) {    

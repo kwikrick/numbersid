@@ -160,7 +160,7 @@ void app_init(void) {
     bool c1541_enabled = sargs_exists("c1541");
     c64_desc_t desc = c64_desc(joy_type, c1530_enabled, c1541_enabled);
     c64_init(&state.c64, &desc);
-    sequencer_init(&state.sequencer, &state.c64);
+    sequencer_init(&state.sequencer, &state.c64.sid);
     gfx_init(&(gfx_desc_t){
         .disable_speaker_icon = sargs_exists("disable-speaker-icon"),
         #ifdef CHIPS_USE_UI
