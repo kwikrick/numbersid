@@ -1,0 +1,22 @@
+/*
+    UI implementation for numbersid.c, this must live in a .cc file.
+*/
+
+#include "chips/chips_common.h"
+#include "chips/clk.h"
+#include "chips/m6581.h"
+
+#include "imgui.h"
+#include "imgui_internal.h"
+
+#define CHIPS_UI_IMPL
+#include "ui/ui_util.h"
+#include "ui/ui_settings.h"
+#include "ui/ui_chip.h"
+#include "ui/ui_m6581.h"
+#include "ui/ui_audio.h"
+
+#include "sequencer.h"
+#include "ui_sequencer.h"
+#include "ui_preview.h"
+#include "ui_numbersid.h"
