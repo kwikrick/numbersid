@@ -54,7 +54,7 @@ extern "C" {
 #endif
 
 // reboot callback
-typedef void (*ui_numbersid_boot_cb)(sequencer_t* seq);
+typedef void (*ui_numbersid_boot_cb)(sequencer_t* seq);     //TODO: should a numbsid_t* ?
 
 // setup params for ui_numbersid_init()
 typedef struct {
@@ -103,6 +103,8 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
         if (ImGui::BeginMenu("Windows")) {
             ImGui::MenuItem("Sequencer", 0, &ui->ui_sequencer.open);
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);
+            ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
+            //ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);      // TODO
             ImGui::EndMenu();
         }
         ui_util_options_menu();
@@ -181,8 +183,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_sequencer_discard(&ui->ui_sequencer);
     ui_preview_discard(&ui->ui_preview);
     //ui_audio_discard(&ui->ui_audio);          // TODO
-    
-    // ui->sequencer = 0;  ??
+    //ui->sequencer = 0;  ??
 }
 
 void ui_numbersid_draw(ui_numbersid_t* ui) {
@@ -210,7 +211,6 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
 
 void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* settings) {
     CHIPS_ASSERT(ui && settings);
-    
     ui_m6581_load_settings(&ui->ui_sid, settings);
     ui_sequencer_load_settings(&ui->ui_sequencer, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);

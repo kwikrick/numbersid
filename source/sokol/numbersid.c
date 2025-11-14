@@ -193,10 +193,6 @@ void app_init(void) {
         .logger.func = slog_func,
     });
     
-    // todo: from c_64_init
-    //sys->audio.callback = desc->audio.callback;
-    //sys->audio.num_samples = _C64_DEFAULT(desc->audio.num_samples, C64_DEFAULT_AUDIO_SAMPLES);
-    
     state.audio.callback.func = push_audio;
     state.audio.num_samples = C64_DEFAULT_AUDIO_SAMPLES;
 
@@ -208,6 +204,9 @@ void app_init(void) {
     
     sequencer_init(&state.sequencer, &state.sid);
     
+    // TODO: GFX is intended to diplay a (retro machine's) framebuffer. 
+    // I don't think I need it, but it also handles some setup for 
+    // Sokol graphics and ImGui. It call ui_draw to draw the UI. 
     gfx_init(&(gfx_desc_t){
         .disable_speaker_icon = sargs_exists("disable-speaker-icon"),
         #ifdef CHIPS_USE_UI
@@ -224,7 +223,7 @@ void app_init(void) {
 
     clock_init();
     prof_init();
-    fs_init();          // ?
+    fs_init();          // needed? Maybe for UI settings? Maybe later for load/save sequence data.  
     #ifdef CHIPS_USE_UI
         ui_init(&(ui_desc_t){
             .draw_cb = ui_draw_cb,
@@ -232,9 +231,10 @@ void app_init(void) {
             .imgui_ini_key = "floooh.chips.numbersid",
         });
         ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
-            .sequencer = &state.sequencer,
+            .sequencer = &state.sequencer,          // TODO make and use a numbersid_t object 
             .boot_cb = ui_boot_cb,
         });
+        ui_numbersid_load_settings(&state.ui, ui_settings());
         // important: initialize webapi after ui
         webapi_init(&(webapi_desc_t){
             .funcs = {
@@ -272,8 +272,10 @@ void app_init(void) {
     // }
 }
 
-static void handle_file_loading(void);
-static void send_keybuf_input(void);
+//static void handle_file_loading(void);
+//static void send_keybuf_input(void);
+
+// declare for use in app_frame
 static void draw_status_bar(void);
 
 
@@ -315,8 +317,8 @@ void app_frame(void) {
     gfx_draw(numbersid_display_info());
     draw_status_bar();
 
-    handle_file_loading();
-    send_keybuf_input();
+    //handle_file_loading();
+    //send_keybuf_input();
 }
 
 void app_input(const sapp_event* event) {
@@ -342,13 +344,13 @@ void app_cleanup(void) {
     sargs_shutdown();
 }
 
-static void send_keybuf_input(void) {
+// static void send_keybuf_input(void) {
 
-}
+// }
 
-static void handle_file_loading(void) {
+// static void handle_file_loading(void) {
     
-}
+// }
 
 static void draw_status_bar(void) {
     prof_push(PROF_EMU, (float)state.emu_time_ms);
@@ -372,6 +374,8 @@ static void ui_save_settings_cb(ui_settings_t* settings) {
 
 static void ui_boot_cb(sequencer_t* seq) {
     clock_init();
+    // TODO: need SID too. 
+    // When is this called?
     //sequencer_init(seq);
 }
 
@@ -397,6 +401,7 @@ static void ui_load_snapshots_from_storage(void) {
 
 // webapi wrappers
 static void web_boot(void) {
+    // TODO: needed? When is this called?
     clock_init();
     //c64_desc_t desc = c64_desc(state.c64.joystick_type, state.c64.c1530.valid, state.c64.c1541.valid);
     //c64_init(&state.c64, &desc);
