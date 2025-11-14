@@ -1,0 +1,7 @@
+.vscode/
+.DS_Store
+fips-files/build/
+fips-files/deploy/
+.fips-*
+CMakeUserPresets.json
+*.pyc
