@@ -250,7 +250,7 @@ void update_sid(sequencer_t* sequencer)
         scale = scale & ((1<<12)-1);            // 12 bits for 2 notes in a scale
         if (scale == 0) scale = ((1<<12)-1);    // default full chromatic scale
         uint8_t finger_notes[12];
-        uint8_t fingers = decode_scale(scale, &finger_notes);
+        uint8_t fingers = decode_scale(scale, finger_notes);
         if (fingers == 0) fingers = 1;         // should not happen if scale !=0, but just in case
         int16_t octave = note / fingers;
         if (note < 0) octave = (note - fingers+1) / fingers;          // because we want floor(note / fingers) but using integer math 
