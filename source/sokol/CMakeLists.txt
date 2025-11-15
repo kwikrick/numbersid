@@ -1,13 +1,3 @@
-fips_ide_group(source/c64_sequencer)
-fips_begin_app(c64_sequencer windowed)
-    fips_files(c64_sequencer.c c64-sequencer-ui-impl.cc) 
-    if (FIPS_IOS)
-        fips_files(ios-info.plist)
-    endif()
-    fips_deps(roms ui)
-fips_end_app()
-target_compile_definitions(c64_sequencer PRIVATE CHIPS_USE_UI)
-
 fips_ide_group(source/numbersid)
 fips_begin_app(numbersid windowed)
     fips_files(numbersid.c numbersid-ui-impl.cc) 
