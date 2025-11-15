@@ -1,5 +1,14 @@
+/*
+    Sequencer core logic. 
 
-// A numerical sequencer for the SID
+    Do this:
+    ~~~C
+    #define CHIPS_UI_IMPL
+    ~~~
+    before you include this file in *one* C++ file to create the
+    implementation.
+
+*/
 
 typedef struct {
     char variable;           // if 0, then number
@@ -70,7 +79,6 @@ typedef struct {
     int16_t values[26];             // A-Z
     preview_t preview;
 } sequencer_t;
-
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 #ifdef CHIPS_IMPL
@@ -353,7 +361,7 @@ void update_preview(sequencer_t* sequencer)
     memcpy(sequencer->values,backup,sizeof(backup));
 }
 
-void update_sequencer(sequencer_t* sequencer, uint32_t) 
+void update_sequencer(sequencer_t* sequencer) 
 {
     update_preview(sequencer);
 

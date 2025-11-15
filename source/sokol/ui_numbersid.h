@@ -2,7 +2,7 @@
 /*#
     # ui_numbersid.h
 
-    UI for numbersid.h
+    UI for numbersid.
 
     Do this:
     ~~~C

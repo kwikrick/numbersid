@@ -2,7 +2,7 @@
 /*#
     # ui_sequencer.h
 
-    Debug visualization for sequencer.h (SID).
+    Visualization for numbersid sequencer.
 
     Do this:
     ~~~C

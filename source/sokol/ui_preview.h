@@ -2,7 +2,7 @@
 /*#
     # ui_preview.h
 
-    Preview window for sequencer.
+    Preview window for numbersid.
 
     Do this:
     ~~~C

@@ -1,11 +1,13 @@
 /*
-    Copy of c64.c with extensions by kwikrick. 
-
-    Allows SID chip to be controlled externally
+    Numbersid. 
     
-    Idea 1: via shared memory file
+    A number sequenced based sequencer for the SID.
 
+    Application code. 
+
+    Derived from https://github.com/floooh/chips-test
 */
+
 #define CHIPS_IMPL
 #include "chips/chips_common.h"
 #include "chips/m6581.h"
@@ -28,10 +30,9 @@
 // --------------
 
 
-#define C64_FREQUENCY (985248)              // clock frequency in Hz
-#define C64_MAX_AUDIO_SAMPLES (1024)        // max number of audio samples in internal sample buffer
-#define C64_DEFAULT_AUDIO_SAMPLES (128)     // default number of samples in internal sample buffer
-
+#define C64_FREQUENCY (985248)          // clock frequency in Hz; We'll be updating the SID as if in a C64
+#define MAX_AUDIO_SAMPLES (1024)        // max number of audio samples in internal sample buffer
+#define DEFAULT_AUDIO_SAMPLES (128)     // default number of samples in internal sample buffer
 #define FRAMEBUFFER_WIDTH 400
 #define FRAMEBUFFER_HEIGHT 300
 #define FRAMEBUFFER_SIZE_BYTES (FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT)
@@ -44,7 +45,7 @@ static struct {
         chips_audio_callback_t callback;
         int num_samples;
         int sample_pos;
-        float sample_buffer[C64_MAX_AUDIO_SAMPLES];
+        float sample_buffer[MAX_AUDIO_SAMPLES];
     } audio;
     uint64_t pins;
     m6581_t sid;
@@ -61,6 +62,7 @@ static void ui_draw_cb(const ui_draw_info_t* draw_info);
 static void ui_save_settings_cb(ui_settings_t* settings);
 static void ui_boot_cb(sequencer_t* sequencer);
 
+// TODO: do we need these Web callbacks?
 static void web_boot(void);
 static void web_reset(void);
 static bool web_ready(void);
@@ -82,6 +84,19 @@ static webapi_cpu_state_t web_dbg_cpu_state(void);
 static void web_dbg_request_disassemly(uint16_t addr, int offset_lines, int num_lines, webapi_dasm_line_t* result);
 static void web_dbg_read_memory(uint16_t addr, int num_bytes, uint8_t* dst_ptr);
 
+
+// audio-streaming callback
+static void push_audio(const float* samples, int num_samples, void* user_data) {
+    (void)user_data;
+    saudio_push(samples, num_samples);
+}
+
+
+// TODO: this framebuffer stuff, not really needed for my app
+// but I need to figure out how to get ImGUI in Sokol without 
+// using the Chips code.
+
+
 #define BORDER_TOP (24)
 #else
 #define BORDER_TOP (8)
@@ -91,14 +106,7 @@ static void web_dbg_read_memory(uint16_t addr, int num_bytes, uint8_t* dst_ptr);
 #define BORDER_BOTTOM (16)
 #define LOAD_DELAY_FRAMES (180)
 
-// audio-streaming callback
-static void push_audio(const float* samples, int num_samples, void* user_data) {
-    (void)user_data;
-    saudio_push(samples, num_samples);
-}
-
 #define _M6569_RGBA8(r,g,b) (0xFF000000|(b<<16)|(g<<8)|(r))
-
 /* https://www.pepto.de/projects/colorvic/ */
 static const uint32_t _m6569_colors[16] = {
     _M6569_RGBA8(0x00,0x00,0x00),
@@ -118,7 +126,6 @@ static const uint32_t _m6569_colors[16] = {
     _M6569_RGBA8(0x70,0x6d,0xeb),
     _M6569_RGBA8(0xb2,0xb2,0xb2),
 };
-
 chips_range_t m6569_dbg_palette(void) {
     static uint32_t dbg_palette[256];
     size_t i = 0;
@@ -150,7 +157,6 @@ chips_range_t m6569_dbg_palette(void) {
         .size = sizeof(dbg_palette)
     };
 }
-
 chips_display_info_t numbersid_display_info() {
     chips_display_info_t res = {
         .frame = {
@@ -166,19 +172,13 @@ chips_display_info_t numbersid_display_info() {
         },
         .palette = m6569_dbg_palette(),
     };
-    //if (sys) {
-    //    res.screen = m6569_screen(&sys->vic);
-    //}
-    //else {
-        res.screen = (chips_rect_t){
+   res.screen = (chips_rect_t){
             .x = 0,
             .y = 0,
             .width = FRAMEBUFFER_WIDTH,
             .height = FRAMEBUFFER_HEIGHT
         };
-    //};
-    //CHIPS_ASSERT(((sys == 0) && (res.frame.buffer.ptr == 0)) || ((sys != 0) && (res.frame.buffer.ptr != 0)));
-    return res;
+   return res;
 }
 
 void app_init(void) {
@@ -194,7 +194,7 @@ void app_init(void) {
     });
     
     state.audio.callback.func = push_audio;
-    state.audio.num_samples = C64_DEFAULT_AUDIO_SAMPLES;
+    state.audio.num_samples = DEFAULT_AUDIO_SAMPLES;
 
     m6581_init(&state.sid, &(m6581_desc_t){
         .tick_hz = C64_FREQUENCY,
@@ -231,53 +231,36 @@ void app_init(void) {
             .imgui_ini_key = "floooh.chips.numbersid",
         });
         ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
-            .sequencer = &state.sequencer,          // TODO make and use a numbersid_t object 
+            .sequencer = &state.sequencer,          // TODO make and use a numbersid_t object?
             .boot_cb = ui_boot_cb,
         });
         ui_numbersid_load_settings(&state.ui, ui_settings());
-        // important: initialize webapi after ui
-        webapi_init(&(webapi_desc_t){
-            .funcs = {
-                .boot = web_boot,
-                .reset = web_reset,
-                .ready = web_ready,
-                .load = web_load,
-                .input = web_input,
-                .dbg_connect = web_dbg_connect,
-                .dbg_disconnect = web_dbg_disconnect,
-                .dbg_add_breakpoint = web_dbg_add_breakpoint,
-                .dbg_remove_breakpoint = web_dbg_remove_breakpoint,
-                .dbg_break = web_dbg_break,
-                .dbg_continue = web_dbg_continue,
-                .dbg_step_next = web_dbg_step_next,
-                .dbg_step_into = web_dbg_step_into,
-                .dbg_cpu_state = web_dbg_cpu_state,
-                .dbg_request_disassembly = web_dbg_request_disassemly,
-                .dbg_read_memory = web_dbg_read_memory,
-            }
-        });
+        // // important: initialize webapi after ui
+        // webapi_init(&(webapi_desc_t){
+        //     .funcs = {
+        //         .boot = web_boot,
+        //         .reset = web_reset,
+        //         .ready = web_ready,
+        //         .load = web_load,
+        //         .input = web_input,
+        //         .dbg_connect = web_dbg_connect,
+        //         .dbg_disconnect = web_dbg_disconnect,
+        //         .dbg_add_breakpoint = web_dbg_add_breakpoint,
+        //         .dbg_remove_breakpoint = web_dbg_remove_breakpoint,
+        //         .dbg_break = web_dbg_break,
+        //         .dbg_continue = web_dbg_continue,
+        //         .dbg_step_next = web_dbg_step_next,
+        //         .dbg_step_into = web_dbg_step_into,
+        //         .dbg_cpu_state = web_dbg_cpu_state,
+        //         .dbg_request_disassembly = web_dbg_request_disassemly,
+        //         .dbg_read_memory = web_dbg_read_memory,
+        //     }
+        //});
     #endif
-    bool delay_input = false;
-    // if (sargs_exists("file")) {
-    //     delay_input = true;
-    //     fs_load_file_async(FS_CHANNEL_IMAGES, sargs_value("file"));
-    // }
-    // if (sargs_exists("prg")) {
-    //     fs_load_base64(FS_CHANNEL_IMAGES, "url.prg", sargs_value("prg"));
-    // }
-    // if (!delay_input) {
-    //     if (sargs_exists("input")) {
-    //         keybuf_put(sargs_value("input"));
-    //     }
-    // }
 }
-
-//static void handle_file_loading(void);
-//static void send_keybuf_input(void);
 
 // declare for use in app_frame
 static void draw_status_bar(void);
-
 
 uint32_t numbersid_exec(uint32_t micro_seconds) {
     
@@ -304,11 +287,10 @@ uint32_t numbersid_exec(uint32_t micro_seconds) {
 
 void app_frame(void) {
     
-    
     state.frame_time_us = clock_frame_time();
     const uint64_t emu_start_time = stm_now();
 
-    update_sequencer(&state.sequencer, state.frame_time_us);
+    update_sequencer(&state.sequencer);
 
     state.ticks = numbersid_exec(state.frame_time_us);
     
@@ -316,9 +298,6 @@ void app_frame(void) {
 
     gfx_draw(numbersid_display_info());
     draw_status_bar();
-
-    //handle_file_loading();
-    //send_keybuf_input();
 }
 
 void app_input(const sapp_event* event) {
@@ -364,7 +343,7 @@ static void draw_status_bar(void) {
 }
 
 #if defined(CHIPS_USE_UI)
-static void ui_draw_cb(const ui_draw_info_t* draw_info) {
+static void ui_draw_cb(const ui_draw_info_t*) {
     ui_numbersid_draw(&state.ui);
 }
 
@@ -372,26 +351,26 @@ static void ui_save_settings_cb(ui_settings_t* settings) {
     ui_numbersid_save_settings(&state.ui, settings);
 }
 
-static void ui_boot_cb(sequencer_t* seq) {
+static void ui_boot_cb(sequencer_t*) {
     clock_init();
     // TODO: need SID too. 
     // When is this called?
     //sequencer_init(seq);
 }
 
-static void ui_update_snapshot_screenshot(size_t slot) {
+static void ui_update_snapshot_screenshot(size_t) {
    
 }
 
-static void ui_save_snapshot(size_t slot) {
+static void ui_save_snapshot(size_t) {
    
 }
 
-static bool ui_load_snapshot(size_t slot) {
-    
+static bool ui_load_snapshot(size_t) {
+    return false;
 }
 
-static void ui_fetch_snapshot_callback(const fs_snapshot_response_t* response) {
+static void ui_fetch_snapshot_callback(const fs_snapshot_response_t*) {
     
 }
 
@@ -430,8 +409,7 @@ static bool web_ready(void) {
     return clock_frame_count_60hz() > LOAD_DELAY_FRAMES;
 }
 
-static bool web_load(chips_range_t data) {
-    
+static bool web_load(chips_range_t) {
     return false;
 }
 
@@ -439,11 +417,11 @@ static void web_input(const char* text) {
     keybuf_put(text);
 }
 
-static void web_dbg_add_breakpoint(uint16_t addr) {
+static void web_dbg_add_breakpoint(uint16_t) {
     //ui_dbg_add_breakpoint(&state.ui.dbg, addr);
 }
 
-static void web_dbg_remove_breakpoint(uint16_t addr) {
+static void web_dbg_remove_breakpoint(uint16_t) {
     //ui_dbg_remove_breakpoint(&state.ui.dbg, addr);
 }
 
@@ -463,7 +441,7 @@ static void web_dbg_step_into(void) {
     //ui_dbg_step_into(&state.ui.dbg);
 }
 
-static void web_dbg_on_stopped(int stop_reason, uint16_t addr) {
+static void web_dbg_on_stopped(int, uint16_t addr) {
     // stopping on the entry or exit breakpoints always
     // overrides the incoming stop_reason
     int webapi_stop_reason = WEBAPI_STOPREASON_UNKNOWN;
@@ -509,11 +487,11 @@ static webapi_cpu_state_t web_dbg_cpu_state(void) {
     return (webapi_cpu_state_t){};
 }
 
-static void web_dbg_request_disassemly(uint16_t addr, int offset_lines, int num_lines, webapi_dasm_line_t* result) {
+static void web_dbg_request_disassemly(uint16_t, int, int, webapi_dasm_line_t*) {
    
 }
 
-static void web_dbg_read_memory(uint16_t addr, int num_bytes, uint8_t* dst_ptr) {
+static void web_dbg_read_memory(uint16_t, int, uint8_t*) {
     
 }
 #endif
