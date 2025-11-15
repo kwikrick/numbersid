@@ -5,9 +5,11 @@ A number sequence based sequencer for the SID.
 Try it on-line: https://kwikrick.github.io/numbersid 
 
 Project drived from floooh's excellent chips project.
-Check it out: https://github.com/floooh/chips-test
+Check it out: https://github.com/floooh/chips
 
 ## Building instructions
+
+(Note: Derived from chips-test)
 
 To build and run on Windows, OSX or Linux (exact versions of tools shouldn't matter):
 
@@ -97,16 +99,6 @@ might work too, but this is not well tested).
 ...
 ```
 
-When the above emscripten build steps work, you can also build and test the
-entire samples webpage like this:
-
-```bash
-> ./fips webpage build
-...
-> ./fips webpage serve
-...
-```
-
 ## Many Thanks To:
 
-- utest.h: https://github.com/sheredom/utest.h
+- Andre Weissflog (floooh): https://github.com/floooh
