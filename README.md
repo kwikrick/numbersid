@@ -1,11 +1,13 @@
 # numbersid
 
-A number sequence based sequencer for the SID chip.
+A number sequence based sequencer for the SID.
 
-Project drived from floooh's excellent chips-test project.
+Try it on-line: https://kwikrick.github.io/numbersid 
+
+Project drived from floooh's excellent chips project.
 Check it out: https://github.com/floooh/chips-test
 
-**TODO** instructions need updating
+## Building instructions
 
 To build and run on Windows, OSX or Linux (exact versions of tools shouldn't matter):
 
