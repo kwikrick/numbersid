@@ -61,29 +61,7 @@ static struct {
 static void ui_draw_cb(const ui_draw_info_t* draw_info);
 static void ui_save_settings_cb(ui_settings_t* settings);
 static void ui_boot_cb(sequencer_t* sequencer);
-
-// TODO: do we need these Web callbacks?
-static void web_boot(void);
-static void web_reset(void);
-static bool web_ready(void);
-static bool web_load(chips_range_t data);
-static void web_input(const char* text);
-static void web_dbg_connect(void);
-static void web_dbg_disconnect(void);
-static void web_dbg_add_breakpoint(uint16_t addr);
-static void web_dbg_remove_breakpoint(uint16_t addr);
-static void web_dbg_break(void);
-static void web_dbg_continue(void);
-static void web_dbg_step_next(void);
-static void web_dbg_step_into(void);
-static void web_dbg_on_stopped(int stop_reason, uint16_t addr);
-static void web_dbg_on_continued(void);
-static void web_dbg_on_reboot(void);
-static void web_dbg_on_reset(void);
-static webapi_cpu_state_t web_dbg_cpu_state(void);
-static void web_dbg_request_disassemly(uint16_t addr, int offset_lines, int num_lines, webapi_dasm_line_t* result);
-static void web_dbg_read_memory(uint16_t addr, int num_bytes, uint8_t* dst_ptr);
-
+#endif
 
 // audio-streaming callback
 static void push_audio(const float* samples, int num_samples, void* user_data) {
@@ -91,12 +69,10 @@ static void push_audio(const float* samples, int num_samples, void* user_data) {
     saudio_push(samples, num_samples);
 }
 
-
-// TODO: this framebuffer stuff, not really needed for my app
-// but I need to figure out how to get ImGUI in Sokol without 
-// using the Chips code.
-
-
+// TODO: this GFX framebuffer/screen stuff, not really needed 
+// for my app but I need the code. I should to figure out how to 
+// get ImGUI in Sokol without using the Chips code.
+#ifdef CHIPS_USE_UI
 #define BORDER_TOP (24)
 #else
 #define BORDER_TOP (8)
@@ -235,27 +211,6 @@ void app_init(void) {
             .boot_cb = ui_boot_cb,
         });
         ui_numbersid_load_settings(&state.ui, ui_settings());
-        // // important: initialize webapi after ui
-        // webapi_init(&(webapi_desc_t){
-        //     .funcs = {
-        //         .boot = web_boot,
-        //         .reset = web_reset,
-        //         .ready = web_ready,
-        //         .load = web_load,
-        //         .input = web_input,
-        //         .dbg_connect = web_dbg_connect,
-        //         .dbg_disconnect = web_dbg_disconnect,
-        //         .dbg_add_breakpoint = web_dbg_add_breakpoint,
-        //         .dbg_remove_breakpoint = web_dbg_remove_breakpoint,
-        //         .dbg_break = web_dbg_break,
-        //         .dbg_continue = web_dbg_continue,
-        //         .dbg_step_next = web_dbg_step_next,
-        //         .dbg_step_into = web_dbg_step_into,
-        //         .dbg_cpu_state = web_dbg_cpu_state,
-        //         .dbg_request_disassembly = web_dbg_request_disassemly,
-        //         .dbg_read_memory = web_dbg_read_memory,
-        //     }
-        //});
     #endif
 }
 
@@ -323,14 +278,6 @@ void app_cleanup(void) {
     sargs_shutdown();
 }
 
-// static void send_keybuf_input(void) {
-
-// }
-
-// static void handle_file_loading(void) {
-    
-// }
-
 static void draw_status_bar(void) {
     prof_push(PROF_EMU, (float)state.emu_time_ms);
     prof_stats_t emu_stats = prof_stats(PROF_EMU);
@@ -358,142 +305,6 @@ static void ui_boot_cb(sequencer_t*) {
     //sequencer_init(seq);
 }
 
-static void ui_update_snapshot_screenshot(size_t) {
-   
-}
-
-static void ui_save_snapshot(size_t) {
-   
-}
-
-static bool ui_load_snapshot(size_t) {
-    return false;
-}
-
-static void ui_fetch_snapshot_callback(const fs_snapshot_response_t*) {
-    
-}
-
-static void ui_load_snapshots_from_storage(void) {
-    
-}
-
-// webapi wrappers
-static void web_boot(void) {
-    // TODO: needed? When is this called?
-    clock_init();
-    //c64_desc_t desc = c64_desc(state.c64.joystick_type, state.c64.c1530.valid, state.c64.c1541.valid);
-    //c64_init(&state.c64, &desc);
-    //ui_dbg_reboot(&state.ui.dbg);
-}
-
-static void web_reset(void) {
-    //c64_reset(&state.c64);
-    //ui_dbg_reset(&state.ui.dbg);
-}
-
-static void web_dbg_connect(void) {
-    gfx_disable_speaker_icon();
-    //state.dbg.entry_addr = 0xFFFFFFFF;
-    //state.dbg.exit_addr = 0xFFFFFFFF;
-    //ui_dbg_external_debugger_connected(&state.ui.dbg);
-}
-
-static void web_dbg_disconnect(void) {
-    //state.dbg.entry_addr = 0xFFFFFFFF;
-    //state.dbg.exit_addr = 0xFFFFFFFF;
-    //ui_dbg_external_debugger_disconnected(&state.ui.dbg);
-}
-
-static bool web_ready(void) {
-    return clock_frame_count_60hz() > LOAD_DELAY_FRAMES;
-}
-
-static bool web_load(chips_range_t) {
-    return false;
-}
-
-static void web_input(const char* text) {
-    keybuf_put(text);
-}
-
-static void web_dbg_add_breakpoint(uint16_t) {
-    //ui_dbg_add_breakpoint(&state.ui.dbg, addr);
-}
-
-static void web_dbg_remove_breakpoint(uint16_t) {
-    //ui_dbg_remove_breakpoint(&state.ui.dbg, addr);
-}
-
-static void web_dbg_break(void) {
-    //ui_dbg_break(&state.ui.dbg);
-}
-
-static void web_dbg_continue(void) {
-    //ui_dbg_continue(&state.ui.dbg, false);
-}
-
-static void web_dbg_step_next(void) {
-    //ui_dbg_step_next(&state.ui.dbg);
-}
-
-static void web_dbg_step_into(void) {
-    //ui_dbg_step_into(&state.ui.dbg);
-}
-
-static void web_dbg_on_stopped(int, uint16_t addr) {
-    // stopping on the entry or exit breakpoints always
-    // overrides the incoming stop_reason
-    int webapi_stop_reason = WEBAPI_STOPREASON_UNKNOWN;
-    // if (state.dbg.entry_addr == state.c64.cpu.PC) {
-    //     webapi_stop_reason = WEBAPI_STOPREASON_ENTRY;
-    // } else if (state.dbg.exit_addr == state.c64.cpu.PC) {
-    //     webapi_stop_reason = WEBAPI_STOPREASON_EXIT;
-    // } else if (stop_reason == UI_DBG_STOP_REASON_BREAK) {
-    //     webapi_stop_reason = WEBAPI_STOPREASON_BREAK;
-    // } else if (stop_reason == UI_DBG_STOP_REASON_STEP) {
-    //     webapi_stop_reason = WEBAPI_STOPREASON_STEP;
-    // } else if (stop_reason == UI_DBG_STOP_REASON_BREAKPOINT) {
-    //     webapi_stop_reason = WEBAPI_STOPREASON_BREAKPOINT;
-    // }
-    webapi_event_stopped(webapi_stop_reason, addr);
-}
-
-static void web_dbg_on_continued(void) {
-    webapi_event_continued();
-}
-
-static void web_dbg_on_reboot(void) {
-    webapi_event_reboot();
-}
-
-static void web_dbg_on_reset(void) {
-    webapi_event_reset();
-}
-
-static webapi_cpu_state_t web_dbg_cpu_state(void) {
-    // const m6502_t* cpu = &state.c64.cpu;
-    // return (webapi_cpu_state_t){
-    //     .items = {
-    //         [WEBAPI_CPUSTATE_TYPE] = WEBAPI_CPUTYPE_6502,
-    //         [WEBAPI_CPUSTATE_6502_A] = cpu->A,
-    //         [WEBAPI_CPUSTATE_6502_X] = cpu->X,
-    //         [WEBAPI_CPUSTATE_6502_Y] = cpu->Y,
-    //         [WEBAPI_CPUSTATE_6502_S] = cpu->S,
-    //         [WEBAPI_CPUSTATE_6502_P] = cpu->P,
-    //         [WEBAPI_CPUSTATE_6502_PC] = cpu->PC,
-    //     }
-    // };
-    return (webapi_cpu_state_t){};
-}
-
-static void web_dbg_request_disassemly(uint16_t, int, int, webapi_dasm_line_t*) {
-   
-}
-
-static void web_dbg_read_memory(uint16_t, int, uint8_t*) {
-    
-}
 #endif
 
 sapp_desc sokol_main(int argc, char* argv[]) {
