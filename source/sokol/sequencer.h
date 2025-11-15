@@ -65,7 +65,6 @@ typedef struct {
 #define NUM_SEQUENCES  16
 
 typedef struct {
-    //c64_t* c64;
     m6581_t* sid;
     bool running;
     bool muted;
@@ -84,7 +83,6 @@ typedef struct {
 #ifdef CHIPS_IMPL
 
 void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
-    //sequencer->c64 = c64;
     sequencer->sid = sid;
     sequencer->frame = 0;
     sequencer->running = true;

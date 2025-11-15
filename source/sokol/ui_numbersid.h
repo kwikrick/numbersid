@@ -106,7 +106,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
             ImGui::MenuItem("Sequencer", 0, &ui->ui_sequencer.open);
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);
             ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
-            ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);      // TODO
+            ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);
             ImGui::EndMenu();
         }
         ui_util_options_menu();
