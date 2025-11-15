@@ -37,16 +37,18 @@
 #define FRAMEBUFFER_HEIGHT 300
 #define FRAMEBUFFER_SIZE_BYTES (FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT)
 
+typedef struct {
+    chips_audio_callback_t callback;
+    int num_samples;
+    int sample_pos;
+    float sample_buffer[MAX_AUDIO_SAMPLES];
+} audio_t;
+
 static struct {
     uint32_t frame_time_us;
     uint32_t ticks;
     double emu_time_ms;
-    struct {
-        chips_audio_callback_t callback;
-        int num_samples;
-        int sample_pos;
-        float sample_buffer[MAX_AUDIO_SAMPLES];
-    } audio;
+    audio_t audio;
     uint64_t pins;
     m6581_t sid;
     sequencer_t sequencer;
@@ -209,6 +211,8 @@ void app_init(void) {
         ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
             .sequencer = &state.sequencer,          // TODO make and use a numbersid_t object?
             .boot_cb = ui_boot_cb,
+            .audio_sample_buffer = state.audio.sample_buffer,
+            .audio_num_samples = state.audio.num_samples,
         });
         ui_numbersid_load_settings(&state.ui, ui_settings());
     #endif

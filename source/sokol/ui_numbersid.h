@@ -54,20 +54,22 @@ extern "C" {
 #endif
 
 // reboot callback
-typedef void (*ui_numbersid_boot_cb)(sequencer_t* seq);     //TODO: should a numbsid_t* ?
+typedef void (*ui_numbersid_boot_cb)(sequencer_t* seq);
 
 // setup params for ui_numbersid_init()
 typedef struct {
-    sequencer_t* sequencer; // pointer to the sequencer   TODO: should a numbsid_t* ?
+    sequencer_t* sequencer;     // pointer to the sequencer
+    int audio_num_samples;
+    float* audio_sample_buffer;
     ui_numbersid_boot_cb boot_cb; // reboot callback functions
 } ui_numbersid_desc_t;
 
 typedef struct {
-    sequencer_t* sequencer;         // TODO: make a numbersid_t*
+    sequencer_t* sequencer;
     
     ui_numbersid_boot_cb boot_cb;
     ui_m6581_t ui_sid;
-    //ui_audio_t ui_audio;      // TODO
+    ui_audio_t ui_audio;
     ui_sequencer_t ui_sequencer;
     ui_preview_t ui_preview;
 } ui_numbersid_t;
@@ -104,7 +106,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
             ImGui::MenuItem("Sequencer", 0, &ui->ui_sequencer.open);
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);
             ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
-            //ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);      // TODO
+            ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);      // TODO
             ImGui::EndMenu();
         }
         ui_util_options_menu();
@@ -146,17 +148,16 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         UI_CHIP_INIT_DESC(&desc.chip_desc, "6581", 16, _ui_numbersid_sid_pins);
         ui_m6581_init(&ui->ui_sid, &desc);
     }
-    // x += dx; y += dy;
-    // {
-    //     ui_audio_desc_t desc = {0};
-    //     desc.title = "Audio Output";
-    //     // TODO
-    //     //desc.sample_buffer = ui->c64->audio.sample_buffer;      // in state, but is static 
-    //     //desc.num_samples = ui->c64->audio.num_samples;
-    //     desc.x = x;
-    //     desc.y = y;
-    //     ui_audio_init(&ui->ui_audio, &desc);
-    // }
+    x += dx; y += dy;
+    {
+        ui_audio_desc_t desc = {0};
+        desc.title = "Audio Output";
+        desc.sample_buffer = ui_desc->audio_sample_buffer;
+        desc.num_samples = ui_desc->audio_num_samples;
+        desc.x = x;
+        desc.y = y;
+        ui_audio_init(&ui->ui_audio, &desc);
+    }
     x += dx; y += dy;
     {
         ui_sequencer_desc_t desc = {0};
@@ -182,14 +183,15 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_m6581_discard(&ui->ui_sid);
     ui_sequencer_discard(&ui->ui_sequencer);
     ui_preview_discard(&ui->ui_preview);
-    //ui_audio_discard(&ui->ui_audio);          // TODO
-    //ui->sequencer = 0;  ??
+    ui_audio_discard(&ui->ui_audio);
+    //ui->sequencer = 0;  // TODO??
 }
 
 void ui_numbersid_draw(ui_numbersid_t* ui) {
     CHIPS_ASSERT(ui && ui->sequencer);
     _ui_numbersid_draw_menu(ui);
-    //ui_audio_draw(&ui->ui_audio, ui->audio.sample_pos);   // TODO
+    //ui_audio_draw(&ui->ui_audio, ui->audio.sample_pos);
+    ui_audio_draw(&ui->ui_audio, 0);    // TODO, I don't have the sample_pos variable here. Add it to ui_numbersid...
     ui_m6581_draw(&ui->ui_sid);
     ui_sequencer_draw(&ui->ui_sequencer);
     ui_preview_draw(&ui->ui_preview);
@@ -206,7 +208,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     ui_m6581_save_settings(&ui->ui_sid, settings);
     ui_sequencer_save_settings(&ui->ui_sequencer, settings);
     ui_preview_save_settings(&ui->ui_preview, settings);
-    // ui_audio_save_settings(&ui->ui_audio, settings);     // TODO
+    ui_audio_save_settings(&ui->ui_audio, settings);
 }
 
 void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* settings) {
@@ -214,7 +216,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     ui_m6581_load_settings(&ui->ui_sid, settings);
     ui_sequencer_load_settings(&ui->ui_sequencer, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);
-    // ui_audio_load_settings(&ui->ui_audio, settings);   // TODO
+    ui_audio_load_settings(&ui->ui_audio, settings);
 }
 #ifdef __clang__
 #pragma clang diagnostic pop
