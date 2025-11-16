@@ -1,3 +1,3 @@
-include_directories(common roms)
+include_directories(common)
 add_subdirectory(common)
-add_subdirectory(sokol)
+add_subdirectory(numbersid)
