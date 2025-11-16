@@ -12,19 +12,19 @@
 #include "chips/chips_common.h"
 #include "chips/m6581.h"
 #include "chips/clk.h"
+
 #include "common.h"
 #include "sequencer.h"
-#if defined(CHIPS_USE_UI)
-    #define UI_DBG_USE_M6502
-    #include "ui.h"
-    #include "ui/ui_settings.h"
-    #include "ui/ui_chip.h"
-    #include "ui/ui_audio.h"
-    #include "ui/ui_m6581.h"
-    #include "ui_sequencer.h"
-    #include "ui_preview.h"
-    #include "ui_numbersid.h"
-#endif
+
+#include "ui.h"
+#include "ui/ui_settings.h"
+#include "ui/ui_chip.h"
+#include "ui/ui_audio.h"
+#include "ui/ui_m6581.h"
+#include "ui_sequencer.h"
+#include "ui_preview.h"
+#include "ui_numbersid.h"
+
 #include <stdlib.h>
 
 // --------------
@@ -52,18 +52,16 @@ static struct {
     uint64_t pins;
     m6581_t sid;
     sequencer_t sequencer;
-    #ifdef CHIPS_USE_UI
-        ui_numbersid_t ui;
-    #endif
+    ui_numbersid_t ui;
     //alignas(64) 
     uint8_t framebuffer[FRAMEBUFFER_SIZE_BYTES];
 } state;
 
-#ifdef CHIPS_USE_UI
+
 static void ui_draw_cb(const ui_draw_info_t* draw_info);
 static void ui_save_settings_cb(ui_settings_t* settings);
 static void ui_boot_cb(sequencer_t* sequencer);
-#endif
+
 
 // audio-streaming callback
 static void push_audio(const float* samples, int num_samples, void* user_data) {
@@ -74,11 +72,8 @@ static void push_audio(const float* samples, int num_samples, void* user_data) {
 // TODO: this GFX framebuffer/screen stuff, not really needed 
 // for my app but I need the code. I should to figure out how to 
 // get ImGUI in Sokol without using the Chips code.
-#ifdef CHIPS_USE_UI
+
 #define BORDER_TOP (24)
-#else
-#define BORDER_TOP (8)
-#endif
 #define BORDER_LEFT (8)
 #define BORDER_RIGHT (8)
 #define BORDER_BOTTOM (16)
@@ -187,9 +182,7 @@ void app_init(void) {
     // Sokol graphics and ImGui. It call ui_draw to draw the UI. 
     gfx_init(&(gfx_desc_t){
         .disable_speaker_icon = sargs_exists("disable-speaker-icon"),
-        #ifdef CHIPS_USE_UI
         .draw_extra_cb = ui_draw,
-        #endif
         .border = {
             .left = BORDER_LEFT,
             .right = BORDER_RIGHT,
@@ -202,20 +195,20 @@ void app_init(void) {
     clock_init();
     prof_init();
     fs_init();          // needed? Maybe for UI settings? Maybe later for load/save sequence data.  
-    #ifdef CHIPS_USE_UI
-        ui_init(&(ui_desc_t){
-            .draw_cb = ui_draw_cb,
-            .save_settings_cb = ui_save_settings_cb,
-            .imgui_ini_key = "floooh.chips.numbersid",
-        });
-        ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
-            .sequencer = &state.sequencer,          // TODO make and use a numbersid_t object?
-            .boot_cb = ui_boot_cb,
-            .audio_sample_buffer = state.audio.sample_buffer,
-            .audio_num_samples = state.audio.num_samples,
-        });
-        ui_numbersid_load_settings(&state.ui, ui_settings());
-    #endif
+
+    ui_init(&(ui_desc_t){
+        .draw_cb = ui_draw_cb,
+        .save_settings_cb = ui_save_settings_cb,
+        .imgui_ini_key = "floooh.chips.numbersid",
+    });
+    ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
+        .sequencer = &state.sequencer,          // TODO make and use a numbersid_t object?
+        .boot_cb = ui_boot_cb,
+        .audio_sample_buffer = state.audio.sample_buffer,
+        .audio_num_samples = state.audio.num_samples,
+    });
+    ui_numbersid_load_settings(&state.ui, ui_settings());
+
 }
 
 // declare for use in app_frame
@@ -261,22 +254,18 @@ void app_frame(void) {
 
 void app_input(const sapp_event* event) {
     // accept dropped files also when ImGui grabs input
-    if (event->type == SAPP_EVENTTYPE_FILES_DROPPED) {
-        fs_load_dropped_file_async(FS_CHANNEL_IMAGES);
-    }
-    #ifdef CHIPS_USE_UI
+    // if (event->type == SAPP_EVENTTYPE_FILES_DROPPED) {
+    //     fs_load_dropped_file_async(FS_CHANNEL_IMAGES);
+    // }
     if (ui_input(event)) {
         // input was handled by UI
         return;
     }
-    #endif
 }
 
 void app_cleanup(void) {
-    #ifdef CHIPS_USE_UI
-        ui_numbersid_discard(&state.ui);
-        ui_discard();
-    #endif
+    ui_numbersid_discard(&state.ui);
+    ui_discard();
     saudio_shutdown();
     gfx_shutdown();
     sargs_shutdown();
@@ -293,7 +282,6 @@ static void draw_status_bar(void) {
     sdtx_printf("frame:%.2fms emu:%.2fms (min:%.2fms max:%.2fms) ticks:%d", (float)state.frame_time_us * 0.001f, emu_stats.avg_val, emu_stats.min_val, emu_stats.max_val, state.ticks);
 }
 
-#if defined(CHIPS_USE_UI)
 static void ui_draw_cb(const ui_draw_info_t*) {
     ui_numbersid_draw(&state.ui);
 }
@@ -308,8 +296,6 @@ static void ui_boot_cb(sequencer_t*) {
     // When is this called?
     //sequencer_init(seq);
 }
-
-#endif
 
 sapp_desc sokol_main(int argc, char* argv[]) {
     sargs_setup(&(sargs_desc){
