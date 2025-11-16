@@ -227,7 +227,7 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
                 uint8_t gate_count_index = 'X' + voice - 'A';
                 sequencer->values[gate_count_index] += 1;           // TODO: skip if time is not updated!
                 uint8_t gate_time_index = 'U' + voice - 'A';
-                sequencer->values[gate_time_index] = sequencer->values['T' - 'A'];
+                sequencer->values[gate_time_index] = 0;
             }
         }
     }
@@ -304,16 +304,26 @@ void update_sid(sequencer_t* sequencer)
 
 void update_sequence_variables(sequencer_t* sequencer, int frame) {
 
-    // set frame time variable
-    sequencer->values['T'-'A'] = frame;
-
-    // reset gate count variables when t=0
-    if (frame == 0) {
+    // update gate time counters
+    int delta_frame = frame - sequencer->values['T'-'A'];
+    if (delta_frame == 1) {
+        for (int voice=0;voice<3;++voice) {
+            uint8_t gate_time_index = 'U' + voice - 'A';
+            sequencer->values[gate_time_index] += delta_frame; 
+        }
+    }
+    else {
+        // reset gate count/time variables when jumpign in time
         for (int voice=0;voice<3;++voice){
             uint8_t gate_count_index = 'X' + voice - 'A';
             sequencer->values[gate_count_index] = 0; 
+            uint8_t gate_time_index = 'U' + voice - 'A';
+            sequencer->values[gate_time_index] = 0; 
         }
     }
+
+    // set frame time variable
+    sequencer->values['T'-'A'] = frame;
 
     // compute sequences
     for (int i=0;i<NUM_SEQUENCES;++i) {
