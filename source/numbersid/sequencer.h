@@ -10,6 +10,8 @@
 
 */
 
+#include <stdlib.h>
+
 typedef struct {
     char variable;           // if 0, then number
     int16_t number;
@@ -119,9 +121,12 @@ void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
 }
 
 int16_t floor_mod(int16_t value, int16_t mod) {
-    int16_t count = value / mod;
-    if (value < 0) count = (value - mod+1) / mod;      
-    return value - (count*mod);
+    int16_t absmod = abs(mod);
+    int16_t count = value / absmod;
+    if (value < 0) count = (value - absmod + 1) / absmod;
+    int16_t result = value - (count*absmod);
+    if (mod < 0) result = absmod - result - 1;
+    return result;
 }
 
 float note_freq(float base, float semitones) {
