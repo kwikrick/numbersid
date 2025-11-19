@@ -52,6 +52,7 @@
 #*/
 #include <stdint.h>
 #include <stdbool.h>
+#include <sokol_fetch.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,6 +99,27 @@ void ui_help_load_settings(ui_help_t* win, const ui_settings_t* settings);
     #define CHIPS_ASSERT(c) assert(c)
 #endif
 
+#define HELP_TEXT_SIZE  1024*1024
+
+static char help_text[HELP_TEXT_SIZE];
+
+static bool help_fetch_done = false;
+static bool help_fetch_ok = false;
+
+static void help_fetch_callback (const sfetch_response_t* response)
+{
+    if (response->fetched) {
+        help_fetch_done = true;
+        help_fetch_ok = true;
+        help_text[response->data.size] = 0;     // zero terminate data
+        //channel->ptr = (uint8_t*)response->data.ptr;
+        //channel->size = response->data.size;
+    }
+    else if (response->finished) {
+        help_fetch_done = true;
+    }
+}
+
 void ui_help_init(ui_help_t* win, const ui_help_desc_t* desc) {
     CHIPS_ASSERT(win && desc);
     CHIPS_ASSERT(desc->title);
@@ -110,7 +132,19 @@ void ui_help_init(ui_help_t* win, const ui_help_desc_t* desc) {
     win->open = win->last_open = desc->open;
     win->valid = true;
 
-    text = malloc(1024*sizeof(char));
+    sfetch_handle_t handle = sfetch_send((sfetch_request_t){
+        .channel = 0, 
+        .path = "help/help.txt",
+        .callback = &help_fetch_callback,
+        .buffer = (sfetch_range_t) {
+            .ptr = help_text,
+            .size = HELP_TEXT_SIZE
+        }
+    });
+
+    while (!help_fetch_done) {
+        sfetch_dowork();
+    };
 }
 
 void ui_help_discard(ui_help_t* win) {
@@ -120,7 +154,13 @@ void ui_help_discard(ui_help_t* win) {
 
 static void _ui_help_draw_state(ui_help_t* win) {
 
-    ImGui::Text("Help!\n\nA line.\nAnother Line.");
+    if (help_fetch_ok) {
+        ImGui::Text(help_text);
+    }
+    else {
+        ImGui::Text("Downloading help...");
+    
+    }
     
 }
 
