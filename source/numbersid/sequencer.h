@@ -310,7 +310,9 @@ void update_sid(sequencer_t* sequencer)
 void update_sequence_variables(sequencer_t* sequencer, int frame) {
 
     // update gate time counters
-    int delta_frame = frame - sequencer->values['T'-'A'];
+    int16_t new_t = frame;       // narrowing
+    int16_t old_t = sequencer->values['T'-'A'];
+    int delta_frame = new_t - old_t;
     if (delta_frame == 1) {
         for (int voice=0;voice<3;++voice) {
             uint8_t gate_time_index = 'U' + voice - 'A';
@@ -328,7 +330,7 @@ void update_sequence_variables(sequencer_t* sequencer, int frame) {
     }
 
     // set frame time variable
-    sequencer->values['T'-'A'] = frame;
+    sequencer->values['T'-'A'] = new_t;
 
     // compute sequences
     for (int i=0;i<NUM_SEQUENCES;++i) {
