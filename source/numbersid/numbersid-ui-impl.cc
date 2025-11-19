@@ -19,4 +19,5 @@
 #include "sequencer.h"
 #include "ui_sequencer.h"
 #include "ui_preview.h"
+#include "ui_help.h"
 #include "ui_numbersid.h"

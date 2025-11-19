@@ -72,7 +72,10 @@ typedef struct {
     ui_audio_t ui_audio;
     ui_sequencer_t ui_sequencer;
     ui_preview_t ui_preview;
+    ui_help_t ui_help;
 } ui_numbersid_t;
+
+
 
 void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* desc);
 void ui_numbersid_discard(ui_numbersid_t* ui);
@@ -107,6 +110,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);
             ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
             ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);
+            ImGui::MenuItem("Help", 0, &ui->ui_help.open);
             ImGui::EndMenu();
         }
         ui_util_options_menu();
@@ -176,6 +180,14 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.y = y;
         ui_preview_init(&ui->ui_preview, &desc);
     }
+      x += dx; y += dy;
+    {
+        ui_help_desc_t desc = {0};
+        desc.title = "Help";
+        desc.x = x;
+        desc.y = y;
+        ui_help_init(&ui->ui_help, &desc);
+    }
 }
 
 void ui_numbersid_discard(ui_numbersid_t* ui) {
@@ -183,6 +195,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_m6581_discard(&ui->ui_sid);
     ui_sequencer_discard(&ui->ui_sequencer);
     ui_preview_discard(&ui->ui_preview);
+    ui_help_discard(&ui->ui_help);
     ui_audio_discard(&ui->ui_audio);
     //ui->sequencer = 0;  // TODO??
 }
@@ -195,6 +208,7 @@ void ui_numbersid_draw(ui_numbersid_t* ui) {
     ui_m6581_draw(&ui->ui_sid);
     ui_sequencer_draw(&ui->ui_sequencer);
     ui_preview_draw(&ui->ui_preview);
+    ui_help_draw(&ui->ui_help);
 }
 
 chips_debug_t ui_numbersid_get_debug(ui_numbersid_t* ui) {
@@ -208,6 +222,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     ui_m6581_save_settings(&ui->ui_sid, settings);
     ui_sequencer_save_settings(&ui->ui_sequencer, settings);
     ui_preview_save_settings(&ui->ui_preview, settings);
+    ui_help_save_settings(&ui->ui_help, settings);
     ui_audio_save_settings(&ui->ui_audio, settings);
 }
 
@@ -216,6 +231,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     ui_m6581_load_settings(&ui->ui_sid, settings);
     ui_sequencer_load_settings(&ui->ui_sequencer, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);
+    ui_help_load_settings(&ui->ui_help, settings);
     ui_audio_load_settings(&ui->ui_audio, settings);
 }
 #ifdef __clang__

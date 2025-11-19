@@ -23,6 +23,7 @@
 #include "ui/ui_m6581.h"
 #include "ui_sequencer.h"
 #include "ui_preview.h"
+#include "ui_help.h"
 #include "ui_numbersid.h"
 
 #include <stdlib.h>
@@ -164,7 +165,7 @@ void app_init(void) {
         //int num_packets;        // number of packets in packet queue (for push model)
         .sample_rate = 48000,       // note 48Khz / 60FPS  = 800 audio frames/video frame
         .packet_frames = 64,
-        .num_packets = 64,          // 64x64 = 4096 samples =~ 0.08 secs delay or 8 video frames
+        .num_packets = 64,          // 64x64 = 4096 samples =~ 0.085 secs delay or 5 video frames
         .buffer_frames = 512,       // must be larger than packet_frames, but <1024 (in browser at least)
         //.logger.func = slog_func,
     });
