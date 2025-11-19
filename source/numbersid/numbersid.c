@@ -32,7 +32,8 @@
 
 #define C64_FREQUENCY (985248)          // clock frequency in Hz; We'll be updating the SID as if in a C64
 #define MAX_AUDIO_SAMPLES (1024)        // max number of audio samples in internal sample buffer
-#define DEFAULT_AUDIO_SAMPLES (128)     // default number of samples in internal sample buffer
+#define DEFAULT_AUDIO_SAMPLES (1024)    // default number of samples in internal sample buffer
+                                        // Note: this is quite high, but we are only updating at 60PS = 800 samples/frame
 #define FRAMEBUFFER_WIDTH 400
 #define FRAMEBUFFER_HEIGHT 300
 #define FRAMEBUFFER_SIZE_BYTES (FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT)
@@ -159,19 +160,21 @@ void app_init(void) {
         //int sample_rate;        // requested sample rate
         //int num_channels;       // number of channels, default: 1 (mono)
         //int buffer_frames;      // number of frames in streaming buffer
-        //int packet_frames;      // number of frames in a packet
-        //int num_packets;        // number of packets in packet queue
-        .sample_rate = 44100,
-        .packet_frames = 256,     // Rick: Seems to fix stuttering for me
-        .logger.func = slog_func,
+        //int packet_frames;      // number of frames in a packet (for push model)
+        //int num_packets;        // number of packets in packet queue (for push model)
+        .sample_rate = 48000,       // note 48Khz / 60FPS  = 800 audio frames/video frame
+        .packet_frames = 64,
+        .num_packets = 64,          // 64x64 = 4096 samples =~ 0.08 secs delay or 8 video frames
+        .buffer_frames = 512,       // must be larger than packet_frames, but <1024 (in browser at least)
+        //.logger.func = slog_func,
     });
-    
+
     state.audio.callback.func = push_audio;
     state.audio.num_samples = DEFAULT_AUDIO_SAMPLES;
 
     m6581_init(&state.sid, &(m6581_desc_t){
         .tick_hz = C64_FREQUENCY,
-        .sound_hz = 44100,
+        .sound_hz = 48000,
         .magnitude = 1.0f,
     });
     
@@ -208,7 +211,6 @@ void app_init(void) {
         .audio_num_samples = state.audio.num_samples,
     });
     ui_numbersid_load_settings(&state.ui, ui_settings());
-
 }
 
 // declare for use in app_frame
