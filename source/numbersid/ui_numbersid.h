@@ -169,6 +169,9 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.sequencer = ui_desc->sequencer;
         desc.x = x;
         desc.y = y;
+        desc.w = 900;
+        desc.h = 600;
+        desc.open = true;
         ui_sequencer_init(&ui->ui_sequencer, &desc);
     }
     x += dx; y += dy;
@@ -186,6 +189,9 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.title = "Help";
         desc.x = x;
         desc.y = y;
+        desc.w = 600;
+        desc.h = 900;
+        desc.open = true;
         ui_help_init(&ui->ui_help, &desc);
     }
 }
