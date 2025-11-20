@@ -156,7 +156,18 @@ void ui_help_discard(ui_help_t* win) {
 static void _ui_help_draw_state(ui_help_t* win) {
 
     if (help_fetch_ok) {
-        ImGui::Text(help_text);
+        int pos = 0;
+        int start = 0;
+        while (help_text[pos]!=0 && pos < HELP_TEXT_SIZE) {
+            if (help_text[pos]=='\n') {
+                char org = help_text[pos];
+                help_text[pos] = 0;
+                ImGui::TextWrapped(&help_text[start]);
+                help_text[pos] = org;
+                start=pos+1;
+            }
+            pos++;
+        }
     }
     else {
         ImGui::Text("Downloading help...");

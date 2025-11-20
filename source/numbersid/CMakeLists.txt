@@ -9,7 +9,7 @@ fips_end_app()
 
 # Copy help.txt after build
 add_custom_command(TARGET numbersid POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/help
         $<TARGET_FILE_DIR:numbersid>/help
 )
