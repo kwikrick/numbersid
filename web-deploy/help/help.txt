@@ -1,4 +1,205 @@
-Hello, Welcome to Help. 
+Welcome to NumberSid
+--------------------
 
-A line.
-Another line.
+NumberSid is a tool for making music from number sequences using the SID chip. 
+The SID chip (MOS 6581/8580) is the sound chip of the venerable Commodore C64 computer.
+The chip's sound output is emulated by this program. 
+Number sequences are generated using a few basic mathematical functions, using the
+time as the input, and using the output to control the chip: the frequencies of the 
+oscillators, the waveforms, envelopes and filter. 
+The user sets the parameters of the 
+functions to experimentally find interesting musical patterns.
+
+Getting Started
+---------------
+Some things to try:
+- Open the sequencer window from the menu. Make it as big as possible if it isn't already.
+- In the "Sound parameters" area, find the GATE value for Voice 1.
+- Replace the 0 with 1 (by typing in the edit box). 
+- You should now hear a constant tone (440Hz). 
+- Replace the 0 with (the letter) S.
+- You should now hear a regular pattern of the same note (on-off-on-off...).
+- Change the value of the NOTE from 0 to 1 (or 2 or -1 or anything). You will l hear a different tone. 
+- Change the value of the NOTE from 0 to A. You will now hear a simple melody. 
+- Further down in the "Sequence generator" area, find the row that starts with S.
+- Change the DIV1 value in row S, from 10 to 5. The pattern of note activations will now sound twice as fast.
+- Change the MUL1 value in row A, from 2 to 31. The pattern of tone of the notes played will now change.
+
+
+The sequencer window
+---------------------
+
+The sequencer window consists of three parts: time control,
+sound parameters and the sequence editor. 
+
+Time controls
+-------------
+
+Time is measured in ticks. There are 60 ticks in a second. This corresponds 
+to the screen refresh rate of 60Hz.
+
+The clock starts out running when starting the application, but can be 
+frozen by unchecking "Run". The clock can also be controlled manually
+by typing a number or using the +/- buttons. Use "Reset" to reset 
+the clock to 0.
+
+When the clock is not running, the sound chip may still generate sound, 
+but can be silenced using the "Mute" checkbox.
+
+The SID parameters
+------------------
+The SID chip has three channels, each with it's own oscillator and envelope generator. 
+The NumberSid sequencer has three voices, each corresponding to a channel.
+(The terms are similar but not the same. A voice has logic that it implements
+on top of the SID's channels).
+The chip also has a single filter, through which of the channels can be routed.
+
+Each voice has a number of parameters that can be set and the filter parameter can be set.
+Each parameter can be set to an integer value (range -32768 to 32767) or 
+set to a variable, identified by a single letter A to Z. The values of the 
+variables vary over time - these are the number sequences that are the core idea 
+of the program, and which are controlled in the "sequence generator" section. 
+
+Note that all values (constants and variables) are 16 bit signed integers, 
+ranging from -32768 to 32767. 
+
+Some parameters are bit fields: Only some of the binary bits of the integer number are used,
+and different bits may have different meanings. 
+
+Each voice has the following parameters:
+
+GATE           Bit 0: 1 to open the channel, 0 to close.
+NOTE           Note number in the scale (see below), may be negative or positive. 0 = root note (440Hz if SCALE=0), 
+SCALE          12 bits: each bit represents a piano key in an octave, 1 to be included in the scale, 0 excluded. 
+TRANS          Number of semitones to transpose tone up or down 
+PITCH          Number of cents to pitch the tone u por down
+WAVE           Waveform. Bit 0: Triangle. Bit 1: Sawtooth. Bit 2: Pulse. Bit 3: Noise. Note, noise cannot be combined with other waveforms.  
+PULSEWIDTH     Duty cycle of the Pulse waveform. Range 0-4096 (12 bits). Used when WAVE bit 2 is set (e.g. WAVE=4,5,6,7)
+RING           Bit 0: Enable ring modulation. Uses oscillator output of previous channel (voice 3 for voice 1)
+SYNC           Bit 0: Enable waveform synchronisation. Uses oscillator output of previous channel (voice 3 for voice 1)
+ATTACK         Attack time of the envelope generator. Range 0-15 (4 bits). 
+DECAY          Decay time of the envelope generator. Range 0-15 (4 bits).
+SUSTAIN        Sustain level of the envelope generator. Range 0-15 (4 bits).
+RELEASE        Release time of the envelope generator. Range 0-15 (4 bits).
+FILTER         Bit 0: if 1 then route channel output through filter, if 0 no filter. 
+
+The filter has the following parameters:
+
+MODE          Bit 0: lowpass, Bit 1: bandpass, Bit 3: high pass. Can be combined. (Bit 4 to silence voice 3). 
+CUTOFF        Range 0-4096 (12 bits). Linearly related to frequency (TODO: convert to real frequencies)
+RESONANCE     Strength of filter resonance, Range 0-15 (4 bits). 
+VOLUME        Range 0-15 (4 bits).
+
+
+Sequence Generator
+---------------
+
+On each row, the parameters for a sequence can be defined. 
+
+The first column is the output variable of the sequence, and the other columns are input 
+parameters (values or other variables). The second column (COUNT) is usually set to a
+variable that is the starting point for the calculation, often a time counter, e.g. T. 
+The other columns are parameters for subsequent operations to be performed on the value. 
+
+The meanings of the columns is as follows:
+VAR             The output variable
+COUNT           The starting value for the calculation (often a counting variable)
+ADD1            Add parameter to the the current value
+DIV1            Divide current value by given parameter. Skipped if 0. 
+MUL1            Multiply current value by the given parameter.
+MOD1            Take modulus of the current value and given parameter. Skipped if 0. 
+BASE            Sum the number of digits in the current value when converted to the base given by parameter. Skipped if <2.
+MOD2            Take modulus of the current value and given parameter. Skipped if 0.
+MUL2            Multiply current value by the given parameter.
+DIV2            Divide current value by given parameter. Skipped if 0. 
+ADD2            Add parameter to the the current value.
+
+The order of the rows can be changed using the Up (^) an Down (v) buttons. 
+This is relevant when one row uses the output variable from another row as input. 
+The rows are evaluated from top to bottom. If you use a variable from a 
+lower row, it's value will not have been calculated yet in this clock frame,
+and you'll get the previous value instead (it will sound 1/60th second behind). 
+
+The BASE parameter allows to make the most interesting number sequences. The
+"count the number of digits in given base" operation results in fractal-like,
+self-similar patterns which can be used for complex melodies or rhythms. The
+MUL1 parameter also has a significant effect on the pattern produced.
+
+Special variables
+-----------------
+
+Some variables are set by the software automatically and can be 
+used as parameters. 
+
+Most significant is T, which is the tick counter, which increments every 60th second.
+User defined sequences will typically derive from T. 
+
+T     The number of ticks since the last reset. (Note loops from 32767 to -32768). 
+
+For each voice, the opening and closing of the GATE will control two other variables.
+
+U     Voice 1 gate time, the number of ticks since Voice 1 GATE turned from 0 to 1
+V     Voice 2 gate time, the number of ticks since Voice 2 GATE turned from 0 to 1
+W     Voice 3 gate time, the number of ticks since Voice 3 GATE turned from 0 to 1
+
+X     Voice 1 gate count, the number of times that Voice 1 GATE turned from 0 to 1
+Y     Voice 2 gate count, the number of times that Voice 1 GATE turned from 0 to 1
+Z     Voice 3 gate count, the number of times that Voice 1 GATE turned from 0 to 1
+
+The UVW variables can be used to create effects like pitch bends, restarting each note. 
+The XYZ variables can be used to tie the progression notes played by a voice to the 
+rhythm of the voice. 
+
+Note: The variable that controls the voice gate
+should be evaluated before the the U,W,V,X,Y,Z values. So if variable A controls 
+voice 1 gate, then A should be evaluated before (placed above) the rows where U or X 
+are used. 
+
+Note: special variables can be used as output variables for sequences, 
+but the values will be overwritten each tick before sequence evaluation. 
+UVWXYZ.
+
+Preview
+-------
+
+The preview windows allows the user to inspect the number sequences generated.
+
+In top row of the table type the single letter of a variable to display in that column. 
+
+The following rows correspond to subsequent frame numbers (tick count).  
+If "follow" is checked, the frame numbers follow the time used by the sequencer. 
+If unchecked, the user can set the start value for the frame number using "offset". 
+The "step" value determines the time step between the frames shown in the preview. 
+Increase it to skip values and show a longer time interval. 
+
+
+Audio and SID windows
+---------------------
+
+Visualization of the SID chip's internal state and the audio output. 
+Inherited from the chips project. Maybe useful for diagnostics.
+
+
+History & Background
+--------------------
+
+Why would anyone want to make music using mathematical number sequences? 
+
+I wanted to create a very small (<4K) demo for the C64, and so there is very little 
+space for storing a musical score. One way to achieve this is to
+generate the music using mathematically generated sequences and storing only the 
+parameters of the mathematical functions used. 
+
+However, implementing a interactive tool on the C64 in assembly language 
+is very time consuming, and I also wanted to prototype different 
+ideas for generating sequences. 
+I found floooh's chips project to be a good fit for what I needed, 
+(has a SID emulator, graphical UI and is cross-platform) and
+started from his code to create a proof of concept. 
+
+Also, it's fun to find surprising musical patternsin maths. 
+
+This program was inspired by a program called "Musinum - The music in the numbers" 
+by Lars Kinderman. The idea of using the "sum of digits" function for 
+music generation comes from him. Also, i used his idea for choosing notes from
+a musical scale to create more pleasing harmonies. 
