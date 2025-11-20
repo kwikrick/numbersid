@@ -59,7 +59,7 @@ FILTER         Bit 0: if 1 then route channel output through filter, if 0 no fil
 The filter has the following parameters:
 
 MODE          Bit 0: lowpass, Bit 1: bandpass, Bit 3: high pass. Can be combined. (Bit 4 to silence voice 3). 
-CUTOFF        Range 0-4096 (12 bits). Linearly related to frequency (TODO: convert to real frequencies)
+CUTOFF        Range 0-2047 (11 bits). Linearly related to frequency (30-12000Hz).
 RESONANCE     Strength of filter resonance, Range 0-15 (4 bits). 
 VOLUME        Range 0-15 (4 bits).
 
@@ -69,7 +69,7 @@ Sequence Generator
 This section allows the number sequences to be specified that can be used in the "sound parameters" section. 
 Each row corresponds to a sequence, represented by a one letter variable name.
 
-The first column (VAR) is the output variable of the sequence, and the other columns are input parameters (values or other variables). The second column (COUNT) is the starting valuefor the calculation, and typically a variable is used that counts time, e.g. T. The other columns are parameters for subsequent operations to be performed on the value. 
+The first column (VAR) is the output variable of the sequence, and the other columns are input parameters (values or other variables). The second column (COUNT) is the starting value for the calculation, and typically a variable is used that counts time, e.g. T. The other columns are parameters for subsequent operations to be performed on the value. 
 
 The meanings of the columns is as follows:
 VAR             The output variable
