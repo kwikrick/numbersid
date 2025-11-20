@@ -100,9 +100,7 @@ void ui_help_load_settings(ui_help_t* win, const ui_settings_t* settings);
 #endif
 
 #define HELP_TEXT_SIZE  1024*1024
-
 static char help_text[HELP_TEXT_SIZE];
-
 static bool help_fetch_done = false;
 static bool help_fetch_ok = false;
 
@@ -112,10 +110,17 @@ static void help_fetch_callback (const sfetch_response_t* response)
         help_fetch_done = true;
         help_fetch_ok = true;
         help_text[response->data.size] = 0;     // zero terminate data
-        //channel->ptr = (uint8_t*)response->data.ptr;
-        //channel->size = response->data.size;
     }
     else if (response->finished) {
+        help_fetch_done = true;
+    }
+    else if (response->failed) {
+        help_fetch_done = true;
+    }
+    else if (response->cancelled) {
+        help_fetch_done = true;
+    }
+    else if (response->paused) {
         help_fetch_done = true;
     }
 }
@@ -141,10 +146,6 @@ void ui_help_init(ui_help_t* win, const ui_help_desc_t* desc) {
             .size = HELP_TEXT_SIZE
         }
     });
-
-    while (!help_fetch_done) {
-        sfetch_dowork();
-    };
 }
 
 void ui_help_discard(ui_help_t* win) {
@@ -159,9 +160,7 @@ static void _ui_help_draw_state(ui_help_t* win) {
     }
     else {
         ImGui::Text("Downloading help...");
-    
     }
-    
 }
 
 void ui_help_draw(ui_help_t* win) {

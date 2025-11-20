@@ -198,8 +198,10 @@ void app_init(void) {
 
     clock_init();
     prof_init();
-    fs_init();          // needed? Maybe for UI settings? Maybe later for load/save sequence data.  
-
+    fs_init();         
+       // Needed? Maybe later for load/save sequence data.
+       // Also calls sfetch_init and s_fetch_setup, needed for help_init
+       
     ui_init(&(ui_desc_t){
         .draw_cb = ui_draw_cb,
         .save_settings_cb = ui_save_settings_cb,
@@ -253,6 +255,8 @@ void app_frame(void) {
 
     gfx_draw(numbersid_display_info());
     draw_status_bar();
+
+    fs_dowork();    // should work for both fs and sfetch
 }
 
 void app_input(const sapp_event* event) {
