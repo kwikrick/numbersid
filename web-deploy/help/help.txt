@@ -26,50 +26,62 @@ Time controls
 -------------
 Time is measured in ticks. There are 60 ticks in a second. This corresponds to the screen refresh rate of 60Hz.
 
-The clock starts out running when starting the application, but can be frozen by unchecking "Run". The clock can also be controlled manually by typing a number or using the +/- buttons. Use "Reset" to reset 
-the clock to 0.
+The clock starts out running when starting the application, but can be frozen by unchecking "Run". The clock can also be controlled manually by typing a number or using the +/- buttons. Use "Reset" to reset the clock to 0.
 
 When the clock is not running, the sound chip may still generate sound, but can be silenced using the "Mute" checkbox.
 
-The SID parameters
+The sound parameters
 ------------------
-The SID chip has three channels, each with it's own oscillator and envelope generator. The sequencer has three voices, each corresponding to a channel. (Note: the terms are similar but not the same. A voice has logic that it implements on top of the SID's channels). The chip also has a single filter, through which of the channels can be routed.
+The SID chip has three channels, each with it's own oscillator and envelope generator. The sequencer has three voices, each corresponding to a channel. (Note: the terms are similar but not the same. A voice has logic that it implements on top of the SID's channels). The chip also has a single filter, through which each of the channels can be routed.
 
-Each voice has a number of parameters that can be set and the filter parameter can be set. Each parameter can be set to an integer value (range -32768 to 32767) or set to a variable, identified by a single letter A to Z. The values of the variables vary over time - these are the number sequences that are the core idea of the program, and which are controlled in the "sequence generator" section. 
+Each voice has a number of parameters that can be set, and the filter parameters can also be set, in the sound parameters section. Each parameter can be set to an integer value (range -32768 to 32767) or set to a variable, identified by a single letter A to Z. The values of the variables vary over time - these are the number sequences that are the core idea of the program, and which are controlled in the "sequence generator" section. 
 
 Note that all values (constants and variables) are 16 bit signed integers, ranging from -32768 to 32767. Some parameters are bit fields: Only some of the binary bits of the integer number are used, and different bits may have different meanings. 
 
 Each voice has the following parameters:
 
-GATE           Bit 0: 1 to open the channel, 0 to close.
-NOTE           Note number in the scale (see below), may be negative or positive. 0 = root note (440Hz if SCALE=0), 
-SCALE          12 bits: each bit represents a piano key in an octave, 1 to be included in the scale, 0 excluded. 
-TRANS          Number of semitones to transpose tone up or down 
-PITCH          Number of cents to pitch the tone u por down
-WAVE           Waveform. Bit 0: Triangle. Bit 1: Sawtooth. Bit 2: Pulse. Bit 3: Noise. Note, noise cannot be combined with other waveforms.  
-PULSEWIDTH     Duty cycle of the Pulse waveform. Range 0-4096 (12 bits). Used when WAVE bit 2 is set (e.g. WAVE=4,5,6,7)
+GATE           Bit 0: 1 to open the channel, 0 to close. Or: odd and even numbers to open and close
+NOTE           Note number in the scale (see below). May be negative. 0=root note
+SCALE          12 bits: each bit represents a piano key in an octave. 0=all keys
+TRANS          Number of semitones to transpose tone up or down
+PITCH          Number of cents to pitch the tone up or down
+WAVE           Waveform. Bit 0: Triangle. Bit 1: Sawtooth. Bit 2: Pulse. Bit 3: 
+               Noise. Note, noise cannot be combined with other waveforms.  
+PULSEWIDTH     Duty cycle of the Pulse waveform. Range 0-4096 (12 bits). 
+               Used when WAVE bit 2 is set (e.g. WAVE=4,5,6,7).
 RING           Bit 0: Enable ring modulation. Uses oscillator output of previous channel (voice 3 for voice 1)
-SYNC           Bit 0: Enable waveform synchronisation. Uses oscillator output of previous channel (voice 3 for voice 1)
-ATTACK         Attack time of the envelope generator. Range 0-15 (4 bits). 
-DECAY          Decay time of the envelope generator. Range 0-15 (4 bits).
-SUSTAIN        Sustain level of the envelope generator. Range 0-15 (4 bits).
-RELEASE        Release time of the envelope generator. Range 0-15 (4 bits).
-FILTER         Bit 0: if 1 then route channel output through filter, if 0 no filter. 
+SYNC           Bit 0: Enable synchronisation. Uses oscillator output of previous channel (voice 3 for voice 1)
+ATTACK         Attack time of the envelope generator. Range 0-15 (4 bits)
+DECAY          Decay time of the envelope generator. Range 0-15 (4 bits)
+SUSTAIN        Sustain level of the envelope generator. Range 0-15 (4 bits)
+RELEASE        Release time of the envelope generator. Range 0-15 (4 bits)
+FILTER         Bit 0: if 1 then route channel output through filter, if 0 no filter
 
 The filter has the following parameters:
 
-MODE          Bit 0: lowpass, Bit 1: bandpass, Bit 3: high pass. Can be combined. (Bit 4 to silence voice 3). 
-CUTOFF        Range 0-2047 (11 bits). Linearly related to frequency (30-12000Hz).
-RESONANCE     Strength of filter resonance, Range 0-15 (4 bits). 
-VOLUME        Range 0-15 (4 bits).
+MODE          Bit 0: lowpass, Bit 1: bandpass, Bit 2: high pass. Can be combined. (Bit 3 to silence voice 3) 
+CUTOFF        Range 0-2047 (11 bits). Linearly related to frequency (approx. 30-12000Hz)
+RESONANCE     Strength of filter resonance. Range 0-15 (4 bits)
+VOLUME        Range 0-15 (4 bits)
 
+When GATE goes from low to high, the attack phase of the envelope starts (and will continue into
+decay and sustain phase). When GATE goes from low to high, the release phase of the envelope starts. 
+
+The NOTE value is an index in a musical scale. SCALE a 12 bit number where each bit selects a semitone in an octave, i.e. the 12 piano keys in an octave. Each bit determines whether that key is part of the scale or not.
+Examples: 
+4095 = 111111111111 = chromatic scale
+2741 = 101010110101 = C-major 
+1352 = 010101001010 = A-minor 
+0 = default = chromatic scale
+
+NOTE value 0 is the first note in the scale of octave 0. Octave 0 always starts at 440Hz. Note 1 is the second note in the scale, Note -1 is the last note in the scale one octave lower. If there are M notes in the scale, then then octave=FLOOR(N/M) and index=FLOORMOD(N,M). Note that, the fewer notes are in a scale, the further apart two adjacent NOTE values will sound. From the octave and note index, we compute the corresponding semitone of the chromatic scale (i.e. which piano key), which is in turn converted to a frequency for the oscillator. The TRANS value allows to transpose the scale up or down by a number of semitones. The PITCH value allows the frequency to be tuned up or down by a given number of cents (100th of a semitone).
 
 Sequence Generator
 ---------------
 This section allows the number sequences to be specified that can be used in the "sound parameters" section. 
 Each row corresponds to a sequence, represented by a one letter variable name.
 
-The first column (VAR) is the output variable of the sequence, and the other columns are input parameters (values or other variables). The second column (COUNT) is the starting value for the calculation, and typically a variable is used that counts time, e.g. T. The other columns are parameters for subsequent operations to be performed on the value. 
+The first column (VAR) is the output variable of the sequence, and the other columns are input parameters (values or variables). The second column (COUNT) is the starting value for the calculation, and typically a variable is used that counts time, e.g. T (see: Special variables). The other columns are parameters for subsequent operations to be performed on the value. 
 
 The meanings of the columns is as follows:
 VAR             The output variable
@@ -78,7 +90,7 @@ ADD1            Add parameter to the the current value
 DIV1            Divide current value by given parameter. Skipped if 0. 
 MUL1            Multiply current value by the given parameter.
 MOD1            Take modulus of the current value and given parameter. Skipped if 0. 
-BASE            Sum the number of digits in the current value when converted to the base given by parameter. Skipped if <2.
+BASE            Sum the digits in the current value when converted to given base. Skipped if <2.
 MOD2            Take modulus of the current value and given parameter. Skipped if 0.
 MUL2            Multiply current value by the given parameter.
 DIV2            Divide current value by given parameter. Skipped if 0. 
@@ -87,7 +99,21 @@ ADD2            Add parameter to the the current value.
 The order of the rows can be changed using the Up (^) an Down (v) buttons. This is relevant when one row uses the output variable from another row as input. The rows are evaluated from top to bottom. If you use a variable from a 
 lower row, it's value will not have been calculated yet in this clock frame, and you'll get the previous value instead (it will sound 1/60th second behind). 
 
-The BASE parameter allows to make the most interesting number sequences. The "count the number of digits in given base" operation results in fractal-like, self-similar patterns which can be used for complex melodies or rhythms. The MUL1 parameter also has a significant effect on the pattern produced.
+The BASE parameter allows to make the most interesting number sequences. The "count the number of digits in given base" operation results in fractal-like, self-similar patterns which can be used for complex melodies or rhythms. The MUL1 parameter also has a significant effect on the pattern produced. Some interesting patterns are found when BASE=2 and MUL1=2^M-1 = 7, 15, 31, 63, etc. 
+
+Note that the addition, multiplication, division and modulus operations appear twice in the sequence. The reason is that this allows to perform a linear transformation before the (non-linear) sum-of-digits (BASE) operation and a linear transformation after it. Also, because all intermediate values are integers, and rounded down after division, the order of the operations is important. The first set of operations allow to control the tempo at which the sequence plays and other time based characteristics of the sequence, while the second allows the control the range of values of the output variable.
+
+The parameters can used/interpreted as follows:
+
+ADD1   offset the sequence in time
+DIV1   control tempo of the sequence
+MUL1   set step size for the sum-of-digits, creates different patterns
+MOD1   set input range for the sum-of-digits, creates repetitions of sequence in time
+BASE   >=2 for the sum-of digits function
+MOD2   limit output range, can introduces large drop in value
+MUL2   multiply output range (larger steps)
+DIV2   divide output range (rounded down)
+ADD2   move output range
 
 Special variables
 -----------------
@@ -95,7 +121,7 @@ Some variables are set by the software automatically and can be used as paramete
 
 Most significant is T, which is the tick counter, which increments every 60th second. User defined sequences will typically derive from T. 
 
-T     The number of ticks since the last reset. (Note loops from 32767 to -32768). 
+T     The number of ticks since the last reset. (Note overflows from 32767 to -32768). 
 
 For each voice, the opening and closing of the GATE will control two other variables:
 
@@ -107,10 +133,12 @@ X     Voice 1 gate count, the number of times that Voice 1 GATE turned from 0 to
 Y     Voice 2 gate count, the number of times that Voice 1 GATE turned from 0 to 1
 Z     Voice 3 gate count, the number of times that Voice 1 GATE turned from 0 to 1
 
-The UVW variables can be used to create effects like pitch bends, restarting each note. The XYZ variables can be used to tie the progression notes played by a voice to the rhythm of the voice. 
+The UVW variables can be used to create effects that restart with each note, e.g. a pitch bend. 
+
+The XYZ variables can be used to tie the progression notes played by a voice to the rhythm of the voice. 
 
 Note: The variable that controls the voice gate should be evaluated before the the U,W,V,X,Y,Z values. So if variable A controls voice 1 gate, then A should be evaluated before (placed above) the rows where U or X 
-are used. 
+are used. Otherwise, the value of the dependend variable will be one tick behind. 
 
 Note: special variables can be used as output variables for sequences, but the values will be overwritten each tick before sequence evaluation. 
 
@@ -118,9 +146,9 @@ Preview
 -------
 The preview windows allows the user to inspect the number sequences generated.
 
-In top row of the table type the single letter of a variable to display in that column. 
+In top row of the table, type the single letter of a variable to display it in that column. 
 
-The following rows correspond to subsequent frame numbers (tick count).  If "follow" is checked, the frame numbers follow the time used by the sequencer. If unchecked, the user can set the start value for the frame number using "offset". The "step" value determines the time step between the frames shown in the preview. Increase it to skip values and show a longer time interval. 
+The following rows correspond to subsequent frame numbers (tick count). If "follow" is checked, the frame numbers follow the time used by the sequencer. If unchecked, the user can set the start value for the frame number using "offset". The "step" value determines the time step between the frames shown in the preview. Increase it to skip values and show a longer time interval. 
 
 
 Audio and SID windows
@@ -130,7 +158,7 @@ Visualization of the SID chip's internal state and the audio output. Inherited f
 
 History & Background
 --------------------
-Why would anyone want to make music using mathematical number sequences? 
+Why would anyone want to make music this way? 
 
 I wanted to create a very small (<4K) demo for the C64, and so there is very little space for storing a musical score. One way to achieve this is to generate the music using mathematically generated sequences and storing only the parameters of the mathematical functions used. 
 
