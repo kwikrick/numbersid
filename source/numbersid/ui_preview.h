@@ -34,7 +34,9 @@
 
     ## zlib/libpng license
 
+    Copyright (c) 2025 Rick van der Meiden
     Copyright (c) 2018 Andre Weissflog
+    
     This software is provided 'as-is', without any express or implied warranty.
     In no event will the authors be held liable for any damages arising from the
     use of this software.
