@@ -119,7 +119,7 @@ Some variables are set by the software automatically and can be used as paramete
 
 Most significant is T, which is the tick counter, which increments every 60th second. User defined sequences will typically derive from T. 
 
-T     The number of ticks since the last reset. (Note loops from 32767 to -32768). 
+T     The number of ticks since the last reset. (Note overflows from 32767 to -32768). 
 
 For each voice, the opening and closing of the GATE will control two other variables:
 
@@ -131,10 +131,12 @@ X     Voice 1 gate count, the number of times that Voice 1 GATE turned from 0 to
 Y     Voice 2 gate count, the number of times that Voice 1 GATE turned from 0 to 1
 Z     Voice 3 gate count, the number of times that Voice 1 GATE turned from 0 to 1
 
-The UVW variables can be used to create effects like pitch bends, restarting each note. The XYZ variables can be used to tie the progression notes played by a voice to the rhythm of the voice. 
+The UVW variables can be used to create effects that restart with each note, e.g. a pitch bend. 
+
+The XYZ variables can be used to tie the progression notes played by a voice to the rhythm of the voice. 
 
 Note: The variable that controls the voice gate should be evaluated before the the U,W,V,X,Y,Z values. So if variable A controls voice 1 gate, then A should be evaluated before (placed above) the rows where U or X 
-are used. 
+are used. Otherwise, the value of the dependend variable will be one tick behind. 
 
 Note: special variables can be used as output variables for sequences, but the values will be overwritten each tick before sequence evaluation. 
 
@@ -142,9 +144,9 @@ Preview
 -------
 The preview windows allows the user to inspect the number sequences generated.
 
-In top row of the table type the single letter of a variable to display in that column. 
+In top row of the table, type the single letter of a variable to display it in that column. 
 
-The following rows correspond to subsequent frame numbers (tick count).  If "follow" is checked, the frame numbers follow the time used by the sequencer. If unchecked, the user can set the start value for the frame number using "offset". The "step" value determines the time step between the frames shown in the preview. Increase it to skip values and show a longer time interval. 
+The following rows correspond to subsequent frame numbers (tick count). If "follow" is checked, the frame numbers follow the time used by the sequencer. If unchecked, the user can set the start value for the frame number using "offset". The "step" value determines the time step between the frames shown in the preview. Increase it to skip values and show a longer time interval. 
 
 
 Audio and SID windows
@@ -154,7 +156,7 @@ Visualization of the SID chip's internal state and the audio output. Inherited f
 
 History & Background
 --------------------
-Why would anyone want to make music using mathematical number sequences? 
+Why would anyone want to make music this way? 
 
 I wanted to create a very small (<4K) demo for the C64, and so there is very little space for storing a musical score. One way to achieve this is to generate the music using mathematically generated sequences and storing only the parameters of the mathematical functions used. 
 
