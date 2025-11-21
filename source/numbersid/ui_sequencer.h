@@ -90,6 +90,9 @@ void ui_sequencer_draw(ui_sequencer_t* win);
 void ui_sequencer_save_settings(ui_sequencer_t* win, ui_settings_t* settings);
 void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settings);
 
+// from sequencer.h
+int16_t floor_mod(int16_t value, int16_t mod);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -443,17 +446,20 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
                 };
                 str[0] = seq->variable; str[1] = 0;
 
-                if (ImGui::Button("^")) 
+
+                if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
                 {
-                    sequence_t seq1 = sequencer->sequences[(i-1)%NUM_SEQUENCES];  //copy
-                    sequencer->sequences[(i-1)%NUM_SEQUENCES] = *seq;   // copy      
+                    int j = floor_mod(i-1,NUM_SEQUENCES);
+                    sequence_t seq1 = sequencer->sequences[j];  //copy
+                    sequencer->sequences[j] = *seq;   // copy      
                     sequencer->sequences[i] = seq1;   // copy
                 } 
                  ImGui::TableNextColumn();
-                if (ImGui::Button("v")) 
+                if (ImGui::ArrowButton("v",ImGuiDir_Down)) 
                 {
-                    sequence_t seq1 = sequencer->sequences[(i+1)%NUM_SEQUENCES];  //copy
-                    sequencer->sequences[(i+1)%NUM_SEQUENCES] = *seq;   // copy      
+                    int j = floor_mod(i+1,NUM_SEQUENCES);
+                    sequence_t seq1 = sequencer->sequences[j];  //copy
+                    sequencer->sequences[j] = *seq;   // copy      
                     sequencer->sequences[i] = seq1;   // copy
                 } 
                 ImGui::TableNextColumn();
