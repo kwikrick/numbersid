@@ -162,7 +162,7 @@ static void _ui_help_draw_state(ui_help_t* win) {
             if (help_text[pos]=='\n') {
                 char org = help_text[pos];
                 help_text[pos] = 0;
-                ImGui::TextWrapped(&help_text[start]);
+                ImGui::TextWrapped("%s",&help_text[start]);
                 help_text[pos] = org;
                 start=pos+1;
             }
