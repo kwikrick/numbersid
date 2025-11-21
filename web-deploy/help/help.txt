@@ -72,7 +72,7 @@ Examples:
 1352 = 010101001010 = A-minor 
 0 = default = chromatic scale
 
-NOTE value 0 is the first note in the scale of octave 0. Octave 0 always starts at 440Hz. Note 1 is the second note in the scale, Note -1 is the last note in the scale one octave lower. If there are M notes in the scale, then then octave=FLOOR(N/M) and index=FLOORMOD(N,M). Note that, the fewer notes are in a scale, the further apart two adjacent NOTE values will sound. From the octave and note index, we compute the corresponding semitone of the chromatic scale (i.e. which piano key), which is in turn converted to a frequency for the oscillator. The TRANS value allows to transpose the scale up or down by a number of semitones. The PITCH value allows the frequency to be tuned up or down by a given number of cents (100th of a semitone).
+NOTE value 0 is the first note in the scale of octave 0. Octave 0 always starts at 440Hz. Note 1 is the second note in the scale, Note -1 is the last note in the scale one octave lower, etc. If there are M notes in the scale, then octave=FLOOR(N/M) and index=FLOORMOD(N,M). Note that, the fewer notes are in a scale, the further apart two adjacent NOTE values will sound. From the octave and note index, we compute the corresponding semitone of the chromatic scale (i.e. which piano key), which is in turn converted to a frequency for the oscillator. The TRANS value allows to transpose the scale up or down by a number of semitones. The PITCH value allows the frequency to be tuned up or down by a given number of cents (100th of a semitone).
 
 Sequence Generator
 ---------------
@@ -101,17 +101,19 @@ The BASE parameter allows to make the most interesting number sequences. The "co
 
 Note that the addition, multiplication, division and modulus operations appear twice in the sequence. The reason is that this allows to perform a linear transformation before the (non-linear) sum-of-digits (BASE) operation and a linear transformation after it. Also, because all intermediate values are integers, and rounded down after division, the order of the operations is important. The first set of operations allow to control the tempo at which the sequence plays and other time based characteristics of the sequence, while the second allows the control the range of values of the output variable.
 
-The parameters can used/interpreted as follows:
+The parameters can be used for the following effects:
 
 ADD1   offset the sequence in time
 DIV1   control tempo of the sequence
 MUL1   set step size for the sum-of-digits, creates different patterns
-MOD1   set input range for the sum-of-digits, creates repetitions of sequence in time
+MOD1   creates repetitions of sequence in time
 BASE   >=2 for the sum-of digits function
-MOD2   limit output range, can introduces large drop in value
+MOD2   limit output range (introduces drops in value)
 MUL2   multiply output range (larger steps)
 DIV2   divide output range (rounded down)
-ADD2   move output range
+ADD2   move output range up/down
+
+Using variables for these parameters allows for much more complicated sequences.
 
 Special variables
 -----------------
@@ -164,4 +166,4 @@ However, implementing a interactive tool on the C64 in assembly language is very
 
 Also, it's fun to find surprising musical patternsin maths. 
 
-This program was inspired by a program called "Musinum - The music in the numbers" by Lars Kinderman. The idea of using the "sum of digits" function for music generation comes from him. Also, i used his idea for choosing notes from a musical scale to create more pleasing harmonies.
+This program was inspired by a program called "Musinum - The music in the numbers" by Lars Kinderman. The idea of using the "sum of digits" function for music generation comes from him. Also, i used his idea for choosing notes from a musical scale to create more pleasing melodies and harmonies.
