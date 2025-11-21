@@ -10,6 +10,7 @@
 
 */
 
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct {
@@ -82,7 +83,12 @@ typedef struct {
 } sequencer_t;
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
+
 #ifdef CHIPS_IMPL
+
+
+void sequencer_export(sequencer_t* sequencer, char* buffer, int size);
+
 
 void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
     sequencer->sid = sid;
@@ -118,6 +124,10 @@ void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
         .base = (var_or_number_t){.number = 2},
         .mul2 = (var_or_number_t){.number = 1},
     };
+
+    // test
+    //char buffer[1024*100];
+    //sequencer_export(sequencer, buffer, sizeof(buffer));
 }
 
 int16_t floor_mod(int16_t value, int16_t mod) {
@@ -396,6 +406,56 @@ void update_sequencer(sequencer_t* sequencer)
     if (sequencer->running) {    
         sequencer->frame += 1;
     }
+}
+
+int varonum_export(var_or_number_t* varonum, char* buffer, int size) 
+{
+    // TODO: for C64 code, should be in a single 16 bit value, 
+    // 1 bit to indicate type, limit number range to 15 bits, union with variable number. 
+    //return snprintf(buffer, size, "%d,%d,",varonum->variable, varonum->number);
+    int n = snprintf(buffer, size, "%d, %d, ",varonum->variable, varonum->number);
+    assert(n>0 && size-n>0);
+    return n;
+}
+
+void sequencer_export(sequencer_t* sequencer, char* buffer, int size) 
+{
+    int pos = 0;
+    for (int v; v<3; v++) {
+        voice_t* voice = &sequencer->voices[v];
+        pos += varonum_export(&voice->gate, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->note, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->scale, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->transpose, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->pitch, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->waveform, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->pulsewidth, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->ring, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->sync, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->attack, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->decay, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->sustain, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->release, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->filter, &buffer[pos],size-pos);
+    }
+    pos += varonum_export(&sequencer->filter_mode, &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->cutoff, &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->resonance, &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->volume, &buffer[pos],size-pos);
+    for (int s; s<NUM_SEQUENCES; s++) {
+        sequence_t* seq = &sequencer->sequences[s];
+        pos += varonum_export(&seq->add1, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->div1, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mul1, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mod1, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->base, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mod2, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mul2, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->div2, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->add2, &buffer[pos],size-pos);
+    }
+    assert(size-pos>0);
+    buffer[pos] = 0;
 }
 
 #endif
