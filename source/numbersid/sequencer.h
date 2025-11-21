@@ -10,6 +10,10 @@
 
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -81,6 +85,12 @@ typedef struct {
     int16_t values[26];             // A-Z
     preview_t preview;
 } sequencer_t;
+
+int16_t floor_mod(int16_t value, int16_t mod);
+
+#ifdef __cplusplus
+}
+#endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 

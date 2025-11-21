@@ -84,9 +84,6 @@ void ui_sequencer_draw(ui_sequencer_t* win);
 void ui_sequencer_save_settings(ui_sequencer_t* win, ui_settings_t* settings);
 void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settings);
 
-// from sequencer.h
-int16_t floor_mod(int16_t value, int16_t mod);
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
