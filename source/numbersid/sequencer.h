@@ -290,8 +290,8 @@ void update_sid(sequencer_t* sequencer)
     }
 
     int16_t cutoff = varonum_eval(&sequencer->cutoff, sequencer);
-    _m6581_set_cutoff_lo(&sequencer->sid->filter, (cutoff&0xFF));
-    _m6581_set_cutoff_hi(&sequencer->sid->filter, (cutoff>>8));
+    _m6581_set_cutoff_lo(&sequencer->sid->filter, (cutoff&0x7));            // bits 0-2
+    _m6581_set_cutoff_hi(&sequencer->sid->filter, (cutoff>>3));             // bits 3-10
 
     int16_t resonance = varonum_eval(&sequencer->resonance, sequencer);
     int16_t filter1 = varonum_eval(&sequencer->voices[0].filter, sequencer);
