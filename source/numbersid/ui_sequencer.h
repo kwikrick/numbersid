@@ -20,13 +20,11 @@
 
     Include the following headers before the including the *declaration*:
         - sequencer.h
-        - ui_chip.h
         - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
         - sequencer.h
-        - ui_chip.h
         - ui_util.h
 
     All strings provided to ui_sequencer_init() must remain alive until
@@ -64,24 +62,20 @@ extern "C" {
 */
 typedef struct ui_sequencer_desc_t {
     const char* title;          /* window title */
-    //m6581_t* sid;               /* pointer to m6581_t instance to track */
     sequencer_t* sequencer;      /* object to show and edit */
     int x, y;                   /* initial window position */
     int w, h;                   /* initial window size (or default size of 0) */
     bool open;                  /* initial window open state */
-    //ui_chip_desc_t chip_desc;   /* chip visualization desc */
 } ui_sequencer_desc_t;
 
 typedef struct ui_sequencer_t {
     const char* title;
-    //m6581_t* sid;
     sequencer_t* sequencer;
     float init_x, init_y;
     float init_w, init_h;
     bool open;
     bool last_open;
     bool valid;
-    //ui_chip_t chip;
 } ui_sequencer_t;
 
 void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc);
@@ -137,10 +131,8 @@ void ui_string_to_varonum(char* str, var_or_number_t* varonum)
 void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
     CHIPS_ASSERT(win && desc);
     CHIPS_ASSERT(desc->title);
-    //CHIPS_ASSERT(desc->sid);
     memset(win, 0, sizeof(ui_sequencer_t));
     win->title = desc->title;
-    //win->sid = desc->sid;
     win->sequencer = desc->sequencer;
     win->init_x = (float) desc->x;
     win->init_y = (float) desc->y;
@@ -148,7 +140,6 @@ void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
     win->init_h = (float) ((desc->h == 0) ? 410 : desc->h);
     win->open = win->last_open = desc->open;
     win->valid = true;
-    //ui_chip_init(&win->chip, &desc->chip_desc);
 }
 
 void ui_sequencer_discard(ui_sequencer_t* win) {
@@ -160,16 +151,12 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
 
     sequencer_t* sequencer = win->sequencer;
 
-    //m6581_t* sid = win->sid;
     const float cw0 = 84.0f;
     const float cw = 64.0f;
     char str[16];       // reuse this string for conversions to/from varonum
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
-    //ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
-    
-    
-    //if (ImGui::CollapsingHeader("Time Controls", ImGuiTreeNodeFlags_DefaultOpen)) 
+
     {
         ImGui::SeparatorText("Time Control");  
         ImGui::PushItemWidth(cw0);
@@ -185,7 +172,6 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
         ImGui::PopItemWidth();
     }
     
-    //if (ImGui::CollapsingHeader("Sound Parameters", ImGuiTreeNodeFlags_DefaultOpen)) {
     {
         ImGui::SeparatorText("Sound Parameters");  
         if (ImGui::BeginTable("##voices", 4)) {
@@ -441,7 +427,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
             ImGui::EndTable();
         }
     }
-    //if (ImGui::CollapsingHeader("Sequence Generator",ImGuiTreeNodeFlags_DefaultOpen)) {
+   
     {
         ImGui::SeparatorText("Sequence Generator");
         if (ImGui::BeginTable("##sequences", 13, ImGuiTableFlags_BordersInnerH)) {
@@ -477,7 +463,6 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
                     &seq->add2
                 };
                 str[0] = seq->variable; str[1] = 0;
-
 
                 if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
                 {
