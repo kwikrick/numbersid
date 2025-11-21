@@ -45,10 +45,8 @@ NOTE           Note number in the scale (see below). May be negative. 0=root not
 SCALE          12 bits: each bit represents a piano key in an octave. 0=all keys
 TRANS          Number of semitones to transpose tone up or down
 PITCH          Number of cents to pitch the tone up or down
-WAVE           Waveform. Bit 0: Triangle. Bit 1: Sawtooth. Bit 2: Pulse. Bit 3: 
-               Noise. Note, noise cannot be combined with other waveforms.  
-PULSEWIDTH     Duty cycle of the Pulse waveform. Range 0-4096 (12 bits). 
-               Used when WAVE bit 2 is set (e.g. WAVE=4,5,6,7).
+WAVE           Waveform. Bit 0: Triangle. Bit 1: Sawtooth. Bit 2: Pulse. Bit 3: Noise (Noise cannot ne combined)
+PULSEWIDTH     Duty cycle of the Pulse waveform. Range 0-4096 (12 bits). Used only if WAVE bit 2 set. 
 RING           Bit 0: Enable ring modulation. Uses oscillator output of previous channel (voice 3 for voice 1)
 SYNC           Bit 0: Enable synchronisation. Uses oscillator output of previous channel (voice 3 for voice 1)
 ATTACK         Attack time of the envelope generator. Range 0-15 (4 bits)
