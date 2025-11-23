@@ -89,7 +89,8 @@ typedef struct {
 
 // exported functions
 int16_t floor_mod(int16_t value, int16_t mod);
-void sequencer_export(sequencer_t* sequencer, char* buffer, int size);
+void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int words_per_line);
+bool sequencer_import_data(sequencer_t* sequencer, char* buffer);
 
 #ifdef __cplusplus
 }
@@ -98,10 +99,6 @@ void sequencer_export(sequencer_t* sequencer, char* buffer, int size);
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 
 #ifdef CHIPS_IMPL
-
-
-void sequencer_export(sequencer_t* sequencer, char* buffer, int size);
-
 
 void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
     sequencer->sid = sid;
@@ -431,7 +428,7 @@ int varonum_export(var_or_number_t* varonum, char* buffer, int size)
     return n;
 }
 
-void sequencer_export(sequencer_t* sequencer, char* buffer, int size) 
+void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int words_per_line)
 {
     int pos = 0;
     for (int v=0; v<3; v++) {
@@ -469,6 +466,73 @@ void sequencer_export(sequencer_t* sequencer, char* buffer, int size)
     }
     assert(size-pos>0);
     buffer[pos] = 0;
+
+    int count = 0;
+    pos = 0;
+    while (buffer[pos]!=0){
+        if (buffer[pos]==',') {
+            count++;
+            if (count == words_per_line) {
+                count = 0;
+                buffer[pos+1]='\n';
+            }
+        }
+        pos++;
+    }
 }
+
+
+bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos) 
+{
+    int argsread = sscanf(&buffer[*pos], "%hd, %hd,", &varonum->variable, &varonum->number);
+    if (argsread != 2) return false;
+    int count=0;
+    while (buffer[*pos]!=0) {
+        if (buffer[*pos]==',') count+=1;
+        (*pos)++;
+        if (count==2) break;
+    }
+    return (count==2);
+}
+
+bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
+{
+    int pos = 0;
+    for (int v=0; v<3; v++) {
+        voice_t* voice = &sequencer->voices[v];
+        if(!varonum_import(&voice->gate, buffer, &pos)) return false;
+        if(!varonum_import(&voice->note, buffer, &pos)) return false;
+        if(!varonum_import(&voice->scale, buffer, &pos)) return false;
+        if(!varonum_import(&voice->transpose, buffer, &pos)) return false;
+        if(!varonum_import(&voice->pitch, buffer, &pos)) return false;
+        if(!varonum_import(&voice->waveform, buffer, &pos)) return false;
+        if(!varonum_import(&voice->pulsewidth, buffer, &pos)) return false;
+        if(!varonum_import(&voice->ring, buffer, &pos)) return false;
+        if(!varonum_import(&voice->sync, buffer, &pos)) return false;
+        if(!varonum_import(&voice->attack, buffer, &pos)) return false;
+        if(!varonum_import(&voice->decay, buffer, &pos)) return false;
+        if(!varonum_import(&voice->sustain, buffer, &pos)) return false;
+        if(!varonum_import(&voice->release, buffer, &pos)) return false;
+        if(!varonum_import(&voice->filter, buffer, &pos)) return false;
+    }
+    if(!varonum_import(&sequencer->filter_mode, buffer, &pos)) return false;
+    if(!varonum_import(&sequencer->cutoff, buffer, &pos)) return false;
+    if(!varonum_import(&sequencer->resonance, buffer, &pos)) return false;
+    if(!varonum_import(&sequencer->volume, buffer, &pos)) return false;
+    for (int s=0; s<NUM_SEQUENCES; s++) {
+        sequence_t* seq = &sequencer->sequences[s];
+        if(!varonum_import(&seq->add1, buffer, &pos)) return false;
+        if(!varonum_import(&seq->div1, buffer, &pos)) return false;
+        if(!varonum_import(&seq->mul1, buffer, &pos)) return false;
+        if(!varonum_import(&seq->mod1, buffer, &pos)) return false;
+        if(!varonum_import(&seq->base, buffer, &pos)) return false;
+        if(!varonum_import(&seq->mod2, buffer, &pos)) return false;
+        if(!varonum_import(&seq->mul2, buffer, &pos)) return false;
+        if(!varonum_import(&seq->div2, buffer, &pos)) return false;
+        if(!varonum_import(&seq->add2, buffer, &pos)) return false;
+    }
+    return true;
+}
+
 
 #endif

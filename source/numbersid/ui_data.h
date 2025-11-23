@@ -125,15 +125,37 @@ static void _ui_data_draw_state(ui_data_t* win) {
 
     sequencer_t* sequencer = win->sequencer;
 
-    static char buffer[1024*1024];
-    // ImGuiInputTextFlags_WordWrap is in beta
-    ImGui::InputTextMultiline("data", buffer, sizeof(buffer),ImVec2(400,200));
-    ImGui::Button("Clear");
-    ImGui::Button("Import");
+    static char buffer[1024*64];
 
-    if (ImGui::Button("Export")) {
-        sequencer_export(sequencer, buffer, sizeof(buffer));
+    // TODO: unfortunately, ImGuiInputTextFlags_WordWrap is in beta
+    ImGui::InputTextMultiline("data", buffer, sizeof(buffer),ImVec2(400,200));
+    
+    if (ImGui::Button("Clear")) {
+        memset(buffer, 0, sizeof(buffer));
     }
+    if (ImGui::Button("Import")) {
+        bool result = sequencer_import_data(sequencer, buffer);
+        if (!result) {
+            ImGui::OpenPopup("Import Error");
+        }
+    };
+    if (ImGui::Button("Export")) {
+        sequencer_export_data(sequencer, buffer, sizeof(buffer), 4);
+    }
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("Import Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Error importing data.");    
+        if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    // TODO, use
+    //sapp_get_clipboard_string
+    //sapp_set_clipboard_string
+
     
 }
 
