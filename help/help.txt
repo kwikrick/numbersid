@@ -156,6 +156,16 @@ Audio and SID windows
 Visualization of the SID chip's internal state and the audio output. Inherited from the chips project. Maybe useful for diagnostics.
 
 
+Data window
+-----------
+The data window allows exporting and importing the sequencer data as text.
+
+The "Export" button writes the current data into the text area in the window. Select all text (Ctrl+A) and copy it (Ctrl+C) into the clipboard. 
+You may then store it any way you like, e.g. in a text file or use it in your favourite 6502 Assember. 
+
+The "Import" button reads the values from the text area and updates the sequencer state. To use it, first clear the text area (using the "Clear" button)
+then paste any previously exported data in to the text area. Then press "Import". A popup will report succes or failure (due to incorrectly formatted or incomplete data).
+
 History & Background
 --------------------
 Why would anyone want to make music this way? 
