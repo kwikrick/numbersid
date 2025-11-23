@@ -44,6 +44,7 @@
 #include "ui_sequencer.h"
 #include "ui_preview.h"
 #include "ui_help.h"
+#include "ui_data.h"
 #include "ui_numbersid.h"
 
 #include <stdlib.h>
@@ -343,5 +344,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .html5_bubble_mouse_events = true,
         .html5_update_document_title = true,
         .logger.func = slog_func,
+        .enable_clipboard = true,
+        .clipboard_size = 1024*64
     };
 }

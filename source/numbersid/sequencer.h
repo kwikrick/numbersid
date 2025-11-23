@@ -86,7 +86,10 @@ typedef struct {
     preview_t preview;
 } sequencer_t;
 
+
+// exported functions
 int16_t floor_mod(int16_t value, int16_t mod);
+void sequencer_export(sequencer_t* sequencer, char* buffer, int size);
 
 #ifdef __cplusplus
 }
@@ -431,7 +434,7 @@ int varonum_export(var_or_number_t* varonum, char* buffer, int size)
 void sequencer_export(sequencer_t* sequencer, char* buffer, int size) 
 {
     int pos = 0;
-    for (int v; v<3; v++) {
+    for (int v=0; v<3; v++) {
         voice_t* voice = &sequencer->voices[v];
         pos += varonum_export(&voice->gate, &buffer[pos],size-pos);
         pos += varonum_export(&voice->note, &buffer[pos],size-pos);
@@ -452,7 +455,7 @@ void sequencer_export(sequencer_t* sequencer, char* buffer, int size)
     pos += varonum_export(&sequencer->cutoff, &buffer[pos],size-pos);
     pos += varonum_export(&sequencer->resonance, &buffer[pos],size-pos);
     pos += varonum_export(&sequencer->volume, &buffer[pos],size-pos);
-    for (int s; s<NUM_SEQUENCES; s++) {
+    for (int s=0; s<NUM_SEQUENCES; s++) {
         sequence_t* seq = &sequencer->sequences[s];
         pos += varonum_export(&seq->add1, &buffer[pos],size-pos);
         pos += varonum_export(&seq->div1, &buffer[pos],size-pos);

@@ -27,6 +27,8 @@
     - ui_audio.h
     - ui_sequencer.h
     - ui_preview.h
+    - ui_data.h
+    - ui_help
 
     ## zlib/libpng license
 
@@ -74,6 +76,7 @@ typedef struct {
     ui_audio_t ui_audio;
     ui_sequencer_t ui_sequencer;
     ui_preview_t ui_preview;
+    ui_data_t ui_data;
     ui_help_t ui_help;
 } ui_numbersid_t;
 
@@ -110,6 +113,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
         if (ImGui::BeginMenu("Windows")) {
             ImGui::MenuItem("Sequencer", 0, &ui->ui_sequencer.open);
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);
+            ImGui::MenuItem("Data", 0, &ui->ui_data.open);
             ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
             ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);
             ImGui::MenuItem("Help", 0, &ui->ui_help.open);
@@ -185,7 +189,16 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.y = y;
         ui_preview_init(&ui->ui_preview, &desc);
     }
-      x += dx; y += dy;
+     x += dx; y += dy;
+    {
+        ui_data_desc_t desc = {0};
+        desc.title = "Data";
+        desc.sequencer = ui_desc->sequencer;
+        desc.x = x;
+        desc.y = y;
+        ui_data_init(&ui->ui_data, &desc);
+    }
+    x += dx; y += dy;
     {
         ui_help_desc_t desc = {0};
         desc.title = "Help";
@@ -203,6 +216,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_m6581_discard(&ui->ui_sid);
     ui_sequencer_discard(&ui->ui_sequencer);
     ui_preview_discard(&ui->ui_preview);
+    ui_data_discard(&ui->ui_data);
     ui_help_discard(&ui->ui_help);
     ui_audio_discard(&ui->ui_audio);
     //ui->sequencer = 0;  // TODO??
@@ -216,6 +230,7 @@ void ui_numbersid_draw(ui_numbersid_t* ui) {
     ui_m6581_draw(&ui->ui_sid);
     ui_sequencer_draw(&ui->ui_sequencer);
     ui_preview_draw(&ui->ui_preview);
+    ui_data_draw(&ui->ui_data);
     ui_help_draw(&ui->ui_help);
 }
 
@@ -230,6 +245,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     ui_m6581_save_settings(&ui->ui_sid, settings);
     ui_sequencer_save_settings(&ui->ui_sequencer, settings);
     ui_preview_save_settings(&ui->ui_preview, settings);
+    ui_data_save_settings(&ui->ui_data, settings);
     ui_help_save_settings(&ui->ui_help, settings);
     ui_audio_save_settings(&ui->ui_audio, settings);
 }
@@ -239,6 +255,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     ui_m6581_load_settings(&ui->ui_sid, settings);
     ui_sequencer_load_settings(&ui->ui_sequencer, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);
+    ui_data_load_settings(&ui->ui_data, settings);
     ui_help_load_settings(&ui->ui_help, settings);
     ui_audio_load_settings(&ui->ui_audio, settings);
 }
