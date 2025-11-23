@@ -64,24 +64,20 @@ extern "C" {
 */
 typedef struct ui_preview_desc_t {
     const char* title;          /* window title */
-    //m6581_t* sid;               /* pointer to m6581_t instance to track */
     sequencer_t* sequencer;      /* object to show and edit */
     int x, y;                   /* initial window position */
     int w, h;                   /* initial window size (or default size of 0) */
     bool open;                  /* initial window open state */
-    //ui_chip_desc_t chip_desc;   /* chip visualization desc */
 } ui_preview_desc_t;
 
 typedef struct ui_preview_t {
     const char* title;
-    //m6581_t* sid;
     sequencer_t* sequencer;
     float init_x, init_y;
     float init_w, init_h;
     bool open;
     bool last_open;
     bool valid;
-    //ui_chip_t chip;
 } ui_preview_t;
 
 void ui_preview_init(ui_preview_t* win, const ui_preview_desc_t* desc);

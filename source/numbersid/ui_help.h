@@ -75,7 +75,6 @@ typedef struct ui_help_t {
     bool open;
     bool last_open;
     bool valid;
-    char* text;
 } ui_help_t;
 
 void ui_help_init(ui_help_t* win, const ui_help_desc_t* desc);
@@ -137,7 +136,8 @@ void ui_help_init(ui_help_t* win, const ui_help_desc_t* desc) {
     win->open = win->last_open = desc->open;
     win->valid = true;
 
-    sfetch_handle_t handle = sfetch_send((sfetch_request_t){
+    //sfetch_handle_t handle = 
+    sfetch_send((sfetch_request_t){
         .channel = 0, 
         .path = "help/help.txt",
         .callback = &help_fetch_callback,
@@ -154,7 +154,7 @@ void ui_help_discard(ui_help_t* win) {
 }
 
 static void _ui_help_draw_state(ui_help_t* win) {
-
+    if (!win->valid) return;
     if (help_fetch_ok) {
         int pos = 0;
         int start = 0;
