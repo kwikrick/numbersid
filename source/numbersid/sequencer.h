@@ -134,10 +134,6 @@ void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
         .base = (var_or_number_t){.number = 2},
         .mul2 = (var_or_number_t){.number = 1},
     };
-
-    // test
-    //char buffer[1024*100];
-    //sequencer_export(sequencer, buffer, sizeof(buffer));
 }
 
 int16_t floor_mod(int16_t value, int16_t mod) {
