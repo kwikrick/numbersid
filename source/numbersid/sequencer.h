@@ -424,6 +424,16 @@ int varonum_export(var_or_number_t* varonum, char* buffer, int size)
     return n;
 }
 
+int var_export(char variable, char* buffer, int size) 
+{
+    // TODO: for C64 code, could be less than a byte?
+    // Now using a whole word if put on the same .word list as rest
+    int n = snprintf(buffer, size, "%d, ",variable);
+    assert(n>0 && size-n>0);
+    return n;
+}
+
+
 void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int words_per_line)
 {
     int pos = 0;
@@ -450,6 +460,8 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
     pos += varonum_export(&sequencer->volume, &buffer[pos],size-pos);
     for (int s=0; s<NUM_SEQUENCES; s++) {
         sequence_t* seq = &sequencer->sequences[s];
+        pos += var_export(seq->variable, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->count, &buffer[pos],size-pos);
         pos += varonum_export(&seq->add1, &buffer[pos],size-pos);
         pos += varonum_export(&seq->div1, &buffer[pos],size-pos);
         pos += varonum_export(&seq->mul1, &buffer[pos],size-pos);
@@ -491,6 +503,20 @@ bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos)
     return (count==2);
 }
 
+
+bool var_import(char* variable, char* buffer, int* pos) 
+{
+    int argsread = sscanf(&buffer[*pos], "%hhd,", variable);
+    if (argsread != 1) return false;
+    int count=0;
+    while (buffer[*pos]!=0) {
+        if (buffer[*pos]==',') count+=1;
+        (*pos)++;
+        if (count==1) break;
+    }
+    return (count==1);
+}
+
 bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
 {
     int pos = 0;
@@ -517,6 +543,8 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
     if(!varonum_import(&sequencer->volume, buffer, &pos)) return false;
     for (int s=0; s<NUM_SEQUENCES; s++) {
         sequence_t* seq = &sequencer->sequences[s];
+        if(!var_import(&seq->variable, buffer, &pos)) return false;
+        if(!varonum_import(&seq->count, buffer, &pos)) return false;
         if(!varonum_import(&seq->add1, buffer, &pos)) return false;
         if(!varonum_import(&seq->div1, buffer, &pos)) return false;
         if(!varonum_import(&seq->mul1, buffer, &pos)) return false;
