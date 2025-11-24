@@ -444,7 +444,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
             ImGui::TableHeadersRow();
             ImGui::TableNextColumn();
 
-            for (int i = 0; i < 16; i++) {
+            for (int i = 0; i < sequencer->num_sequences; i++) {
                 ImGui::PushID(i);
                 sequence_t* seq = &win->sequencer->sequences[i];
                 var_or_number_t* varonums[10]= {
@@ -463,7 +463,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
 
                 if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
                 {
-                    int j = floor_mod(i-1,NUM_SEQUENCES);
+                    int j = floor_mod(i-1,sequencer->num_sequences);
                     sequence_t seq1 = sequencer->sequences[j];  //copy
                     sequencer->sequences[j] = *seq;   // copy      
                     sequencer->sequences[i] = seq1;   // copy
@@ -471,7 +471,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
                  ImGui::TableNextColumn();
                 if (ImGui::ArrowButton("v",ImGuiDir_Down)) 
                 {
-                    int j = floor_mod(i+1,NUM_SEQUENCES);
+                    int j = floor_mod(i+1,sequencer->num_sequences);
                     sequence_t seq1 = sequencer->sequences[j];  //copy
                     sequencer->sequences[j] = *seq;   // copy      
                     sequencer->sequences[i] = seq1;   // copy
@@ -499,6 +499,19 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
                 ImGui::PopID();
             }
             ImGui::EndTable();
+
+            if (sequencer->num_sequences < MAX_SEQUENCES) {
+                if (ImGui::Button("+")) {
+                    sequencer->num_sequences++;
+                }
+                ImGui::SameLine();        
+            }
+            if (sequencer->num_sequences > 0) {
+                if (ImGui::Button("-")) {
+                    sequencer->num_sequences--;
+                }
+                ImGui::SameLine();
+            }
         }
     }
 

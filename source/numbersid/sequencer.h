@@ -69,14 +69,15 @@ typedef struct {
     int16_t values[NUM_PREVIEW_ROWS][NUM_PREVIEW_COLS];
 } preview_t;
 
-#define NUM_SEQUENCES  16
+#define MAX_SEQUENCES  26
 
 typedef struct {
     m6581_t* sid;
     bool running;
     bool muted;
     int frame;
-    sequence_t sequences[NUM_SEQUENCES];
+    sequence_t sequences[MAX_SEQUENCES];
+    uint8_t num_sequences;
     voice_t voices[3];
     var_or_number_t filter_mode;
     var_or_number_t cutoff;
@@ -113,12 +114,13 @@ void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
         sequencer->voices[i].waveform.number = 1;
         sequencer->voices[i].sustain.number = 15;
     }
-    for (int i=0;i<NUM_SEQUENCES;i++){
+    for (int i=0;i<MAX_SEQUENCES;i++){
         sequencer->sequences[i].mul1.number = 1;
         sequencer->sequences[i].mul2.number = 1;
     }
-    
+
     // add a test sequence
+    sequencer->num_sequences = 4;
     sequencer->sequences[0] = (sequence_t){
         .variable = 'S',
         .count = (var_or_number_t){.variable = 'T'},
@@ -349,7 +351,7 @@ void update_sequence_variables(sequencer_t* sequencer, int frame) {
     sequencer->values['T'-'A'] = new_t;
 
     // compute sequences
-    for (int i=0;i<NUM_SEQUENCES;++i) {
+    for (int i=0;i<sequencer->num_sequences;++i) {
         update_sequence(&sequencer->sequences[i], sequencer);
     }
 }
@@ -430,7 +432,17 @@ int varonum_export(var_or_number_t* varonum, char* buffer, int size)
 int var_export(char variable, char* buffer, int size) 
 {
     // TODO: for C64 code, could be less than a byte?
-    // Now using a whole word if put on the same .word list as rest
+    // Now using a whole word if put on the same .word list as the rest
+    int n = snprintf(buffer, size, "%d, ",variable);
+    assert(n>0 && size-n>0);
+    return n;
+}
+
+
+int export_uint8(uint8_t variable, char* buffer, int size) 
+{
+    // TODO: we currently don't distingish 16 bit words or 8 bit bytes in the output
+    // it's just list of numbers.  
     int n = snprintf(buffer, size, "%d, ",variable);
     assert(n>0 && size-n>0);
     return n;
@@ -461,7 +473,10 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
     pos += varonum_export(&sequencer->cutoff, &buffer[pos],size-pos);
     pos += varonum_export(&sequencer->resonance, &buffer[pos],size-pos);
     pos += varonum_export(&sequencer->volume, &buffer[pos],size-pos);
-    for (int s=0; s<NUM_SEQUENCES; s++) {
+    
+    pos += export_uint8(sequencer->num_sequences, &buffer[pos],size-pos);
+    
+    for (int s=0; s<sequencer->num_sequences; s++) {
         sequence_t* seq = &sequencer->sequences[s];
         pos += var_export(seq->variable, &buffer[pos],size-pos);
         pos += varonum_export(&seq->count, &buffer[pos],size-pos);
@@ -495,7 +510,7 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
 
 bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos) 
 {
-    int argsread = sscanf(&buffer[*pos], "%hd, %hd,", &varonum->variable, &varonum->number);
+    int argsread = sscanf(&buffer[*pos], "%hhd, %hd,", &varonum->variable, &varonum->number);
     if (argsread != 2) return false;
     int count=0;
     while (buffer[*pos]!=0) {
@@ -508,6 +523,19 @@ bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos)
 
 
 bool var_import(char* variable, char* buffer, int* pos) 
+{
+    int argsread = sscanf(&buffer[*pos], "%hhd,", variable);
+    if (argsread != 1) return false;
+    int count=0;
+    while (buffer[*pos]!=0) {
+        if (buffer[*pos]==',') count+=1;
+        (*pos)++;
+        if (count==1) break;
+    }
+    return (count==1);
+}
+
+bool import_uint8(uint8_t* variable, char* buffer, int* pos) 
 {
     int argsread = sscanf(&buffer[*pos], "%hhd,", variable);
     if (argsread != 1) return false;
@@ -544,7 +572,10 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
     if(!varonum_import(&sequencer->cutoff, buffer, &pos)) return false;
     if(!varonum_import(&sequencer->resonance, buffer, &pos)) return false;
     if(!varonum_import(&sequencer->volume, buffer, &pos)) return false;
-    for (int s=0; s<NUM_SEQUENCES; s++) {
+
+    if(!import_uint8(&sequencer->num_sequences, buffer, &pos)) return false;
+        
+    for (int s=0; s<sequencer->num_sequences; s++) {
         sequence_t* seq = &sequencer->sequences[s];
         if(!var_import(&seq->variable, buffer, &pos)) return false;
         if(!varonum_import(&seq->count, buffer, &pos)) return false;
