@@ -58,15 +58,16 @@ typedef struct {
 } voice_t;
 
 #define NUM_PREVIEW_ROWS 50
-#define NUM_PREVIEW_COLS 8
+#define MAX_PREVIEW_COLS 32
 
 typedef struct {
     int step;
     int offset;
     bool follow;
-    char variables[NUM_PREVIEW_COLS];
+    int num_columns;
+    char variables[MAX_PREVIEW_COLS];
     uint16_t frames[NUM_PREVIEW_ROWS];
-    int16_t values[NUM_PREVIEW_ROWS][NUM_PREVIEW_COLS];
+    int16_t values[NUM_PREVIEW_ROWS][MAX_PREVIEW_COLS];
 } preview_t;
 
 #define MAX_SEQUENCES   64
@@ -137,6 +138,10 @@ void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
         .base = (var_or_number_t){.number = 2},
         .mul2 = (var_or_number_t){.number = 1},
     };
+
+    // add a column to the preview
+    sequencer->preview.num_columns = 4;
+
 }
 
 int16_t floor_mod(int16_t value, int16_t mod) {
@@ -373,8 +378,9 @@ void update_preview(sequencer_t* sequencer)
 
         // save in preview
         preview->frames[row] = frame;
-        for (int col=0;col<NUM_PREVIEW_COLS;++col) {
+        for (int col=0;col<preview->num_columns;++col) {
             char var = preview->variables[col];
+            // TODO: in future allow more variables
             if (var >= 'A' && var <='Z') { 
                 int index = (var - 'A') % MAX_VARIABLES;
                 preview->values[row][col] = sequencer->values[index];

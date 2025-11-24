@@ -137,17 +137,19 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
-    if (ImGui::BeginTable("##preview", NUM_PREVIEW_COLS+1, ImGuiTableFlags_BordersInnerV)) {
+    if (ImGui::BeginTable("##preview", preview->num_columns+2, ImGuiTableFlags_BordersV)) {
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw);
-        for (int col=0; col<NUM_PREVIEW_COLS;++col) {
+        for (int col=0; col<preview->num_columns;++col) {
             ImGui::TableSetupColumn("Var", ImGuiTableColumnFlags_WidthFixed, cw);
         }
+        ImGui::TableSetupColumn("##plusmin", ImGuiTableColumnFlags_WidthFixed, cw);
+
         ImGui::TableHeadersRow();
         ImGui::TableNextColumn();
 
         ImGui::Text("Frame"); 
         ImGui::TableNextColumn();
-        for (int col=0; col<NUM_PREVIEW_COLS;++col) {
+        for (int col=0; col<preview->num_columns;++col) {
             ImGui::PushID(col);
             str[0] = preview->variables[col];
             str[1] = 0;
@@ -162,18 +164,41 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
             ImGui::PopID();
         }
 
+        if (preview->num_columns < MAX_PREVIEW_COLS) {
+            if (ImGui::Button("+")) {
+                preview->num_columns++;
+            }
+            ImGui::SameLine();        
+        }
+        if (preview->num_columns > 0) {
+            if (ImGui::Button("-")) {
+                preview->num_columns--;
+            }
+            ImGui::SameLine();
+        }
+        ImGui::TableNextColumn();
+
         for (int row=0;row<NUM_PREVIEW_ROWS;++row) {
+
             ImGui::Text("%6i", preview->frames[row]); 
             ImGui::TableNextColumn();
-            for (int col=0; col<NUM_PREVIEW_COLS;++col) {
-                ImGui::Text("%6i",preview->values[row][col]);
+
+            for (int col=0; col<preview->num_columns;++col) {
+                int index = preview->variables[col] - 'A';
+                if (index >= 0 && index < MAX_VARIABLES) { 
+                    ImGui::Text("%6i",preview->values[row][col]);
+                }
+                else {
+                    ImGui::Text("");
+                }
                 ImGui::TableNextColumn();
             }
+            // for +/- column
+            ImGui::TableNextColumn();
         }
-
         ImGui::EndTable();
     }
-
+    
     ImGui::PopStyleVar();
     
 }
