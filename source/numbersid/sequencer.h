@@ -574,6 +574,7 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
     if(!varonum_import(&sequencer->volume, buffer, &pos)) return false;
 
     if(!import_uint8(&sequencer->num_sequences, buffer, &pos)) return false;
+    if (sequencer->num_sequences > MAX_SEQUENCES) sequencer->num_sequences = MAX_SEQUENCES;
         
     for (int s=0; s<sequencer->num_sequences; s++) {
         sequence_t* seq = &sequencer->sequences[s];
