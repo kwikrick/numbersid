@@ -154,6 +154,7 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
             if (ImGui::InputText("##var",str, IM_ARRAYSIZE(str))) {
                 char new_variable = ImToUpper(str[0]);
+                // TODO: in future may want to support more variables
                 if (new_variable < 'A' || new_variable > 'Z') new_variable = 0;
                     preview->variables[col] = new_variable;
             }

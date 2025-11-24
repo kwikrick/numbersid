@@ -69,7 +69,8 @@ typedef struct {
     int16_t values[NUM_PREVIEW_ROWS][NUM_PREVIEW_COLS];
 } preview_t;
 
-#define MAX_SEQUENCES  26
+#define MAX_SEQUENCES   64
+#define MAX_VARIABLES   26    // A-Z
 
 typedef struct {
     m6581_t* sid;
@@ -83,7 +84,7 @@ typedef struct {
     var_or_number_t cutoff;
     var_or_number_t resonance;
     var_or_number_t volume;
-    int16_t values[26];             // A-Z
+    int16_t values[MAX_VARIABLES];            
     preview_t preview;
 } sequencer_t;
 
@@ -160,10 +161,10 @@ int16_t varonum_eval(var_or_number_t* varonum, sequencer_t* sequencer) {
         return varonum->number;
     }
     else {
-        uint8_t var_index = (varonum->variable - 'A') % 26;
+        uint8_t var_index = (varonum->variable - 'A') % MAX_VARIABLES;
         return sequencer->values[var_index];
     }
-} 
+}
 
 int16_t sum_digits(int16_t base, int16_t value) {
     if (base <= 1) return value;        // TODO more options
@@ -239,7 +240,7 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     value = value + add2;
 
     // get old sequence value
-    uint8_t var_index = (sequence->variable - 'A') % 26;
+    uint8_t var_index = (sequence->variable - 'A') % MAX_VARIABLES;
     uint16_t old = sequencer->values[var_index];
 
     // determine change first bit from zero to non-zero
@@ -361,7 +362,7 @@ void update_preview(sequencer_t* sequencer)
     preview_t* preview = &sequencer->preview;
 
     // backup variable values
-    int16_t backup[26];
+    int16_t backup[MAX_VARIABLES];
     memcpy(backup, sequencer->values,sizeof(backup));
 
     int frame = preview->follow ? sequencer->frame : preview->offset;
@@ -375,7 +376,7 @@ void update_preview(sequencer_t* sequencer)
         for (int col=0;col<NUM_PREVIEW_COLS;++col) {
             char var = preview->variables[col];
             if (var >= 'A' && var <='Z') { 
-                int index = var - 'A';
+                int index = (var - 'A') % MAX_VARIABLES;
                 preview->values[row][col] = sequencer->values[index];
             }
         }
