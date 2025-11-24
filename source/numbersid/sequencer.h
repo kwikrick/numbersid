@@ -416,9 +416,12 @@ void update_sequencer(sequencer_t* sequencer)
 
 int varonum_export(var_or_number_t* varonum, char* buffer, int size) 
 {
-    // TODO: for C64 code, should be in a single 16 bit value, 
-    // 1 bit to indicate type, limit number range to 15 bits, union with variable number. 
-    //return snprintf(buffer, size, "%d,%d,",varonum->variable, varonum->number);
+    // encode varonum in a single 16 bit value, 
+    // Option 1: 1 bit to indicate type, number range limited to 15 bits, union with variable number
+    //   disadvantage: processer per parameter more expensive (matters on c64)
+    // Option 2: encode type separate from the number and variable in bit fields
+    //    e.g  we have 42 SID parameters -> 42 bits = 7 bytes. 
+    //   could be decoded in to easier to process 42 bytes on c64 at load time    
     int n = snprintf(buffer, size, "%d, %d, ",varonum->variable, varonum->number);
     assert(n>0 && size-n>0);
     return n;
