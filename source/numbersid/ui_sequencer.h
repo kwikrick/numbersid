@@ -171,7 +171,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
     
     {
         ImGui::SeparatorText("Sound Parameters");  
-        if (ImGui::BeginTable("##voices", 4)) {
+        if (ImGui::BeginTable("##voices", 4, ImGuiTableFlags_SizingFixedFit)) {
             ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
             ImGui::TableSetupColumn("Voice 1", ImGuiTableColumnFlags_WidthFixed, cw);
             ImGui::TableSetupColumn("Voice 2", ImGuiTableColumnFlags_WidthFixed, cw);
@@ -376,7 +376,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
             }
             ImGui::EndTable();
         }
-        if (ImGui::BeginTable("##filter", 2)) {
+        if (ImGui::BeginTable("##filter", 2, ImGuiTableFlags_SizingFixedFit)) {
             ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
             ImGui::TableSetupColumn("Filter", ImGuiTableColumnFlags_WidthFixed, cw);
             ImGui::TableHeadersRow();
@@ -427,7 +427,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
    
     {
         ImGui::SeparatorText("Sequence Generator");
-        if (ImGui::BeginTable("##sequences", 13, ImGuiTableFlags_BordersInnerH)) {
+        if (ImGui::BeginTable("##sequences", 13,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
             ImGui::TableSetupColumn("##up", ImGuiTableColumnFlags_WidthFixed,16);
             ImGui::TableSetupColumn("##down", ImGuiTableColumnFlags_WidthFixed,16);
             ImGui::TableSetupColumn("VAR", ImGuiTableColumnFlags_WidthFixed, cw0);

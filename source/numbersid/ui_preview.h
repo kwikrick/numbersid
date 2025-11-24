@@ -137,32 +137,20 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
-    if (ImGui::BeginTable("##preview", preview->num_columns+2, ImGuiTableFlags_BordersV)) {
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw);
-        for (int col=0; col<preview->num_columns;++col) {
+    int numcols = preview->num_columns;
+
+    if (ImGui::BeginTable("##preview", numcols+3, ImGuiTableFlags_BordersV | ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("Frame", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("##plusmin", ImGuiTableColumnFlags_WidthFixed, 40);
+        for (int col=0; col<numcols;++col) {
             ImGui::TableSetupColumn("Var", ImGuiTableColumnFlags_WidthFixed, cw);
         }
-        ImGui::TableSetupColumn("##plusmin", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("##empty", ImGuiTableColumnFlags_WidthStretch);
 
         ImGui::TableHeadersRow();
         ImGui::TableNextColumn();
 
-        ImGui::Text("Frame"); 
-        ImGui::TableNextColumn();
-        for (int col=0; col<preview->num_columns;++col) {
-            ImGui::PushID(col);
-            str[0] = preview->variables[col];
-            str[1] = 0;
-            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-            if (ImGui::InputText("##var",str, IM_ARRAYSIZE(str))) {
-                char new_variable = ImToUpper(str[0]);
-                // TODO: in future may want to support more variables
-                if (new_variable < 'A' || new_variable > 'Z') new_variable = 0;
-                    preview->variables[col] = new_variable;
-            }
-            ImGui::TableNextColumn();
-            ImGui::PopID();
-        }
+        ImGui::TableNextColumn();  // empty row in frame col
 
         if (preview->num_columns < MAX_PREVIEW_COLS) {
             if (ImGui::Button("+")) {
@@ -178,12 +166,30 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
         }
         ImGui::TableNextColumn();
 
+        for (int col=0; col<numcols;++col) {
+            ImGui::PushID(col);
+            str[0] = preview->variables[col];
+            str[1] = 0;
+            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
+            if (ImGui::InputText("##var",str, IM_ARRAYSIZE(str))) {
+                char new_variable = ImToUpper(str[0]);
+                // TODO: in future may want to support more variables
+                if (new_variable < 'A' || new_variable > 'Z') new_variable = 0;
+                    preview->variables[col] = new_variable;
+            }
+            ImGui::TableNextColumn();
+            ImGui::PopID();
+        }
+        ImGui::TableNextColumn();   // empty col at end
+
         for (int row=0;row<NUM_PREVIEW_ROWS;++row) {
 
             ImGui::Text("%6i", preview->frames[row]); 
             ImGui::TableNextColumn();
 
-            for (int col=0; col<preview->num_columns;++col) {
+            ImGui::TableNextColumn();  // +-
+
+            for (int col=0; col<numcols;++col) {
                 int index = preview->variables[col] - 'A';
                 if (index >= 0 && index < MAX_VARIABLES) { 
                     ImGui::Text("%6i",preview->values[row][col]);
@@ -193,8 +199,7 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
                 }
                 ImGui::TableNextColumn();
             }
-            // for +/- column
-            ImGui::TableNextColumn();
+            ImGui::TableNextColumn();   // empty col at end
         }
         ImGui::EndTable();
     }
