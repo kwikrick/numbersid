@@ -12,6 +12,7 @@
 #define CHIPS_UI_IMPL
 #include "ui/ui_util.h"
 #include "ui/ui_settings.h"
+#include "ui/ui_snapshot.h"
 #include "ui/ui_chip.h"
 #include "ui/ui_m6581.h"
 #include "ui/ui_audio.h"
@@ -21,4 +22,5 @@
 #include "ui_preview.h"
 #include "ui_help.h"
 #include "ui_data.h"
+
 #include "ui_numbersid.h"

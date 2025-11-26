@@ -22,7 +22,6 @@ typedef struct {
     int16_t number;
 } var_or_number_t;
 
-
 typedef struct {
     char variable;
     var_or_number_t count;
@@ -87,6 +86,14 @@ typedef struct {
     int16_t values[MAX_VARIABLES];            
     preview_t preview;
 } sequencer_t;
+
+
+#define SEQUENCER_SNAPSHOT_VERSION (1)
+
+typedef struct {
+    uint32_t version;
+    sequencer_t sequencer;
+} sequencer_snapshot_t;
 
 
 // exported functions
@@ -595,6 +602,25 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         if(!varonum_import(&seq->div2, buffer, &pos)) return false;
         if(!varonum_import(&seq->add2, buffer, &pos)) return false;
     }
+    return true;
+}
+
+
+uint32_t sequencer_save_snapshot(sequencer_t* sys, sequencer_t* dst) {
+    CHIPS_ASSERT(sys && dst);
+    *dst = *sys;
+    return SEQUENCER_SNAPSHOT_VERSION;
+}
+
+bool sequencer_load_snapshot(sequencer_t* sys, uint32_t version, sequencer_t* src) {
+    CHIPS_ASSERT(sys && src);
+    if (version != SEQUENCER_SNAPSHOT_VERSION) {
+        return false;
+    }
+    static sequencer_t im;
+    im = *src;
+    *sys = im;
+    // TODO: whno not *sys = *src?
     return true;
 }
 

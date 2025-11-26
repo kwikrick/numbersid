@@ -23,6 +23,7 @@
 
     - ui_util.h
     - ui_settings.h
+    - ui_snapshot.h
     - ui_m6581.h
     - ui_audio.h
     - ui_sequencer.h
@@ -67,6 +68,7 @@ typedef struct {
     int audio_num_samples;
     float* audio_sample_buffer;
     ui_numbersid_boot_cb boot_cb;
+    ui_snapshot_desc_t snapshot;
 } ui_numbersid_desc_t;
 
 typedef struct {
@@ -79,6 +81,7 @@ typedef struct {
     ui_preview_t ui_preview;
     ui_data_t ui_data;
     ui_help_t ui_help;
+    ui_snapshot_t snapshot;
 } ui_numbersid_t;
 
 
@@ -112,6 +115,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
     CHIPS_ASSERT(ui && ui->sequencer);
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("System")) {
+            ui_snapshot_menus(&ui->snapshot);
             if (ImGui::MenuItem("Reboot")) {
                 ui->boot_cb(ui->sequencer);
             }
@@ -158,6 +162,7 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
     CHIPS_ASSERT(ui_desc->boot_cb);
     ui->sequencer = ui_desc->sequencer;
     ui->boot_cb = ui_desc->boot_cb;
+    ui_snapshot_init(&ui->snapshot, &ui_desc->snapshot);
     int x = 20, y = 20, dx = 10, dy = 10;
     {
         ui_m6581_desc_t desc = {0};

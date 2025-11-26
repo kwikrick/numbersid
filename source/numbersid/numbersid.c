@@ -45,12 +45,12 @@
 #include "ui_preview.h"
 #include "ui_help.h"
 #include "ui_data.h"
+#include "ui/ui_snapshot.h"
 #include "ui_numbersid.h"
 
 #include <stdlib.h>
 
 // --------------
-
 
 #define C64_FREQUENCY (985248)          // clock frequency in Hz; We'll be updating the SID as if in a C64
 #define MAX_AUDIO_SAMPLES (1024)        // max number of audio samples in internal sample buffer
@@ -78,13 +78,16 @@ static struct {
     ui_numbersid_t ui;
     //alignas(64) 
     uint8_t framebuffer[FRAMEBUFFER_SIZE_BYTES];
+    sequencer_snapshot_t snapshots[UI_SNAPSHOT_MAX_SLOTS];
 } state;
 
 
 static void ui_draw_cb(const ui_draw_info_t* draw_info);
 static void ui_save_settings_cb(ui_settings_t* settings);
 static void ui_boot_cb(sequencer_t* sequencer);
-
+static void ui_save_snapshot(size_t slot_index);
+static bool ui_load_snapshot(size_t slot_index);
+static void ui_load_snapshots_from_storage(void);
 
 // audio-streaming callback
 static void push_audio(const float* samples, int num_samples, void* user_data) {
@@ -226,7 +229,7 @@ void app_init(void) {
     ui_init(&(ui_desc_t){
         .draw_cb = ui_draw_cb,
         .save_settings_cb = ui_save_settings_cb,
-        .imgui_ini_key = "floooh.chips.numbersid",
+        .imgui_ini_key = "floooh.chips.numbersid",          // TODO: kwikrick.numbersid
     });
     ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
         .sequencer = &state.sequencer,
@@ -234,8 +237,16 @@ void app_init(void) {
         .boot_cb = ui_boot_cb,
         .audio_sample_buffer = state.audio.sample_buffer,
         .audio_num_samples = state.audio.num_samples,
+        .snapshot = {
+                .load_cb = ui_load_snapshot,
+                .save_cb = ui_save_snapshot,
+                .empty_slot_screenshot = {
+                    .texture = ui_shared_empty_snapshot_texture(),
+                },
+            },
     });
     ui_numbersid_load_settings(&state.ui, ui_settings());
+    ui_load_snapshots_from_storage();
 }
 
 // declare for use in app_frame
@@ -325,6 +336,57 @@ static void ui_boot_cb(sequencer_t* sequencer) {
     clock_init();
     sequencer_init(sequencer);
 }
+
+static void ui_update_snapshot_screenshot(size_t slot) {
+    ui_snapshot_screenshot_t screenshot = {
+        .texture = ui_create_screenshot_texture(numbersid_display_info(&state.snapshots[slot].sequencer))
+    };
+    ui_snapshot_screenshot_t prev_screenshot = ui_snapshot_set_screenshot(&state.ui.snapshot, slot, screenshot);
+    if (prev_screenshot.texture) {
+        ui_destroy_texture(prev_screenshot.texture);
+    }
+}
+
+static void ui_save_snapshot(size_t slot) {
+    if (slot < UI_SNAPSHOT_MAX_SLOTS) {
+        state.snapshots[slot].version = sequencer_save_snapshot(&state.sequencer, &state.snapshots[slot].sequencer);
+        ui_update_snapshot_screenshot(slot);
+        fs_save_snapshot("sequencer", slot, (chips_range_t){ .ptr = &state.snapshots[slot], sizeof(sequencer_snapshot_t) });
+    }
+}
+
+static bool ui_load_snapshot(size_t slot) {
+    bool success = false;
+    if ((slot < UI_SNAPSHOT_MAX_SLOTS) && (state.ui.snapshot.slots[slot].valid)) {
+        success = sequencer_load_snapshot(&state.sequencer, state.snapshots[slot].version, &state.snapshots[slot].sequencer);
+    }
+    return success;
+}
+
+static void ui_fetch_snapshot_callback(const fs_snapshot_response_t* response) {
+    assert(response);
+    if (response->result != FS_RESULT_SUCCESS) {
+        return;
+    }
+    if (response->data.size != sizeof(sequencer_snapshot_t)) {
+        return;
+    }
+    if (((sequencer_snapshot_t*)response->data.ptr)->version != SEQUENCER_SNAPSHOT_VERSION) {
+        return;
+    }
+    size_t snapshot_slot = response->snapshot_index;
+    assert(snapshot_slot < UI_SNAPSHOT_MAX_SLOTS);
+    memcpy(&state.snapshots[snapshot_slot], response->data.ptr, response->data.size);
+    ui_update_snapshot_screenshot(snapshot_slot);
+}
+
+static void ui_load_snapshots_from_storage(void) {
+    for (size_t snapshot_slot = 0; snapshot_slot < UI_SNAPSHOT_MAX_SLOTS; snapshot_slot++) {
+        fs_load_snapshot_async("sequencer", snapshot_slot, ui_fetch_snapshot_callback);
+    }
+}
+
+// ----------------------
 
 sapp_desc sokol_main(int argc, char* argv[]) {
     sargs_setup(&(sargs_desc){
