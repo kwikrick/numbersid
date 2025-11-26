@@ -280,9 +280,11 @@ void app_frame(void) {
     state.frame_time_us = clock_frame_time();
     const uint64_t emu_start_time = stm_now();
 
-    update_sequencer(&state.sequencer);
+    sequencer_update(&state.sequencer);
 
-    update_sid(&state.sequencer, &state.sid);
+    sequencer_update_sid(&state.sequencer, &state.sid);
+
+    sequencer_update_framebuffer(&state.sequencer, state.framebuffer, numbersid_display_info());
 
     state.ticks = numbersid_exec(state.frame_time_us);
     
@@ -339,7 +341,7 @@ static void ui_boot_cb(sequencer_t* sequencer) {
 
 static void ui_update_snapshot_screenshot(size_t slot) {
     ui_snapshot_screenshot_t screenshot = {
-        .texture = ui_create_screenshot_texture(numbersid_display_info(&state.snapshots[slot].sequencer))
+        .texture = ui_create_screenshot_texture(numbersid_display_info())
     };
     ui_snapshot_screenshot_t prev_screenshot = ui_snapshot_set_screenshot(&state.ui.snapshot, slot, screenshot);
     if (prev_screenshot.texture) {

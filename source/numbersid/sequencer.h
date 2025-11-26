@@ -100,6 +100,11 @@ typedef struct {
 int16_t floor_mod(int16_t value, int16_t mod);
 void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int words_per_line);
 bool sequencer_import_data(sequencer_t* sequencer, char* buffer);
+void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid);
+void sequencer_update(sequencer_t* sequencer);
+void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, chips_display_info_t info);
+
+
 
 #ifdef __cplusplus
 }
@@ -273,7 +278,7 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     sequencer->values[var_index] = value;
 }
 
-void update_sid(sequencer_t* sequencer, m6581_t* sid)
+void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
 {
     if (sequencer->muted) {
         int16_t volume = 0;
@@ -416,7 +421,7 @@ void update_preview(sequencer_t* sequencer)
     memcpy(sequencer->values,backup,sizeof(backup));
 }
 
-void update_sequencer(sequencer_t* sequencer) 
+void sequencer_update(sequencer_t* sequencer) 
 {
     update_preview(sequencer);
 
@@ -427,6 +432,25 @@ void update_sequencer(sequencer_t* sequencer)
         sequencer->frame += 1;
     }
 }
+
+void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, chips_display_info_t info) 
+{
+    int w = info.frame.dim.width;
+    int h = info.frame.dim.height;
+    
+    int x = floor_mod(sequencer->frame,w);
+
+    for (int v=0;v<3;v++) {
+        int16_t gate = varonum_eval(&sequencer->voices[v].gate,sequencer);
+        int16_t note = varonum_eval(&sequencer->voices[v].note,sequencer);
+        uint8_t color = gate;
+        int y = floor_mod(50 + 100*v + note, h);
+        int index = y*w + x;
+        framebuffer[index] = color;
+    }
+}
+
+// ----------- import/export ------------
 
 int varonum_export(var_or_number_t* varonum, char* buffer, int size) 
 {
@@ -605,6 +629,7 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
     return true;
 }
 
+// ----------- snapshot -----------
 
 uint32_t sequencer_save_snapshot(sequencer_t* sys, sequencer_t* dst) {
     CHIPS_ASSERT(sys && dst);
