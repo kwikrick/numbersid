@@ -104,6 +104,9 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer);
 #ifdef CHIPS_IMPL
 
 void sequencer_init(sequencer_t* sequencer, m6581_t* sid) {
+    
+    memset(sequencer,0,sizeof(sequencer_t));
+
     sequencer->sid = sid;
     sequencer->frame = 0;
     sequencer->running = true;

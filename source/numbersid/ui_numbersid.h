@@ -110,6 +110,12 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
 static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
     CHIPS_ASSERT(ui && ui->sequencer);
     if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("System")) {
+            if (ImGui::MenuItem("Reboot")) {
+                ui->boot_cb(ui->sequencer);
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Windows")) {
             ImGui::MenuItem("Sequencer", 0, &ui->ui_sequencer.open);
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);

@@ -320,9 +320,7 @@ static void ui_save_settings_cb(ui_settings_t* settings) {
 
 static void ui_boot_cb(sequencer_t*) {
     clock_init();
-    // TODO: need SID too. 
-    // When is this called?
-    //sequencer_init(seq);
+    sequencer_init(&state.sequencer, &state.sid);
 }
 
 sapp_desc sokol_main(int argc, char* argv[]) {
