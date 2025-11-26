@@ -200,7 +200,7 @@ void app_init(void) {
         .magnitude = 1.0f,
     });
     
-    sequencer_init(&state.sequencer, &state.sid);
+    sequencer_init(&state.sequencer);
     
     // TODO: GFX is intended to diplay a (retro machine's) framebuffer. 
     // I don't think I need it, but it also handles some setup for 
@@ -229,7 +229,8 @@ void app_init(void) {
         .imgui_ini_key = "floooh.chips.numbersid",
     });
     ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
-        .sequencer = &state.sequencer,          // TODO make and use a numbersid_t object?
+        .sequencer = &state.sequencer,
+        .sid = &state.sid,
         .boot_cb = ui_boot_cb,
         .audio_sample_buffer = state.audio.sample_buffer,
         .audio_num_samples = state.audio.num_samples,
@@ -269,6 +270,8 @@ void app_frame(void) {
     const uint64_t emu_start_time = stm_now();
 
     update_sequencer(&state.sequencer);
+
+    update_sid(&state.sequencer, &state.sid);
 
     state.ticks = numbersid_exec(state.frame_time_us);
     
@@ -318,9 +321,9 @@ static void ui_save_settings_cb(ui_settings_t* settings) {
     ui_numbersid_save_settings(&state.ui, settings);
 }
 
-static void ui_boot_cb(sequencer_t*) {
+static void ui_boot_cb(sequencer_t* sequencer) {
     clock_init();
-    sequencer_init(&state.sequencer, &state.sid);
+    sequencer_init(sequencer);
 }
 
 sapp_desc sokol_main(int argc, char* argv[]) {

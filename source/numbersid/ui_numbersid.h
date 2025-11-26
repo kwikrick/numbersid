@@ -62,10 +62,11 @@ typedef void (*ui_numbersid_boot_cb)(sequencer_t* seq);
 
 // setup params for ui_numbersid_init()
 typedef struct {
-    sequencer_t* sequencer;     // pointer to the sequencer
+    sequencer_t* sequencer;
+    m6581_t* sid;
     int audio_num_samples;
     float* audio_sample_buffer;
-    ui_numbersid_boot_cb boot_cb; // reboot callback functions
+    ui_numbersid_boot_cb boot_cb;
 } ui_numbersid_desc_t;
 
 typedef struct {
@@ -161,7 +162,7 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
     {
         ui_m6581_desc_t desc = {0};
         desc.title = "MOS 6581 (SID)";
-        desc.sid = ui->sequencer->sid;
+        desc.sid = ui_desc->sid;
         desc.x = x;
         desc.y = y;
         UI_CHIP_INIT_DESC(&desc.chip_desc, "6581", 16, _ui_numbersid_sid_pins);
