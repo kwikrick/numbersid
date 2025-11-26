@@ -122,7 +122,10 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
             ImGui::MenuItem("Data", 0, &ui->ui_data.open);
             ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
             ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);
-            ImGui::MenuItem("Help", 0, &ui->ui_help.open);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Help")) {
+            ImGui::MenuItem("Manual", 0, &ui->ui_help.open);
             ImGui::EndMenu();
         }
         ui_util_options_menu();
