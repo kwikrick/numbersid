@@ -278,6 +278,27 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     sequencer->values[var_index] = value;
 }
 
+float compute_freq(sequencer_t* sequencer, int v)       // voice v
+{
+    // compute freqence from  note, scale,trans,pitch
+    int16_t note = varonum_eval(&sequencer->voices[v].note, sequencer);
+    int16_t scale = varonum_eval(&sequencer->voices[v].scale, sequencer);
+    int16_t transpose = varonum_eval(&sequencer->voices[v].transpose, sequencer);
+    int16_t pitch = varonum_eval(&sequencer->voices[v].pitch, sequencer);
+
+    scale = scale & ((1<<12)-1);            // 12 bits for 2 notes in a scale
+    if (scale == 0) scale = ((1<<12)-1);    // default full chromatic scale
+    uint8_t finger_notes[12];
+    uint8_t fingers = decode_scale(scale, finger_notes);
+    if (fingers == 0) fingers = 1;         // should not happen if scale !=0, but just in case
+    int16_t octave = note / fingers;
+    if (note < 0) octave = (note - fingers+1) / fingers;          // because we want floor(note / fingers) but using integer math 
+    int16_t finger = note - (octave * fingers);
+    int16_t semitone = octave * 12 + finger_notes[finger];
+    semitone += transpose;
+    return note_freq(440.0, (float)semitone + (float)pitch/100);
+}
+
 void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
 {
     if (sequencer->muted) {
@@ -295,25 +316,9 @@ void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
         int16_t ring = varonum_eval(&sequencer->voices[v].ring, sequencer);
         int16_t wave = varonum_eval(&sequencer->voices[v].waveform, sequencer);
         _m6581_set_ctrl(&sid->voice[v], (gate&1) + ((sync&1)<<1) + ((ring&1)<<2 ) + ((wave&15)<<4));
-
-        // compute freqence from  note, scale,trans,pitch
-        int16_t note = varonum_eval(&sequencer->voices[v].note, sequencer);
-        int16_t scale = varonum_eval(&sequencer->voices[v].scale, sequencer);
-        int16_t transpose = varonum_eval(&sequencer->voices[v].transpose, sequencer);
-        int16_t pitch = varonum_eval(&sequencer->voices[v].pitch, sequencer);
-
-        scale = scale & ((1<<12)-1);            // 12 bits for 2 notes in a scale
-        if (scale == 0) scale = ((1<<12)-1);    // default full chromatic scale
-        uint8_t finger_notes[12];
-        uint8_t fingers = decode_scale(scale, finger_notes);
-        if (fingers == 0) fingers = 1;         // should not happen if scale !=0, but just in case
-        int16_t octave = note / fingers;
-        if (note < 0) octave = (note - fingers+1) / fingers;          // because we want floor(note / fingers) but using integer math 
-        int16_t finger = note - (octave * fingers);
-        int16_t semitone = octave * 12 + finger_notes[finger];
-        semitone += transpose;
-        float freq = note_freq(440.0, (float)semitone + (float)pitch/100);
         
+        float freq = compute_freq(sequencer, v);
+
         int16_t sid_freq_value = freq_to_sid_value_pal(freq);
         _m6581_set_freq_hi(&sid->voice[v], (sid_freq_value>>8));
         _m6581_set_freq_lo(&sid->voice[v], (sid_freq_value&0xFF));
@@ -440,13 +445,34 @@ void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, 
     
     int x = floor_mod(sequencer->frame,w);
 
+    // clear vertical line
+    for (int y=0;y<h;y++){
+        int index = y*w + x;
+        framebuffer[index] = 0;
+    }
+
+    // piano-roll like plot
     for (int v=0;v<3;v++) {
         int16_t gate = varonum_eval(&sequencer->voices[v].gate,sequencer);
-        int16_t note = varonum_eval(&sequencer->voices[v].note,sequencer);
-        uint8_t color = gate;
-        int y = floor_mod(50 + 100*v + note, h);
-        int index = y*w + x;
-        framebuffer[index] = color;
+        if (gate%2!=0) {
+            int16_t wave = varonum_eval(&sequencer->voices[v].waveform,sequencer);
+            uint8_t color = v*2+1;            // TODO: voice to color map 
+            int overtones = wave+1;         // TODO: wave to overtones map
+            
+            float freq = compute_freq(sequencer, v);
+            uint16_t val = freq_to_sid_value_pal(freq);
+
+            for (int i=0; i<overtones;i++) {
+                int y = h - (300*(float)val / 65536);
+                y = fmax(0,fmin(y,h-1));
+
+                int index = y*w+x;
+                framebuffer[index] = color;
+
+                val = val * 2;
+            }
+
+        }
     }
 }
 
