@@ -261,7 +261,7 @@ void audio_update_fft_framebuffer(audio_t* audio, uint8_t* framebuffer, chips_di
     for (int i = 0; i < fft_size; i++) {
         fft_buffer[i] = audio->sample_buffer[floor_mod(i+audio->sample_pos-fft_size,audio->num_samples)];
     }
-    C_FFT_real(fft_buffer,fft_size,8.0);
+    C_FFT_real(fft_buffer,fft_size,1);
 
     // draw FFT result into framebuffer
     const int f_start = 2;
