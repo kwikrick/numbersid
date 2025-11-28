@@ -105,55 +105,16 @@ static void push_audio(const float* samples, int num_samples, void* user_data) {
 #define BORDER_BOTTOM (16)
 #define LOAD_DELAY_FRAMES (180)
 
-#define _M6569_RGBA8(r,g,b) (0xFF000000|(b<<16)|(g<<8)|(r))
-/* https://www.pepto.de/projects/colorvic/ */
-static const uint32_t _m6569_colors[16] = {
-    _M6569_RGBA8(0x00,0x00,0x00),
-    _M6569_RGBA8(0xff,0xff,0xff),
-    _M6569_RGBA8(0x81,0x33,0x38),
-    _M6569_RGBA8(0x75,0xce,0xc8),
-    _M6569_RGBA8(0x8e,0x3c,0x97),
-    _M6569_RGBA8(0x56,0xac,0x4d),
-    _M6569_RGBA8(0x2e,0x2c,0x9b),
-    _M6569_RGBA8(0xed,0xf1,0x71),
-    _M6569_RGBA8(0x8e,0x50,0x29),
-    _M6569_RGBA8(0x55,0x38,0x00),
-    _M6569_RGBA8(0xc4,0x6c,0x71),
-    _M6569_RGBA8(0x4a,0x4a,0x4a),
-    _M6569_RGBA8(0x7b,0x7b,0x7b),
-    _M6569_RGBA8(0xa9,0xff,0x9f),
-    _M6569_RGBA8(0x70,0x6d,0xeb),
-    _M6569_RGBA8(0xb2,0xb2,0xb2),
-};
-chips_range_t m6569_dbg_palette(void) {
-    static uint32_t dbg_palette[256];
-    size_t i = 0;
-    for (; i < 16; i++) {
-        dbg_palette[i] = _m6569_colors[i];
-    }
-    for (;i < 256; i++) {
-        uint32_t c = ((_m6569_colors[i&0xF] >> 2) & 0xFF3F3F3F) | 0xFF000000;
-        // bad line
-        if (i & 0x10) {
-            c |= 0x00FF0000;
-        }
-        // BA pin active
-        if (i & 0x20) {
-            c |= 0x000000FF;
-        }
-        // sprite active
-        if (i & 0x40) {
-            c |= 0x00880088;
-        }
-        // interrupt active
-        if (i & 0x80) {
-            c |= 0x0000FF00;
-        }
-        dbg_palette[i] = c;
+#define RGBA8(r,g,b) (0xFF000000|(b<<16)|(g<<8)|(r))
+
+chips_range_t palette(void) {
+    static uint32_t palette_[256];
+    for (int i=0;i<256;++i) {
+        palette_[i] = RGBA8(i,i,i);
     }
     return (chips_range_t){
-        .ptr = dbg_palette,
-        .size = sizeof(dbg_palette)
+        .ptr = palette_,
+        .size = sizeof(palette_)
     };
 }
 chips_display_info_t numbersid_display_info() {
@@ -169,7 +130,7 @@ chips_display_info_t numbersid_display_info() {
                 .size = FRAMEBUFFER_SIZE_BYTES,
             }
         },
-        .palette = m6569_dbg_palette(),
+        .palette = palette()
     };
    res.screen = (chips_rect_t){
             .x = 0,
@@ -275,6 +236,42 @@ uint32_t numbersid_exec(uint32_t micro_seconds) {
     return num_ticks;
 }
 
+#include "lamefft.h"
+void audio_update_fft_framebuffer(audio_t* audio, uint8_t* framebuffer, chips_display_info_t info) 
+{
+    int w = info.frame.dim.width;
+    int h = info.frame.dim.height;
+    
+    // each frame move right
+    static int x = 0;
+    x = (x+1)%w;
+    
+    // clear vertical line
+    for (int y=0;y<h;y++){
+        int index = y*w + x;
+        framebuffer[index] = 0;
+    }
+    
+    // compute FFT on current audio buffer
+    const int fft_size = 1024;
+    double fft_buffer[fft_size];
+    for (int i = 0; i < fft_size; i++) {
+        fft_buffer[i] = audio->sample_buffer[floor_mod(i+audio->sample_pos-fft_size,audio->num_samples)];
+    }
+    C_FFT_real(fft_buffer,fft_size,8.0);
+
+    // draw FFT result into framebuffer
+    const int draw_start = 1;
+    const int draw_end = fft_size / 8;
+    for (int i = draw_start; i < draw_end; i++) {
+        int color = fft_buffer[i]*10;
+        if (color > 255) color = 255;
+        int y = h * (i-draw_start) / (draw_end-draw_start); 
+        int index = y*w+x;
+        framebuffer[index] = color;
+    }
+}
+
 void app_frame(void) {
     
     state.frame_time_us = clock_frame_time();
@@ -284,7 +281,9 @@ void app_frame(void) {
 
     sequencer_update_sid(&state.sequencer, &state.sid);
 
-    sequencer_update_framebuffer(&state.sequencer, state.framebuffer, numbersid_display_info());
+    //sequencer_update_framebuffer(&state.sequencer, state.framebuffer, numbersid_display_info());
+
+    audio_update_fft_framebuffer(&state.audio, state.framebuffer, numbersid_display_info());
 
     state.ticks = numbersid_exec(state.frame_time_us);
     

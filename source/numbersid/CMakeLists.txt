@@ -4,7 +4,7 @@ fips_begin_app(numbersid windowed)
     if (FIPS_IOS)
         fips_files(ios-info.plist)
     endif()
-    fips_deps(ui)
+    fips_deps(ui lamefft)
 fips_end_app()
 
 # Copy help.txt after build

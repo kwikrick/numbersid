@@ -21,3 +21,7 @@ endif()
 
 fips_ide_group(source)
 add_subdirectory(source)
+
+
+fips_ide_group(lamefft)
+add_subdirectory(lamefft)
