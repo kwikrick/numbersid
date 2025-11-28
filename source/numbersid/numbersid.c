@@ -339,8 +339,30 @@ static void ui_boot_cb(sequencer_t* sequencer) {
 }
 
 static void ui_update_snapshot_screenshot(size_t slot) {
-    ui_snapshot_screenshot_t screenshot = {
-        .texture = ui_create_screenshot_texture(numbersid_display_info())
+    chips_display_info_t screenshot_display_info = {
+        .frame = {
+            .dim = {
+                .width = FRAMEBUFFER_WIDTH,
+                .height = FRAMEBUFFER_HEIGHT,
+            },
+            .bytes_per_pixel = 1,
+            .buffer = {
+                .ptr = state.snapshots[slot].screenshot_data,
+                .size = FRAMEBUFFER_SIZE_BYTES,
+            }
+        },
+        .palette = palette(),
+        .screen = (chips_rect_t){
+            .x = 0,
+            .y = 0,
+            .width = FRAMEBUFFER_WIDTH,
+            .height = FRAMEBUFFER_HEIGHT
+        }
+    };
+
+    ui_snapshot_screenshot_t screenshot = {    
+        .texture = ui_create_screenshot_texture(screenshot_display_info),
+        .portrait = false,
     };
     ui_snapshot_screenshot_t prev_screenshot = ui_snapshot_set_screenshot(&state.ui.snapshot, slot, screenshot);
     if (prev_screenshot.texture) {
@@ -351,6 +373,7 @@ static void ui_update_snapshot_screenshot(size_t slot) {
 static void ui_save_snapshot(size_t slot) {
     if (slot < UI_SNAPSHOT_MAX_SLOTS) {
         state.snapshots[slot].version = sequencer_save_snapshot(&state.sequencer, &state.snapshots[slot].sequencer);
+        memcpy(state.snapshots[slot].screenshot_data, state.framebuffer, SCREENSHOT_SIZE_BYTES);
         ui_update_snapshot_screenshot(slot);
         fs_save_snapshot("sequencer", slot, (chips_range_t){ .ptr = &state.snapshots[slot], sizeof(sequencer_snapshot_t) });
     }

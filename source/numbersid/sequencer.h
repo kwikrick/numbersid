@@ -89,10 +89,14 @@ typedef struct {
 
 
 #define SEQUENCER_SNAPSHOT_VERSION (1)
+#define SCREENSHOT_WIDTH (400)      // TODO: how to ensure it's same as framebuffer width?
+#define SCREENSHOT_HEIGHT (300)
+#define SCREENSHOT_SIZE_BYTES (SCREENSHOT_WIDTH * SCREENSHOT_HEIGHT)
 
 typedef struct {
     uint32_t version;
     sequencer_t sequencer;
+    uint8_t screenshot_data[SCREENSHOT_SIZE_BYTES];    // RGBA8 screenshot
 } sequencer_snapshot_t;
 
 
