@@ -26,6 +26,7 @@
     - ui_snapshot.h
     - ui_m6581.h
     - ui_audio.h
+    - ui_display.h
     - ui_sequencer.h
     - ui_preview.h
     - ui_data.h
@@ -69,6 +70,7 @@ typedef struct {
     float* audio_sample_buffer;
     ui_numbersid_boot_cb boot_cb;
     ui_snapshot_desc_t snapshot;
+    ui_display_desc_t display;
 } ui_numbersid_desc_t;
 
 typedef struct {
@@ -82,13 +84,17 @@ typedef struct {
     ui_data_t ui_data;
     ui_help_t ui_help;
     ui_snapshot_t snapshot;
+    ui_display_t display;
 } ui_numbersid_t;
 
 
+typedef struct {
+    ui_display_frame_t display;
+} ui_numersid_frame_t;
 
 void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* desc);
 void ui_numbersid_discard(ui_numbersid_t* ui);
-void ui_numbersid_draw(ui_numbersid_t* ui);
+void ui_numbersid_draw(ui_numbersid_t* ui, ui_display_frame_t* frame);
 void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings);
 void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* settings);
 
@@ -127,6 +133,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
             ImGui::MenuItem("Data", 0, &ui->ui_data.open);
             ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
             ImGui::MenuItem("Audio", 0, &ui->ui_audio.open);
+            ImGui::MenuItem("FFT", 0, &ui->display.open);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Help")) {
@@ -185,6 +192,14 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
     }
     x += dx; y += dy;
     {
+        ui_display_desc_t desc = {0};
+        desc.title = "FFT";
+        desc.x = x;
+        desc.y = y;
+        ui_display_init(&ui->display, &desc);
+    }
+    x += dx; y += dy;
+    {
         ui_sequencer_desc_t desc = {0};
         desc.title = "Sequencer";
         desc.sequencer = ui_desc->sequencer;
@@ -234,12 +249,14 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_data_discard(&ui->ui_data);
     ui_help_discard(&ui->ui_help);
     ui_audio_discard(&ui->ui_audio);
+    ui_display_discard(&ui->display);
     //ui->sequencer = 0;  // TODO??
 }
 
-void ui_numbersid_draw(ui_numbersid_t* ui) {
+void ui_numbersid_draw(ui_numbersid_t* ui, ui_display_frame_t* frame) {
     CHIPS_ASSERT(ui && ui->sequencer);
     _ui_numbersid_draw_menu(ui);
+    ui_display_draw(&ui->display, frame);
     //ui_audio_draw(&ui->ui_audio, ui->audio.sample_pos);
     ui_audio_draw(&ui->ui_audio, 0);    // TODO, I don't have the sample_pos variable here. Add it to ui_numbersid...
     ui_m6581_draw(&ui->ui_sid);
@@ -263,6 +280,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     ui_data_save_settings(&ui->ui_data, settings);
     ui_help_save_settings(&ui->ui_help, settings);
     ui_audio_save_settings(&ui->ui_audio, settings);
+    ui_display_save_settings(&ui->display, settings);
 }
 
 void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* settings) {
@@ -273,6 +291,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     ui_data_load_settings(&ui->ui_data, settings);
     ui_help_load_settings(&ui->ui_help, settings);
     ui_audio_load_settings(&ui->ui_audio, settings);
+    ui_display_load_settings(&ui->display, settings);
 }
 #ifdef __clang__
 #pragma clang diagnostic pop

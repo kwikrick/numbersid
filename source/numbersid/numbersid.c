@@ -40,6 +40,7 @@
 #include "ui/ui_settings.h"
 #include "ui/ui_chip.h"
 #include "ui/ui_audio.h"
+#include "ui/ui_display.h"
 #include "ui/ui_m6581.h"
 #include "ui_sequencer.h"
 #include "ui_preview.h"
@@ -328,8 +329,8 @@ static void draw_status_bar(void) {
     sdtx_printf("frame:%.2fms emu:%.2fms (min:%.2fms max:%.2fms) ticks:%d", (float)state.frame_time_us * 0.001f, emu_stats.avg_val, emu_stats.min_val, emu_stats.max_val, state.ticks);
 }
 
-static void ui_draw_cb(const ui_draw_info_t*) {
-    ui_numbersid_draw(&state.ui);
+static void ui_draw_cb(const ui_draw_info_t* draw_info) {
+    ui_numbersid_draw(&state.ui, &draw_info->display);
 }
 
 static void ui_save_settings_cb(ui_settings_t* settings) {
