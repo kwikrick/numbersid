@@ -106,6 +106,7 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
 bool sequencer_import_data(sequencer_t* sequencer, char* buffer);
 void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid);
 void sequencer_update(sequencer_t* sequencer);
+
 void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, chips_display_info_t info);
 
 
@@ -444,40 +445,8 @@ void sequencer_update(sequencer_t* sequencer)
 
 void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, chips_display_info_t info) 
 {
-    int w = info.frame.dim.width;
-    int h = info.frame.dim.height;
-    
-    int x = floor_mod(sequencer->frame,w);
-
-    // clear vertical line
-    for (int y=0;y<h;y++){
-        int index = y*w + x;
-        framebuffer[index] = 0;
-    }
-
-    // piano-roll like plot
-    for (int v=0;v<3;v++) {
-        int16_t gate = varonum_eval(&sequencer->voices[v].gate,sequencer);
-        if (gate%2!=0) {
-            int16_t wave = varonum_eval(&sequencer->voices[v].waveform,sequencer);
-            uint8_t color = v*2+1;            // TODO: voice to color map 
-            int overtones = wave+1;         // TODO: wave to overtones map
-            
-            float freq = compute_freq(sequencer, v);
-            uint16_t val = freq_to_sid_value_pal(freq);
-
-            for (int i=0; i<overtones;i++) {
-                int y = h - (300*(float)val / 65536);
-                y = fmax(0,fmin(y,h-1));
-
-                int index = y*w+x;
-                framebuffer[index] = color;
-
-                val = val * 2;
-            }
-
-        }
-    }
+    // TODO: what would be a good visualization of the sequencer state?
+    // Or just drop it?    
 }
 
 // ----------- import/export ------------

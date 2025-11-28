@@ -110,7 +110,10 @@ static void push_audio(const float* samples, int num_samples, void* user_data) {
 chips_range_t palette(void) {
     static uint32_t palette_[256];
     for (int i=0;i<256;++i) {
-        palette_[i] = RGBA8(i,i,i);
+        int r = (i & 255);
+        int g = (i & 127) << 1;
+        int b = (i & 63) << 2;
+        palette_[i] = RGBA8(r,g,b);
     }
     return (chips_range_t){
         .ptr = palette_,
@@ -184,13 +187,11 @@ void app_init(void) {
     clock_init();
     prof_init();
     fs_init();         
-       // Needed? Maybe later for load/save sequence data.
-       // Also calls sfetch_init and s_fetch_setup, needed for help_init
        
     ui_init(&(ui_desc_t){
         .draw_cb = ui_draw_cb,
         .save_settings_cb = ui_save_settings_cb,
-        .imgui_ini_key = "floooh.chips.numbersid",          // TODO: kwikrick.numbersid
+        .imgui_ini_key = "kwikrick.numbersid",          // TODO: kwikrick.numbersid
     });
     ui_numbersid_init(&state.ui, &(ui_numbersid_desc_t){
         .sequencer = &state.sequencer,
@@ -236,6 +237,8 @@ uint32_t numbersid_exec(uint32_t micro_seconds) {
     return num_ticks;
 }
 
+// TODO: move to a separate fft gfx file?
+
 #include "lamefft.h"
 void audio_update_fft_framebuffer(audio_t* audio, uint8_t* framebuffer, chips_display_info_t info) 
 {
@@ -261,12 +264,12 @@ void audio_update_fft_framebuffer(audio_t* audio, uint8_t* framebuffer, chips_di
     C_FFT_real(fft_buffer,fft_size,8.0);
 
     // draw FFT result into framebuffer
-    const int draw_start = 1;
-    const int draw_end = fft_size / 8;
-    for (int i = draw_start; i < draw_end; i++) {
-        int color = fft_buffer[i]*10;
+    const int f_start = 2;
+    const int f_end = fft_size / 8;
+    for (int y=0;y<h;y++) {
+        int f = (y*(f_end-f_start))/h + f_start;
+        int color = 512*log(1+fft_buffer[f])/log(fft_size);
         if (color > 255) color = 255;
-        int y = h * (i-draw_start) / (draw_end-draw_start); 
         int index = y*w+x;
         framebuffer[index] = color;
     }
