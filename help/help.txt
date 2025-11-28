@@ -150,11 +150,10 @@ In top row of the table, type the single letter of a variable to display it in t
 
 The following rows correspond to subsequent frame numbers (tick count). If "follow" is checked, the frame numbers follow the time used by the sequencer. If unchecked, the user can set the start value for the frame number using "offset". The "step" value determines the time step between the frames shown in the preview. Increase it to skip values and show a longer time interval. 
 
-
-Audio and SID windows
+Audio, SID, FFT
 ---------------------
 Visualization of the SID chip's internal state and the audio output. Inherited from the chips project. Maybe useful for diagnostics.
-
+The FFT (fast fourier transform) shows the frequency spectrum of the audio over time. It is also used as the screenshot for snapshots. 
 
 Data window
 -----------
@@ -163,8 +162,17 @@ The data window allows exporting and importing the sequencer data as text.
 The "Export" button writes the current data into the text area in the window. Select all text (Ctrl+A) and copy it (Ctrl+C) into the clipboard. 
 You may then store it any way you like, e.g. in a text file or use it in your favourite 6502 Assember. 
 
-The "Import" button reads the values from the text area and updates the sequencer state. To use it, first clear the text area (using the "Clear" button)
-then paste any previously exported data in to the text area. Then press "Import". A popup will report succes or failure (due to incorrectly formatted or incomplete data).
+The "Import" button reads the values from the text area and updates the sequencer state. To use it, first clear the text area (using the "Clear" button) then paste any previously exported data in to the text area. Then press "Import". A popup will report succes or failure (due to incorrectly formatted or incomplete data).
+
+System menu
+-----------
+Reboot, resets the sequencer state, sound parameters and sequence parameters. 
+
+Save Snapshot will save the sequencer state in a semi-permanent place. It can be retrieved using the Load Snapshot function. Each snapshot
+is identified by an image of the FFT. 
+
+The data is not stored in a file of your choosing, but in a temporary space. In the browser this is usually cleared when the browser cache is cleared. 
+On desktop systems, the data is stored in the systems temporary files directory (which on systems is cleared when rebooting the system). To export data to a file or other permanent medium, use the Data window. 
 
 History & Background
 --------------------

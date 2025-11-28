@@ -127,6 +127,11 @@ static void _ui_data_draw_state(ui_data_t* win) {
 
     static char buffer[1024*64];
 
+    ImGui::TextWrapped("To export data, press the Export button, then copy the text from the text area below.\n"
+                      "To import data, paste the data into the text area below and press the Import button.\n" 
+                      "The clear button clears the text area.");
+    ImGui::Separator();
+
     // TODO: unfortunately, ImGuiInputTextFlags_WordWrap is in beta
     ImGui::InputTextMultiline("data", buffer, sizeof(buffer),ImVec2(400,200));
     
