@@ -72,15 +72,13 @@ void transform(complex<double>* f, int N) //
   free(W);
 }
 
-void FFT(complex<double>* f, int N, double d)
+void FFT(complex<double>* f, int N)
 {
   check(N);
   transform(f, N);
-  for(int i = 0; i < N; i++)
-    f[i] *= d; //multiplying by step
 }
 
-void C_FFT_real(double* f, int N, double d)
+void C_FFT_real(double* f, int N)
 {
   assert(check(N));
   complex<double> f_complex[FFT_MAX];
