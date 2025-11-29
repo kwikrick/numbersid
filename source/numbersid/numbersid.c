@@ -57,6 +57,8 @@
 #define MAX_AUDIO_SAMPLES (1024)        // max number of audio samples in internal sample buffer
 #define DEFAULT_AUDIO_SAMPLES (1024)    // default number of samples in internal sample buffer
                                         // Note: this is quite high, but we are only updating at 60PS = 800 samples/frame
+#define FFT_BUFFER_SIZE 1024            // must be  a power of two 
+
 #define FRAMEBUFFER_WIDTH 400
 #define FRAMEBUFFER_HEIGHT 300
 #define FRAMEBUFFER_SIZE_BYTES (FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT)
@@ -80,6 +82,8 @@ static struct {
     //alignas(64) 
     uint8_t framebuffer[FRAMEBUFFER_SIZE_BYTES];
     sequencer_snapshot_t snapshots[UI_SNAPSHOT_MAX_SLOTS];
+    double fft_buffer[FFT_BUFFER_SIZE];
+    size_t fft_pos;
 } state;
 
 
@@ -231,6 +235,13 @@ uint32_t numbersid_exec(uint32_t micro_seconds) {
                 }
                 state.audio.sample_pos = 0;
             }
+            // also store sample in FFT buffer
+            {
+                state.fft_buffer[state.fft_pos++] = state.sid.sample;
+                if (state.fft_pos >= FFT_BUFFER_SIZE) {
+                    state.fft_pos = 0;
+                }
+            }
         }
     }
 
@@ -241,7 +252,8 @@ uint32_t numbersid_exec(uint32_t micro_seconds) {
 // TODO: move to a separate fft gfx file?
 
 #include "lamefft.h"
-void audio_update_fft_framebuffer(audio_t* audio, uint8_t* framebuffer, chips_display_info_t info) 
+
+void update_fft_framebuffer(uint8_t* framebuffer, chips_display_info_t info) 
 {
     int w = info.frame.dim.width;
     int h = info.frame.dim.height;
@@ -249,27 +261,27 @@ void audio_update_fft_framebuffer(audio_t* audio, uint8_t* framebuffer, chips_di
     // each frame move right
     static int x = 0;
     x = (x+1)%w;
-    
-    // clear vertical line
-    for (int y=0;y<h;y++){
-        int index = y*w + x;
-        framebuffer[index] = 0;
+
+    // copy from buffer and apply Hanning window
+    double fft[FFT_BUFFER_SIZE];
+    for (int i=0;i<FFT_BUFFER_SIZE;i++) {
+        int index = state.fft_pos + i - FFT_BUFFER_SIZE;
+        if (index >= FFT_BUFFER_SIZE) index -= FFT_BUFFER_SIZE;
+        if (index < 0) index += FFT_BUFFER_SIZE;
+        // Apply Hann window
+        double hann = 0.5 * (1.0 - cos(2.0 * M_PI * i / (FFT_BUFFER_SIZE - 1)));
+        fft[i] = state.fft_buffer[index] * hann;
     }
     
-    // compute FFT on current audio buffer
-    const int fft_size = 1024;
-    double fft_buffer[fft_size];
-    for (int i = 0; i < fft_size; i++) {
-        fft_buffer[i] = audio->sample_buffer[floor_mod(i+audio->sample_pos-fft_size,audio->num_samples)];
-    }
-    C_FFT_real(fft_buffer,fft_size);
+    // compute FFT on current fft buffer
+    C_FFT_real(fft,FFT_BUFFER_SIZE);
 
     // draw FFT result into framebuffer
     const int f_start = 2;
-    const int f_end = fft_size / 8;
+    const int f_end = FFT_BUFFER_SIZE / 8;
     for (int y=0;y<h;y++) {
         int f = (y*(f_end-f_start))/h + f_start;
-        int color = 512*log(1+fft_buffer[f])/log(fft_size);
+        int color = 512*log(1+fft[f])/log(1+FFT_BUFFER_SIZE);
         if (color > 255) color = 255;
         int index = y*w+x;
         framebuffer[index] = color;
@@ -287,9 +299,9 @@ void app_frame(void) {
 
     //sequencer_update_framebuffer(&state.sequencer, state.framebuffer, numbersid_display_info());
 
-    audio_update_fft_framebuffer(&state.audio, state.framebuffer, numbersid_display_info());
-
     state.ticks = numbersid_exec(state.frame_time_us);
+
+    update_fft_framebuffer(state.framebuffer, numbersid_display_info());
     
     state.emu_time_ms = stm_ms(stm_since(emu_start_time));
 
