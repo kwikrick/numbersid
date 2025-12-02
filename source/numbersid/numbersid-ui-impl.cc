@@ -20,6 +20,7 @@
 
 #include "sequencer.h"
 #include "ui_timecontrol.h"
+#include "ui_soundcontrol.h"
 #include "ui_sequencer.h"
 #include "ui_preview.h"
 #include "ui_help.h"

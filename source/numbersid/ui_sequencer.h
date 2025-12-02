@@ -99,31 +99,6 @@ void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settin
     #define CHIPS_ASSERT(c) assert(c)
 #endif
 
-void ui_varonum_to_string(var_or_number_t* varonum, char* str, int maxlen)
-{
-    if (varonum->variable == 0) {
-        snprintf(str,maxlen,"%d",varonum->number);
-    }
-    else
-    {
-        snprintf(str,maxlen,"%c",varonum->variable);
-    }
-}
-
-void ui_string_to_varonum(char* str, var_or_number_t* varonum)
-{
-    char first = ImToUpper(ImStrSkipBlank(str)[0]);
-    if (first >= 'A' && first <= 'Z') {
-        varonum->variable = first;
-    }
-    else
-    {
-        varonum->variable = 0;
-        varonum->number = atoi(str);
-    }
-    
-}
-
 
 void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
     CHIPS_ASSERT(win && desc);
@@ -153,351 +128,92 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
     char str[16];       // reuse this string for conversions to/from varonum
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
-    
-    {
-        ImGui::SeparatorText("Sound Parameters");  
-        if (ImGui::BeginTable("##voices", 4, ImGuiTableFlags_SizingFixedFit)) {
-            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
-            ImGui::TableSetupColumn("Voice 1", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("Voice 2", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("Voice 3", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableHeadersRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("GATE"); 
-            ImGui::SetItemTooltip("Gate open/close; bit 0: 0=close, 1=open");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].gate, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##gate", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].gate);
-                }
-                ImGui::PopID();
+
+    if (ImGui::BeginTable("##sequences", 13,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("##up", ImGuiTableColumnFlags_WidthFixed,16);
+        ImGui::TableSetupColumn("##down", ImGuiTableColumnFlags_WidthFixed,16);
+        ImGui::TableSetupColumn("VAR", ImGuiTableColumnFlags_WidthFixed, cw0);
+        ImGui::TableSetupColumn("COUNT", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("ADD1", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("DIV1", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("MUL1", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("MOD1", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("BASE", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("MOD2", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("MUL2", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("DIV2", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("ADD2", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableHeadersRow();
+        ImGui::TableNextColumn();
+
+        for (int i = 0; i < sequencer->num_sequences; i++) {
+            ImGui::PushID(i);
+            sequence_t* seq = &win->sequencer->sequences[i];
+            var_or_number_t* varonums[10]= {
+                &seq->count,
+                &seq->add1,
+                &seq->div1,
+                &seq->mul1,
+                &seq->mod1,
+                &seq->base,
+                &seq->mod2,
+                &seq->mul2,
+                &seq->div2,
+                &seq->add2
+            };
+            str[0] = seq->variable; str[1] = 0;
+
+            if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
+            {
+                int j = floor_mod(i-1,sequencer->num_sequences);
+                sequence_t seq1 = sequencer->sequences[j];  //copy
+                sequencer->sequences[j] = *seq;   // copy      
+                sequencer->sequences[i] = seq1;   // copy
+            } 
                 ImGui::TableNextColumn();
-            }
-            ImGui::Text("NOTE");
-            ImGui::SetItemTooltip("Note number; 0 = first note in scale of octave 0"); 
+            if (ImGui::ArrowButton("v",ImGuiDir_Down)) 
+            {
+                int j = floor_mod(i+1,sequencer->num_sequences);
+                sequence_t seq1 = sequencer->sequences[j];  //copy
+                sequencer->sequences[j] = *seq;   // copy      
+                sequencer->sequences[i] = seq1;   // copy
+            } 
             ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].note, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##note", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].note);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
+
+            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
+            if (ImGui::InputText("##var", str, IM_ARRAYSIZE(str))) {
+                char new_variable = ImToUpper(str[0]);
+                // TODO: in future may want to support more variables
+                if (new_variable < 'A' || new_variable > 'Z') new_variable = 0;
+                seq->variable = new_variable;
             }
-            ImGui::Text("SCALE");
-            ImGui::SetItemTooltip("Musical Scale; 12 bits: select semitones in one octave; 0=4095=chromatic; 2741=c-major; 1352=a-minor");
+
             ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].scale, str, IM_ARRAYSIZE(str));
+            for (int col=0;col<10;++col) {
+                ImGui::PushID(col);
                 ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##scale", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].scale);
+                ui_varonum_to_string(varonums[col], str, IM_ARRAYSIZE(str));
+                if (ImGui::InputText("##parameter", str, IM_ARRAYSIZE(str))) {
+                    ui_string_to_varonum(str,varonums[col]);
                 }
-                ImGui::PopID();
                 ImGui::TableNextColumn();
-            }
-            ImGui::Text("TRANS"); 
-            ImGui::SetItemTooltip("Transpose scale; number of semitones");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                 ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].transpose, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##transpose", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].transpose);
-                }
                 ImGui::PopID();
-                ImGui::TableNextColumn();
             }
-            ImGui::Text("PITCH"); 
-            ImGui::SetItemTooltip("Tune frequency; number of cents = 1/100 semitone");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].pitch, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##pitch", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].pitch);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("WAVE");
-            ImGui::SetItemTooltip("Waveform; bit 0=TRIANGLE; bit 1=SAW; bit 2=PULSE; bit 3=NOISE. Noise cannot be combined.");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].waveform, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##waveform", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].waveform);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("PULSEWIDTH"); 
-            ImGui::SetItemTooltip("Pulse width; 12 bits; range 0-4095; used when WAVE bit 2 is set.");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                 ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].pulsewidth, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##pulsewidth", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].pulsewidth);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("RING"); 
-            ImGui::SetItemTooltip("Ring modulation; bit 0: 1=ON, 0=OFF; input from left channel");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                 ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].ring, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##ring", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].ring);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("SYNC"); 
-            ImGui::SetItemTooltip("Synchonisation; bit 0: 1=ON, 0=OFF; input from left channel");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].sync, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##sync", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].sync);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("ATTACK");
-            ImGui::SetItemTooltip("Attack time; range 0-15 (4 bits)");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].attack, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##attach", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].attack);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("DECAY");
-            ImGui::SetItemTooltip("Decay time; range 0-15 (4 bits)");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                 ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].decay, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##decay", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].decay);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("SUSTAIN");
-            ImGui::SetItemTooltip("Sustain level; range 0-15 (4 bits)");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                 ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].sustain, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##sustain", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].sustain);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("RELEASE");
-            ImGui::SetItemTooltip("Release time; range 0-15 (4 bits)");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                 ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].release, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##release", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].release);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::Text("FILTER");
-            ImGui::SetItemTooltip("Filter enable; bit 0: 1=ON, 0=OFF");
-            ImGui::TableNextColumn();
-            for (int i = 0; i < 3; i++) {
-                ImGui::PushID(i);
-                ui_varonum_to_string(&win->sequencer->voices[i].filter, str, IM_ARRAYSIZE(str));
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                bool edited = ImGui::InputText("##filter", str, IM_ARRAYSIZE(str));
-                if (edited) {
-                    ui_string_to_varonum(str,&win->sequencer->voices[i].filter);
-                }
-                ImGui::PopID();
-                ImGui::TableNextColumn();
-            }
-            ImGui::EndTable();
+            ImGui::PopID();
         }
-        if (ImGui::BeginTable("##filter", 2, ImGuiTableFlags_SizingFixedFit)) {
-            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
-            ImGui::TableSetupColumn("Filter", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableHeadersRow();
-            ImGui::TableNextColumn();
-            
-            ImGui::Text("FILTER MODE");
-            ImGui::SetItemTooltip("Filters: bit 0=LOWPASS; bit 1=BANDPASS; bit 2=HIGHPASS; bit 3=Mute Voice 3");
-            ImGui::TableNextColumn();
-            ui_varonum_to_string(&win->sequencer->filter_mode, str, IM_ARRAYSIZE(str));
-            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-            if (ImGui::InputText("##filtermode", str, IM_ARRAYSIZE(str))) {
-                ui_string_to_varonum(str,&win->sequencer->filter_mode);
-            }
-            ImGui::TableNextColumn();
-            
-            ImGui::Text("CUTOFF");
-            ImGui::SetItemTooltip("Cutoff/center frequency: range 0-2047 (11 bits) ~ 30-12000Hz");
-            ImGui::TableNextColumn();
-            ui_varonum_to_string(&win->sequencer->cutoff, str, IM_ARRAYSIZE(str));
-            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-            if (ImGui::InputText("##cutoff", str, IM_ARRAYSIZE(str))) {
-                ui_string_to_varonum(str,&win->sequencer->cutoff);
-            }
-            ImGui::TableNextColumn();
+        ImGui::EndTable();
 
-            ImGui::Text("RESONANCE");
-            ImGui::SetItemTooltip("Resonance strength; range 0-15 (4 bits)");
-            ImGui::TableNextColumn();
-            ui_varonum_to_string(&win->sequencer->resonance, str, IM_ARRAYSIZE(str));
-            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-            if (ImGui::InputText("##resonance", str, IM_ARRAYSIZE(str))) {
-                ui_string_to_varonum(str,&win->sequencer->resonance);
+        if (sequencer->num_sequences < MAX_SEQUENCES) {
+            if (ImGui::Button("+")) {
+                sequencer->num_sequences++;
             }
-            ImGui::TableNextColumn();
-            
-            ImGui::Text("VOLUME");
-            ImGui::SetItemTooltip("Volume; range 0-15 (4 bits)");
-            ImGui::TableNextColumn();
-            ui_varonum_to_string(&win->sequencer->volume, str, IM_ARRAYSIZE(str));
-            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-            if (ImGui::InputText("##volume", str, IM_ARRAYSIZE(str))) {
-                ui_string_to_varonum(str,&win->sequencer->volume);
-            }
-            ImGui::TableNextColumn();
-            ImGui::EndTable();
+            ImGui::SameLine();        
         }
-    }
-   
-    {
-        ImGui::SeparatorText("Sequence Generator");
-        if (ImGui::BeginTable("##sequences", 13,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
-            ImGui::TableSetupColumn("##up", ImGuiTableColumnFlags_WidthFixed,16);
-            ImGui::TableSetupColumn("##down", ImGuiTableColumnFlags_WidthFixed,16);
-            ImGui::TableSetupColumn("VAR", ImGuiTableColumnFlags_WidthFixed, cw0);
-            ImGui::TableSetupColumn("COUNT", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("ADD1", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("DIV1", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("MUL1", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("MOD1", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("BASE", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("MOD2", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("MUL2", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("DIV2", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableSetupColumn("ADD2", ImGuiTableColumnFlags_WidthFixed, cw);
-            ImGui::TableHeadersRow();
-            ImGui::TableNextColumn();
-
-            for (int i = 0; i < sequencer->num_sequences; i++) {
-                ImGui::PushID(i);
-                sequence_t* seq = &win->sequencer->sequences[i];
-                var_or_number_t* varonums[10]= {
-                    &seq->count,
-                    &seq->add1,
-                    &seq->div1,
-                    &seq->mul1,
-                    &seq->mod1,
-                    &seq->base,
-                    &seq->mod2,
-                    &seq->mul2,
-                    &seq->div2,
-                    &seq->add2
-                };
-                str[0] = seq->variable; str[1] = 0;
-
-                if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
-                {
-                    int j = floor_mod(i-1,sequencer->num_sequences);
-                    sequence_t seq1 = sequencer->sequences[j];  //copy
-                    sequencer->sequences[j] = *seq;   // copy      
-                    sequencer->sequences[i] = seq1;   // copy
-                } 
-                 ImGui::TableNextColumn();
-                if (ImGui::ArrowButton("v",ImGuiDir_Down)) 
-                {
-                    int j = floor_mod(i+1,sequencer->num_sequences);
-                    sequence_t seq1 = sequencer->sequences[j];  //copy
-                    sequencer->sequences[j] = *seq;   // copy      
-                    sequencer->sequences[i] = seq1;   // copy
-                } 
-                ImGui::TableNextColumn();
-
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                if (ImGui::InputText("##var", str, IM_ARRAYSIZE(str))) {
-                    char new_variable = ImToUpper(str[0]);
-                    // TODO: in future may want to support more variables
-                    if (new_variable < 'A' || new_variable > 'Z') new_variable = 0;
-                    seq->variable = new_variable;
-                }
-
-                ImGui::TableNextColumn();
-                for (int col=0;col<10;++col) {
-                    ImGui::PushID(col);
-                    ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                    ui_varonum_to_string(varonums[col], str, IM_ARRAYSIZE(str));
-                    if (ImGui::InputText("##parameter", str, IM_ARRAYSIZE(str))) {
-                        ui_string_to_varonum(str,varonums[col]);
-                    }
-                    ImGui::TableNextColumn();
-                    ImGui::PopID();
-                }
-                ImGui::PopID();
+        if (sequencer->num_sequences > 0) {
+            if (ImGui::Button("-")) {
+                sequencer->num_sequences--;
             }
-            ImGui::EndTable();
-
-            if (sequencer->num_sequences < MAX_SEQUENCES) {
-                if (ImGui::Button("+")) {
-                    sequencer->num_sequences++;
-                }
-                ImGui::SameLine();        
-            }
-            if (sequencer->num_sequences > 0) {
-                if (ImGui::Button("-")) {
-                    sequencer->num_sequences--;
-                }
-                ImGui::SameLine();
-            }
+            ImGui::SameLine();
         }
     }
 

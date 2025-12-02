@@ -28,6 +28,7 @@
     - ui_audio.h
     - ui_display.h
     - ui_timecontrol.h
+    - ui_soundcontrol.h
     - ui_sequencer.h
     - ui_preview.h
     - ui_data.h
@@ -81,6 +82,7 @@ typedef struct {
     ui_m6581_t ui_sid;
     ui_audio_t ui_audio;
     ui_timecontrol_t ui_timecontrol;
+    ui_soundcontrol_t ui_soundcontrol;
     ui_sequencer_t ui_sequencer;
     ui_preview_t ui_preview;
     ui_data_t ui_data;
@@ -103,6 +105,10 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+// reused functions for ui_soundcontrol.h and ui_sequencer.h
+void ui_varonum_to_string(var_or_number_t* varonum, char* str, int maxlen);
+void ui_string_to_varonum(char* str, var_or_number_t* varonum);
 
 /*-- IMPLEMENTATION (include in C++ source) ----------------------------------*/
 #ifdef CHIPS_UI_IMPL
@@ -131,6 +137,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
         }
         if (ImGui::BeginMenu("Windows")) {
             ImGui::MenuItem("Time Control", 0, &ui->ui_timecontrol.open);
+            ImGui::MenuItem("Sound Control", 0, &ui->ui_soundcontrol.open);
             ImGui::MenuItem("Sequencer", 0, &ui->ui_sequencer.open);
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);
             ImGui::MenuItem("Data", 0, &ui->ui_data.open);
@@ -201,7 +208,7 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.y = y;
         ui_display_init(&ui->display, &desc);
     }
-     x += dx; y += dy;
+    x += dx; y += dy;
     {
         ui_timecontrol_desc_t desc = {0};
         desc.title = "Time Control";
@@ -210,6 +217,16 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.y = y;
         desc.open = true;
         ui_timecontrol_init(&ui->ui_timecontrol, &desc);
+    }
+    x += dx; y += dy;
+    {
+        ui_soundcontrol_desc_t desc = {0};
+        desc.title = "Sound Control";
+        desc.sequencer = ui_desc->sequencer;
+        desc.x = x;
+        desc.y = y;
+        desc.open = true;
+        ui_soundcontrol_init(&ui->ui_soundcontrol, &desc);
     }
     x += dx; y += dy;
     {
@@ -254,6 +271,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     CHIPS_ASSERT(ui && ui->sequencer);
     ui_m6581_discard(&ui->ui_sid);
     ui_timecontrol_discard(&ui->ui_timecontrol);
+    ui_soundcontrol_discard(&ui->ui_soundcontrol);
     ui_sequencer_discard(&ui->ui_sequencer);
     ui_preview_discard(&ui->ui_preview);
     ui_data_discard(&ui->ui_data);
@@ -271,6 +289,7 @@ void ui_numbersid_draw(ui_numbersid_t* ui, ui_display_frame_t* frame) {
     ui_audio_draw(&ui->ui_audio, 0);    // TODO, I don't have the sample_pos variable here. Add it to ui_numbersid...
     ui_m6581_draw(&ui->ui_sid);
     ui_timecontrol_draw(&ui->ui_timecontrol);
+    ui_soundcontrol_draw(&ui->ui_soundcontrol);
     ui_sequencer_draw(&ui->ui_sequencer);
     ui_preview_draw(&ui->ui_preview);
     ui_data_draw(&ui->ui_data);
@@ -287,6 +306,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     CHIPS_ASSERT(ui && settings);
     ui_m6581_save_settings(&ui->ui_sid, settings);
     ui_timecontrol_save_settings(&ui->ui_timecontrol, settings);
+    ui_soundcontrol_save_settings(&ui->ui_soundcontrol, settings);
     ui_sequencer_save_settings(&ui->ui_sequencer, settings);
     ui_preview_save_settings(&ui->ui_preview, settings);
     ui_data_save_settings(&ui->ui_data, settings);
@@ -299,6 +319,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     CHIPS_ASSERT(ui && settings);
     ui_m6581_load_settings(&ui->ui_sid, settings);
     ui_timecontrol_load_settings(&ui->ui_timecontrol, settings);
+    ui_soundcontrol_load_settings(&ui->ui_soundcontrol, settings);
     ui_sequencer_load_settings(&ui->ui_sequencer, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);
     ui_data_load_settings(&ui->ui_data, settings);

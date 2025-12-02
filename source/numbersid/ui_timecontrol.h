@@ -124,22 +124,18 @@ static void _ui_timecontrol_draw_state(ui_timecontrol_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
-    {
-        ImGui::SeparatorText("Time Control");  
-        ImGui::PushItemWidth(100.0f);
-        ImGui::InputInt("T", &win->sequencer->frame, 1,128);
-        ImGui::SameLine();
-        if (ImGui::Button("Reset")) {
-            sequencer->frame = 0;
-        };
-        ImGui::SameLine();
-        ImGui::Checkbox("Run",&sequencer->running);
-        ImGui::SameLine();
-        ImGui::Checkbox("Mute",&sequencer->muted);
-        ImGui::PopItemWidth();
-    }
-    
-   
+    ImGui::PushItemWidth(100.0f);
+    ImGui::InputInt("T", &win->sequencer->frame, 1,128);
+    ImGui::SameLine();
+    if (ImGui::Button("Reset")) {
+        sequencer->frame = 0;
+    };
+    ImGui::SameLine();
+    ImGui::Checkbox("Run",&sequencer->running);
+    ImGui::SameLine();
+    ImGui::Checkbox("Mute",&sequencer->muted);
+    ImGui::PopItemWidth();
+
     ImGui::PopStyleVar(1);
     
 }
