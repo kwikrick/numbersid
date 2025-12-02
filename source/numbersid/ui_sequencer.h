@@ -133,8 +133,8 @@ void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
     win->sequencer = desc->sequencer;
     win->init_x = (float) desc->x;
     win->init_y = (float) desc->y;
-    win->init_w = (float) ((desc->w == 0) ? 496 : desc->w);
-    win->init_h = (float) ((desc->h == 0) ? 410 : desc->h);
+    win->init_w = (float) ((desc->w == 0) ? 600 : desc->w);
+    win->init_h = (float) ((desc->h == 0) ? 600 : desc->h);
     win->open = win->last_open = desc->open;
     win->valid = true;
 }
@@ -153,21 +153,6 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
     char str[16];       // reuse this string for conversions to/from varonum
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
-
-    {
-        ImGui::SeparatorText("Time Control");  
-        ImGui::PushItemWidth(cw0);
-        ImGui::InputInt("T", &win->sequencer->frame, 1,128);
-        ImGui::SameLine();
-        if (ImGui::Button("Reset")) {
-            sequencer->frame = 0;
-        };
-        ImGui::SameLine();
-        ImGui::Checkbox("Run",&sequencer->running);
-        ImGui::SameLine();
-        ImGui::Checkbox("Mute",&sequencer->muted);
-        ImGui::PopItemWidth();
-    }
     
     {
         ImGui::SeparatorText("Sound Parameters");  

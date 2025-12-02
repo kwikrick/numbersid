@@ -1,8 +1,8 @@
 #pragma once
 /*#
-    # ui_help.h
+    # ui_timecontrol.h
 
-    Preview window for numbersid.
+    Visualization for numbersid sequencer.
 
     Do this:
     ~~~C
@@ -20,21 +20,21 @@
 
     Include the following headers before the including the *declaration*:
         - sequencer.h
-        - ui_chip.h
         - ui_settings.h
 
     Include the following headers before including the *implementation*:
         - imgui.h
         - sequencer.h
-        - ui_chip.h
         - ui_util.h
 
-    All strings provided to ui_help_init() must remain alive until
-    ui_help_discard() is called!
+    All strings provided to ui_timecontrol_init() must remain alive until
+    ui_timecontrol_discard() is called!
 
     ## zlib/libpng license
 
+    Copyright (c) 2025 Rick van der Meiden
     Copyright (c) 2018 Andre Weissflog
+    
     This software is provided 'as-is', without any express or implied warranty.
     In no event will the authors be held liable for any damages arising from the
     use of this software.
@@ -52,36 +52,37 @@
 #*/
 #include <stdint.h>
 #include <stdbool.h>
-#include <sokol_fetch.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* setup parameters for ui_help_init()
-    NOTE: all string data must remain alive until ui_help_discard()!
+/* setup parameters for ui_timecontrol_init()
+    NOTE: all string data must remain alive until ui_timecontrol_discard()!
 */
-typedef struct ui_help_desc_t {
+typedef struct ui_timecontrol_desc_t {
     const char* title;          /* window title */
+    sequencer_t* sequencer;      /* object to show and edit */
     int x, y;                   /* initial window position */
     int w, h;                   /* initial window size (or default size of 0) */
     bool open;                  /* initial window open state */
-} ui_help_desc_t;
+} ui_timecontrol_desc_t;
 
-typedef struct ui_help_t {
+typedef struct ui_timecontrol_t {
     const char* title;
+    sequencer_t* sequencer;
     float init_x, init_y;
     float init_w, init_h;
     bool open;
     bool last_open;
     bool valid;
-} ui_help_t;
+} ui_timecontrol_t;
 
-void ui_help_init(ui_help_t* win, const ui_help_desc_t* desc);
-void ui_help_discard(ui_help_t* win);
-void ui_help_draw(ui_help_t* win);
-void ui_help_save_settings(ui_help_t* win, ui_settings_t* settings);
-void ui_help_load_settings(ui_help_t* win, const ui_settings_t* settings);
+void ui_timecontrol_init(ui_timecontrol_t* win, const ui_timecontrol_desc_t* desc);
+void ui_timecontrol_discard(ui_timecontrol_t* win);
+void ui_timecontrol_draw(ui_timecontrol_t* win);
+void ui_timecontrol_save_settings(ui_timecontrol_t* win, ui_settings_t* settings);
+void ui_timecontrol_load_settings(ui_timecontrol_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -98,83 +99,52 @@ void ui_help_load_settings(ui_help_t* win, const ui_settings_t* settings);
     #define CHIPS_ASSERT(c) assert(c)
 #endif
 
-#define HELP_TEXT_SIZE  1024*1024
-static char help_text[HELP_TEXT_SIZE];
-static bool help_fetch_done = false;
-static bool help_fetch_ok = false;
-
-static void help_fetch_callback (const sfetch_response_t* response)
-{
-    if (response->fetched) {
-        help_fetch_done = true;
-        help_fetch_ok = true;
-        help_text[response->data.size] = 0;     // zero terminate data
-    }
-    else if (response->finished) {
-        help_fetch_done = true;
-    }
-    else if (response->failed) {
-        help_fetch_done = true;
-    }
-    else if (response->cancelled) {
-        help_fetch_done = true;
-    }
-    else if (response->paused) {
-        help_fetch_done = true;
-    }
-}
-
-void ui_help_init(ui_help_t* win, const ui_help_desc_t* desc) {
+void ui_timecontrol_init(ui_timecontrol_t* win, const ui_timecontrol_desc_t* desc) {
     CHIPS_ASSERT(win && desc);
     CHIPS_ASSERT(desc->title);
-    memset(win, 0, sizeof(ui_help_t));
+    memset(win, 0, sizeof(ui_timecontrol_t));
     win->title = desc->title;
+    win->sequencer = desc->sequencer;
     win->init_x = (float) desc->x;
     win->init_y = (float) desc->y;
-    win->init_w = (float) ((desc->w == 0) ? 600 : desc->w);
-    win->init_h = (float) ((desc->h == 0) ? 900 : desc->h);
+    win->init_w = (float) ((desc->w == 0) ? 400 : desc->w);
+    win->init_h = (float) ((desc->h == 0) ?  : desc->h);
     win->open = win->last_open = desc->open;
     win->valid = true;
-
-    //sfetch_handle_t handle = 
-    sfetch_send((sfetch_request_t){
-        .channel = 0, 
-        .path = "help/help.txt",
-        .callback = &help_fetch_callback,
-        .buffer = (sfetch_range_t) {
-            .ptr = help_text,
-            .size = HELP_TEXT_SIZE
-        }
-    });
 }
 
-void ui_help_discard(ui_help_t* win) {
+void ui_timecontrol_discard(ui_timecontrol_t* win) {
     CHIPS_ASSERT(win && win->valid);
     win->valid = false;
 }
 
-static void _ui_help_draw_state(ui_help_t* win) {
-    if (!win->valid) return;
-    if (help_fetch_ok) {
-        int pos = 0;
-        int start = 0;
-        while (help_text[pos]!=0 && pos < HELP_TEXT_SIZE) {
-            if (help_text[pos]=='\n') {
-                char org = help_text[pos];
-                help_text[pos] = 0;
-                ImGui::TextWrapped("%s",&help_text[start]);
-                help_text[pos] = org;
-                start=pos+1;
-            }
-            pos++;
-        }
+static void _ui_timecontrol_draw_state(ui_timecontrol_t* win) {
+
+    sequencer_t* sequencer = win->sequencer;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
+
+    {
+        ImGui::SeparatorText("Time Control");  
+        ImGui::PushItemWidth(100.0f);
+        ImGui::InputInt("T", &win->sequencer->frame, 1,128);
+        ImGui::SameLine();
+        if (ImGui::Button("Reset")) {
+            sequencer->frame = 0;
+        };
+        ImGui::SameLine();
+        ImGui::Checkbox("Run",&sequencer->running);
+        ImGui::SameLine();
+        ImGui::Checkbox("Mute",&sequencer->muted);
+        ImGui::PopItemWidth();
     }
-    else {
-        ImGui::Text("Downloading help...");
-    }
+    
+   
+    ImGui::PopStyleVar(1);
+    
 }
 
-void ui_help_draw(ui_help_t* win) {
+void ui_timecontrol_draw(ui_timecontrol_t* win) {
     CHIPS_ASSERT(win && win->valid);
     ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
@@ -183,19 +153,19 @@ void ui_help_draw(ui_help_t* win) {
     ImGui::SetNextWindowPos(ImVec2(win->init_x, win->init_y), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
-        ImGui::BeginChild("##preview_state", ImVec2(0, 0), true);
-        _ui_help_draw_state(win);
+        ImGui::BeginChild("##sequencer_state", ImVec2(0, 0), true);
+        _ui_timecontrol_draw_state(win);
         ImGui::EndChild();
     }
     ImGui::End();
 }
 
-void ui_help_save_settings(ui_help_t* win, ui_settings_t* settings) {
+void ui_timecontrol_save_settings(ui_timecontrol_t* win, ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     ui_settings_add(settings, win->title, win->open);
 }
 
-void ui_help_load_settings(ui_help_t* win, const ui_settings_t* settings) {
+void ui_timecontrol_load_settings(ui_timecontrol_t* win, const ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     win->open = ui_settings_isopen(settings, win->title);
 }

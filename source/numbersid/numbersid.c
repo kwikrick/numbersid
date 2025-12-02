@@ -42,6 +42,8 @@
 #include "ui/ui_audio.h"
 #include "ui/ui_display.h"
 #include "ui/ui_m6581.h"
+
+#include "ui_timecontrol.h"
 #include "ui_sequencer.h"
 #include "ui_preview.h"
 #include "ui_help.h"
