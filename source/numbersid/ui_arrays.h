@@ -128,7 +128,9 @@ static void _ui_arrays_draw_state(ui_arrays_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
-    if (ImGui::BeginTable("##arrays", 2+MAX_ARRAY_SIZE ,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
+    if (ImGui::BeginTable("##arrays", 4+MAX_ARRAY_SIZE ,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("##up", ImGuiTableColumnFlags_WidthFixed,16);
+        ImGui::TableSetupColumn("##down", ImGuiTableColumnFlags_WidthFixed,16);
         ImGui::TableSetupColumn("ARRAY", ImGuiTableColumnFlags_WidthFixed,cw);
         ImGui::TableSetupColumn("size", ImGuiTableColumnFlags_WidthFixed, 40);
         for (int col=0;col<MAX_ARRAY_SIZE;++col) {
@@ -143,8 +145,34 @@ static void _ui_arrays_draw_state(ui_arrays_t* win) {
 
         for (int i = 0; i < sequencer->num_arrays; i++) {
             ImGui::PushID(i);
+
+             if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
+            {
+                int j = floor_mod(i-1,sequencer->num_arrays);
+                var_or_number_t array[MAX_ARRAY_SIZE];
+                memcpy(array, sequencer->arrays[j], sizeof(array));
+                memcpy(sequencer->arrays[j], sequencer->arrays[i], sizeof(array));
+                memcpy(sequencer->arrays[i], array, sizeof(array));
+                sequencer->array_sizes[j] ^= sequencer->array_sizes[i];
+                sequencer->array_sizes[i] ^= sequencer->array_sizes[j];
+                sequencer->array_sizes[j] ^= sequencer->array_sizes[i];
+            } 
+            ImGui::TableNextColumn();
+
+            if (ImGui::ArrowButton("v",ImGuiDir_Down)) 
+            {
+                int j = floor_mod(i+1,sequencer->num_arrays);
+                var_or_number_t array[MAX_ARRAY_SIZE];
+                memcpy(array, sequencer->arrays[j], sizeof(array));
+                memcpy(sequencer->arrays[j], sequencer->arrays[i], sizeof(array));
+                memcpy(sequencer->arrays[i], array, sizeof(array));
+                sequencer->array_sizes[j] ^= sequencer->array_sizes[i];
+                sequencer->array_sizes[i] ^= sequencer->array_sizes[j];
+                sequencer->array_sizes[j] ^= sequencer->array_sizes[i];
+            } 
+            ImGui::TableNextColumn();
             
-            ImGui::Text("%d", i);
+            ImGui::Text("#%d", i+1);
             ImGui::TableNextColumn();
 
             if (sequencer->array_sizes[i] < MAX_ARRAY_SIZE) {

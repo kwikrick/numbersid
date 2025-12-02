@@ -239,11 +239,15 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     if (sequence->variable == 0) return;    // inactive sequence
     
     int16_t count = varonum_eval(&sequence->count, sequencer);
-    int16_t base = varonum_eval(&sequence->base, sequencer);
+    
     int16_t add1 = varonum_eval(&sequence->add1, sequencer);
     int16_t div1 = varonum_eval(&sequence->div1, sequencer);
     int16_t mul1 = varonum_eval(&sequence->mul1, sequencer);
     int16_t mod1 = varonum_eval(&sequence->mod1, sequencer);
+
+    int16_t base = varonum_eval(&sequence->base, sequencer);
+    int16_t array = varonum_eval(&sequence->array, sequencer);
+    
     int16_t mod2 = varonum_eval(&sequence->mod2, sequencer);
     int16_t mul2 = varonum_eval(&sequence->mul2, sequencer);
     int16_t div2 = varonum_eval(&sequence->div2, sequencer);
@@ -264,6 +268,14 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     }
     
     value = sum_digits(base, value);
+
+    if (array >= 1 && array <= sequencer->num_arrays) {
+        uint8_t array_size = sequencer->array_sizes[array-1];
+        if (array_size > 0) {
+            var_or_number_t v = sequencer->arrays[array-1][floor_mod(value, array_size)];
+            value = varonum_eval(&v, sequencer);
+        }
+    }
     
     if (mod2 != 0) {                     // TODO: more options?
         value = floor_mod(value,mod2); 
