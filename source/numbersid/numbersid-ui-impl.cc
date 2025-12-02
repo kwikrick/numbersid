@@ -22,6 +22,7 @@
 #include "ui_timecontrol.h"
 #include "ui_soundcontrol.h"
 #include "ui_sequencer.h"
+#include "ui_arrays.h"
 #include "ui_preview.h"
 #include "ui_help.h"
 #include "ui_data.h"

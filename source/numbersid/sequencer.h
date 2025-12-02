@@ -32,6 +32,7 @@ typedef struct {
     var_or_number_t mod1;
 
     var_or_number_t base;
+    var_or_number_t array;
 
     var_or_number_t mod2;
     var_or_number_t mul2;
@@ -71,24 +72,34 @@ typedef struct {
 
 #define MAX_SEQUENCES   64
 #define MAX_VARIABLES   26    // A-Z
+#define MAX_ARRAYS      16
+#define MAX_ARRAY_SIZE  16
 
 typedef struct {
+    // time control
     bool running;
     bool muted;
     int frame;
-    sequence_t sequences[MAX_SEQUENCES];
-    uint8_t num_sequences;
+    // sound control
     voice_t voices[3];
     var_or_number_t filter_mode;
     var_or_number_t cutoff;
     var_or_number_t resonance;
     var_or_number_t volume;
-    int16_t values[MAX_VARIABLES];            
+    // sequences
+    sequence_t sequences[MAX_SEQUENCES];
+    uint8_t num_sequences;
+    // arrays
+    var_or_number_t arrays[MAX_ARRAYS][MAX_ARRAY_SIZE];
+    uint8_t array_sizes[MAX_ARRAYS];
+    uint8_t num_arrays;       
     preview_t preview;
+    // current variable values
+    int16_t values[MAX_VARIABLES];
 } sequencer_t;
 
 
-#define SEQUENCER_SNAPSHOT_VERSION (1)
+#define SEQUENCER_SNAPSHOT_VERSION (2)
 #define SCREENSHOT_WIDTH (400)      // TODO: how to ensure it's same as framebuffer width?
 #define SCREENSHOT_HEIGHT (300)
 #define SCREENSHOT_SIZE_BYTES (SCREENSHOT_WIDTH * SCREENSHOT_HEIGHT)
@@ -138,7 +149,6 @@ void sequencer_init(sequencer_t* sequencer) {
         sequencer->sequences[i].mul1.number = 1;
         sequencer->sequences[i].mul2.number = 1;
     }
-
     // add a test sequence
     sequencer->num_sequences = 4;
     sequencer->sequences[0] = (sequence_t){
@@ -156,7 +166,11 @@ void sequencer_init(sequencer_t* sequencer) {
         .base = (var_or_number_t){.number = 2},
         .mul2 = (var_or_number_t){.number = 1},
     };
-
+    // some empty arrays
+    sequencer->num_arrays = 2;
+    for (int i=0;i<sequencer->num_arrays;i++) {
+        sequencer->array_sizes[i] = 4;
+    }
     // add a column to the preview
     sequencer->preview.num_columns = 4;
 

@@ -84,6 +84,7 @@ typedef struct {
     ui_timecontrol_t ui_timecontrol;
     ui_soundcontrol_t ui_soundcontrol;
     ui_sequencer_t ui_sequencer;
+    ui_arrays_t ui_arrays;
     ui_preview_t ui_preview;
     ui_data_t ui_data;
     ui_help_t ui_help;
@@ -139,6 +140,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
             ImGui::MenuItem("Time Control", 0, &ui->ui_timecontrol.open);
             ImGui::MenuItem("Sound Control", 0, &ui->ui_soundcontrol.open);
             ImGui::MenuItem("Sequencer", 0, &ui->ui_sequencer.open);
+            ImGui::MenuItem("Arrays", 0, &ui->ui_arrays.open);
             ImGui::MenuItem("Preview", 0, &ui->ui_preview.open);
             ImGui::MenuItem("Data", 0, &ui->ui_data.open);
             ImGui::MenuItem("SID(MOS6581)", 0, &ui->ui_sid.open);
@@ -240,6 +242,16 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
     }
     x += dx; y += dy;
     {
+        ui_arrays_desc_t desc = {0};
+        desc.title = "Arrays";
+        desc.sequencer = ui_desc->sequencer;
+        desc.x = x;
+        desc.y = y;
+        desc.open = true;
+        ui_arrays_init(&ui->ui_arrays, &desc);
+    }
+    x += dx; y += dy;
+    {
         ui_preview_desc_t desc = {0};
         desc.title = "Preview";
         desc.sequencer = ui_desc->sequencer;
@@ -273,6 +285,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_timecontrol_discard(&ui->ui_timecontrol);
     ui_soundcontrol_discard(&ui->ui_soundcontrol);
     ui_sequencer_discard(&ui->ui_sequencer);
+    ui_arrays_discard(&ui->ui_arrays);
     ui_preview_discard(&ui->ui_preview);
     ui_data_discard(&ui->ui_data);
     ui_help_discard(&ui->ui_help);
@@ -291,6 +304,7 @@ void ui_numbersid_draw(ui_numbersid_t* ui, ui_display_frame_t* frame) {
     ui_timecontrol_draw(&ui->ui_timecontrol);
     ui_soundcontrol_draw(&ui->ui_soundcontrol);
     ui_sequencer_draw(&ui->ui_sequencer);
+    ui_arrays_draw(&ui->ui_arrays);
     ui_preview_draw(&ui->ui_preview);
     ui_data_draw(&ui->ui_data);
     ui_help_draw(&ui->ui_help);
@@ -308,6 +322,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     ui_timecontrol_save_settings(&ui->ui_timecontrol, settings);
     ui_soundcontrol_save_settings(&ui->ui_soundcontrol, settings);
     ui_sequencer_save_settings(&ui->ui_sequencer, settings);
+    ui_arrays_save_settings(&ui->ui_arrays, settings);
     ui_preview_save_settings(&ui->ui_preview, settings);
     ui_data_save_settings(&ui->ui_data, settings);
     ui_help_save_settings(&ui->ui_help, settings);
@@ -321,6 +336,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     ui_timecontrol_load_settings(&ui->ui_timecontrol, settings);
     ui_soundcontrol_load_settings(&ui->ui_soundcontrol, settings);
     ui_sequencer_load_settings(&ui->ui_sequencer, settings);
+    ui_arrays_load_settings(&ui->ui_arrays, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);
     ui_data_load_settings(&ui->ui_data, settings);
     ui_help_load_settings(&ui->ui_help, settings);

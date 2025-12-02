@@ -1,8 +1,8 @@
 #pragma once
 /*#
-    # ui_sequencer.h
+    # ui_arrays.h
 
-    Visualization for numbersid sequencer.
+    Visualization for numbersid arrays.
 
     Do this:
     ~~~C
@@ -27,8 +27,8 @@
         - sequencer.h
         - ui_util.h
 
-    All strings provided to ui_sequencer_init() must remain alive until
-    ui_sequencer_discard() is called!
+    All strings provided to ui_arrays_init() must remain alive until
+    ui_arrays_discard() is called!
 
     ## zlib/libpng license
 
@@ -57,18 +57,18 @@
 extern "C" {
 #endif
 
-/* setup parameters for ui_sequencer_init()
-    NOTE: all string data must remain alive until ui_sequencer_discard()!
+/* setup parameters for ui_arrays_init()
+    NOTE: all string data must remain alive until ui_arrays_discard()!
 */
-typedef struct ui_sequencer_desc_t {
+typedef struct ui_arrays_desc_t {
     const char* title;          /* window title */
     sequencer_t* sequencer;      /* object to show and edit */
     int x, y;                   /* initial window position */
     int w, h;                   /* initial window size (or default size of 0) */
     bool open;                  /* initial window open state */
-} ui_sequencer_desc_t;
+} ui_arrays_desc_t;
 
-typedef struct ui_sequencer_t {
+typedef struct ui_arrays_t {
     const char* title;
     sequencer_t* sequencer;
     float init_x, init_y;
@@ -76,13 +76,13 @@ typedef struct ui_sequencer_t {
     bool open;
     bool last_open;
     bool valid;
-} ui_sequencer_t;
+} ui_arrays_t;
 
-void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc);
-void ui_sequencer_discard(ui_sequencer_t* win);
-void ui_sequencer_draw(ui_sequencer_t* win);
-void ui_sequencer_save_settings(ui_sequencer_t* win, ui_settings_t* settings);
-void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settings);
+void ui_arrays_init(ui_arrays_t* win, const ui_arrays_desc_t* desc);
+void ui_arrays_discard(ui_arrays_t* win);
+void ui_arrays_draw(ui_arrays_t* win);
+void ui_arrays_save_settings(ui_arrays_t* win, ui_settings_t* settings);
+void ui_arrays_load_settings(ui_arrays_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -100,10 +100,10 @@ void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settin
 #endif
 
 
-void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
+void ui_arrays_init(ui_arrays_t* win, const ui_arrays_desc_t* desc) {
     CHIPS_ASSERT(win && desc);
     CHIPS_ASSERT(desc->title);
-    memset(win, 0, sizeof(ui_sequencer_t));
+    memset(win, 0, sizeof(ui_arrays_t));
     win->title = desc->title;
     win->sequencer = desc->sequencer;
     win->init_x = (float) desc->x;
@@ -114,12 +114,12 @@ void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
     win->valid = true;
 }
 
-void ui_sequencer_discard(ui_sequencer_t* win) {
+void ui_arrays_discard(ui_arrays_t* win) {
     CHIPS_ASSERT(win && win->valid);
     win->valid = false;
 }
 
-static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
+static void _ui_arrays_draw_state(ui_arrays_t* win) {
 
     sequencer_t* sequencer = win->sequencer;
 
@@ -128,97 +128,66 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
-    if (ImGui::BeginTable("##sequences", 15,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
-        ImGui::TableSetupColumn("##up", ImGuiTableColumnFlags_WidthFixed,16);
-        ImGui::TableSetupColumn("##down", ImGuiTableColumnFlags_WidthFixed,16);
-        ImGui::TableSetupColumn("VAR", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("=", ImGuiTableColumnFlags_WidthFixed, 16);
-        ImGui::TableSetupColumn("COUNT", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("ADD1", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("DIV1", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("MUL1", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("MOD1", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("BASE", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("ARRAY", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("MOD2", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("MUL2", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("DIV2", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("ADD2", ImGuiTableColumnFlags_WidthFixed, cw);
-
+    if (ImGui::BeginTable("##arrays", 2+MAX_ARRAY_SIZE ,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("ARRAY", ImGuiTableColumnFlags_WidthFixed,cw);
+        ImGui::TableSetupColumn("size", ImGuiTableColumnFlags_WidthFixed, 40);
+        for (int col=0;col<MAX_ARRAY_SIZE;++col) {
+            ImGui::PushID(col);
+            sprintf(str,"[%d]",col);
+            ImGui::TableSetupColumn(str, ImGuiTableColumnFlags_WidthFixed, cw);
+            ImGui::PopID();
+        }
+       
         ImGui::TableHeadersRow();
         ImGui::TableNextColumn();
 
-        for (int i = 0; i < sequencer->num_sequences; i++) {
+        for (int i = 0; i < sequencer->num_arrays; i++) {
             ImGui::PushID(i);
-            sequence_t* seq = &win->sequencer->sequences[i];
-            var_or_number_t* varonums[11]= {
-                &seq->count,
-                &seq->add1,
-                &seq->div1,
-                &seq->mul1,
-                &seq->mod1,
-                &seq->base,
-                &seq->array,
-                &seq->mod2,
-                &seq->mul2,
-                &seq->div2,
-                &seq->add2
-            };
-            str[0] = seq->variable; str[1] = 0;
-
-            if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
-            {
-                int j = floor_mod(i-1,sequencer->num_sequences);
-                sequence_t seq1 = sequencer->sequences[j];  //copy
-                sequencer->sequences[j] = *seq;   // copy      
-                sequencer->sequences[i] = seq1;   // copy
-            } 
+            
+            ImGui::Text("%d", i);
             ImGui::TableNextColumn();
 
-            if (ImGui::ArrowButton("v",ImGuiDir_Down)) 
-            {
-                int j = floor_mod(i+1,sequencer->num_sequences);
-                sequence_t seq1 = sequencer->sequences[j];  //copy
-                sequencer->sequences[j] = *seq;   // copy      
-                sequencer->sequences[i] = seq1;   // copy
-            } 
-            ImGui::TableNextColumn();
-
-            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-            if (ImGui::InputText("##var", str, IM_ARRAYSIZE(str))) {
-                char new_variable = ImToUpper(str[0]);
-                // TODO: in future may want to support more variables
-                if (new_variable < 'A' || new_variable > 'Z') new_variable = 0;
-                seq->variable = new_variable;
+            if (sequencer->array_sizes[i] < MAX_ARRAY_SIZE) {
+            if (ImGui::Button("+")) {
+                sequencer->array_sizes[i]++;
+            }
+            ImGui::SameLine();        
+            }
+            if (sequencer->array_sizes[i] > 0) {
+                if (ImGui::Button("-")) {
+                    sequencer->array_sizes[i]--;
+                }
+                ImGui::SameLine();
             }
             ImGui::TableNextColumn();
-            
-            ImGui::TextUnformatted("");        //=
-            ImGui::TableNextColumn();
 
-            for (int col=0;col<11;++col) {
+            for (int col=0;col<sequencer->array_sizes[i];++col) {
                 ImGui::PushID(col);
                 ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                ui_varonum_to_string(varonums[col], str, IM_ARRAYSIZE(str));
+                ui_varonum_to_string(&sequencer->arrays[i][col], str, IM_ARRAYSIZE(str));
                 if (ImGui::InputText("##parameter", str, IM_ARRAYSIZE(str))) {
-                    ui_string_to_varonum(str,varonums[col]);
+                    ui_string_to_varonum(str,&sequencer->arrays[i][col]);
                 }
                 ImGui::TableNextColumn();
                 ImGui::PopID();
             }
+            for (int col=sequencer->array_sizes[i];col<MAX_ARRAY_SIZE;++col) {
+                ImGui::TableNextColumn();
+            }
+
             ImGui::PopID();
         }
         ImGui::EndTable();
 
-        if (sequencer->num_sequences < MAX_SEQUENCES) {
+        if (sequencer->num_arrays < MAX_ARRAYS) {
             if (ImGui::Button("+")) {
-                sequencer->num_sequences++;
+                sequencer->num_arrays++;
             }
             ImGui::SameLine();        
         }
-        if (sequencer->num_sequences > 0) {
+        if (sequencer->num_arrays > 0) {
             if (ImGui::Button("-")) {
-                sequencer->num_sequences--;
+                sequencer->num_arrays--;
             }
             ImGui::SameLine();
         }
@@ -228,7 +197,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
     
 }
 
-void ui_sequencer_draw(ui_sequencer_t* win) {
+void ui_arrays_draw(ui_arrays_t* win) {
     CHIPS_ASSERT(win && win->valid);
     ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
@@ -238,18 +207,18 @@ void ui_sequencer_draw(ui_sequencer_t* win) {
     ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##sequencer_state", ImVec2(0, 0), true);
-        _ui_sequencer_draw_state(win);
+        _ui_arrays_draw_state(win);
         ImGui::EndChild();
     }
     ImGui::End();
 }
 
-void ui_sequencer_save_settings(ui_sequencer_t* win, ui_settings_t* settings) {
+void ui_arrays_save_settings(ui_arrays_t* win, ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     ui_settings_add(settings, win->title, win->open);
 }
 
-void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settings) {
+void ui_arrays_load_settings(ui_arrays_t* win, const ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     win->open = ui_settings_isopen(settings, win->title);
 }
