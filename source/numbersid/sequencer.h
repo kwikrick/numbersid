@@ -546,14 +546,27 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
         pos += varonum_export(&seq->mul1, &buffer[pos],size-pos);
         pos += varonum_export(&seq->mod1, &buffer[pos],size-pos);
         pos += varonum_export(&seq->base, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->array, &buffer[pos],size-pos);
         pos += varonum_export(&seq->mod2, &buffer[pos],size-pos);
         pos += varonum_export(&seq->mul2, &buffer[pos],size-pos);
         pos += varonum_export(&seq->div2, &buffer[pos],size-pos);
         pos += varonum_export(&seq->add2, &buffer[pos],size-pos);
     }
     assert(size-pos>0);
+
+    pos += export_uint8(sequencer->num_arrays, &buffer[pos],size-pos);
+
+    for (int a=0; a<sequencer->num_arrays; a++) {
+        pos += export_uint8(sequencer->array_sizes[a], &buffer[pos],size-pos);
+        for (int i=0; i<sequencer->array_sizes[a]; i++) {
+            pos += varonum_export(&sequencer->arrays[a][i], &buffer[pos],size-pos);
+        }
+    }
+
+    // terminate string
     buffer[pos] = 0;
 
+    // format with newlines
     int count = 0;
     pos = 0;
     while (buffer[pos]!=0){
@@ -646,10 +659,21 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         if(!varonum_import(&seq->mul1, buffer, &pos)) return false;
         if(!varonum_import(&seq->mod1, buffer, &pos)) return false;
         if(!varonum_import(&seq->base, buffer, &pos)) return false;
+        if(!varonum_import(&seq->array, buffer, &pos)) return false;
         if(!varonum_import(&seq->mod2, buffer, &pos)) return false;
         if(!varonum_import(&seq->mul2, buffer, &pos)) return false;
         if(!varonum_import(&seq->div2, buffer, &pos)) return false;
         if(!varonum_import(&seq->add2, buffer, &pos)) return false;
+    }
+
+    if(!import_uint8(&sequencer->num_arrays, buffer, &pos)) return false;
+    if (sequencer->num_arrays > MAX_ARRAYS) sequencer->num_arrays = MAX_ARRAYS;
+    for (int a=0; a<sequencer->num_arrays; a++) {
+        if(!import_uint8(&sequencer->array_sizes[a], buffer, &pos)) return false;
+        if (sequencer->array_sizes[a] > MAX_ARRAY_SIZE) sequencer->array_sizes[a] = MAX_ARRAY_SIZE;
+        for (int i=0; i<sequencer->array_sizes[a]; i++) {
+            if(!varonum_import(&sequencer->arrays[a][i], buffer, &pos)) return false;
+        }
     }
     return true;
 }

@@ -2,7 +2,7 @@
 /*#
     # ui_parameters.h
 
-    Visualization for numbersid sequencer.
+    Visualization for numbersid sound parameters.
 
     Do this:
     ~~~C

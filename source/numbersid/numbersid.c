@@ -44,8 +44,8 @@
 #include "ui/ui_m6581.h"
 
 #include "ui_timecontrol.h"     // TODO: need all of these here?
-#include "ui_soundcontrol.h"
-#include "ui_sequencer.h"
+#include "ui_parameters.h"
+#include "ui_variables.h"
 #include "ui_arrays.h"
 #include "ui_preview.h"
 #include "ui_help.h"

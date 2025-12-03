@@ -1,6 +1,6 @@
 #pragma once
 /*#
-    # ui_sequencer.h
+    # ui_variables.h
 
     Visualization for numbersid sequencer.
 
@@ -27,8 +27,8 @@
         - sequencer.h
         - ui_util.h
 
-    All strings provided to ui_sequencer_init() must remain alive until
-    ui_sequencer_discard() is called!
+    All strings provided to ui_variables_init() must remain alive until
+    ui_variables_discard() is called!
 
     ## zlib/libpng license
 
@@ -57,18 +57,18 @@
 extern "C" {
 #endif
 
-/* setup parameters for ui_sequencer_init()
-    NOTE: all string data must remain alive until ui_sequencer_discard()!
+/* setup parameters for ui_variables_init()
+    NOTE: all string data must remain alive until ui_variables_discard()!
 */
-typedef struct ui_sequencer_desc_t {
+typedef struct ui_variables_desc_t {
     const char* title;          /* window title */
     sequencer_t* sequencer;      /* object to show and edit */
     int x, y;                   /* initial window position */
     int w, h;                   /* initial window size (or default size of 0) */
     bool open;                  /* initial window open state */
-} ui_sequencer_desc_t;
+} ui_variables_desc_t;
 
-typedef struct ui_sequencer_t {
+typedef struct ui_variables_t {
     const char* title;
     sequencer_t* sequencer;
     float init_x, init_y;
@@ -76,13 +76,13 @@ typedef struct ui_sequencer_t {
     bool open;
     bool last_open;
     bool valid;
-} ui_sequencer_t;
+} ui_variables_t;
 
-void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc);
-void ui_sequencer_discard(ui_sequencer_t* win);
-void ui_sequencer_draw(ui_sequencer_t* win);
-void ui_sequencer_save_settings(ui_sequencer_t* win, ui_settings_t* settings);
-void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settings);
+void ui_variables_init(ui_variables_t* win, const ui_variables_desc_t* desc);
+void ui_variables_discard(ui_variables_t* win);
+void ui_variables_draw(ui_variables_t* win);
+void ui_variables_save_settings(ui_variables_t* win, ui_settings_t* settings);
+void ui_variables_load_settings(ui_variables_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -100,10 +100,10 @@ void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settin
 #endif
 
 
-void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
+void ui_variables_init(ui_variables_t* win, const ui_variables_desc_t* desc) {
     CHIPS_ASSERT(win && desc);
     CHIPS_ASSERT(desc->title);
-    memset(win, 0, sizeof(ui_sequencer_t));
+    memset(win, 0, sizeof(ui_variables_t));
     win->title = desc->title;
     win->sequencer = desc->sequencer;
     win->init_x = (float) desc->x;
@@ -114,12 +114,12 @@ void ui_sequencer_init(ui_sequencer_t* win, const ui_sequencer_desc_t* desc) {
     win->valid = true;
 }
 
-void ui_sequencer_discard(ui_sequencer_t* win) {
+void ui_variables_discard(ui_variables_t* win) {
     CHIPS_ASSERT(win && win->valid);
     win->valid = false;
 }
 
-static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
+static void _ui_variables_draw_state(ui_variables_t* win) {
 
     sequencer_t* sequencer = win->sequencer;
 
@@ -228,7 +228,7 @@ static void _ui_sequencer_draw_state(ui_sequencer_t* win) {
     
 }
 
-void ui_sequencer_draw(ui_sequencer_t* win) {
+void ui_variables_draw(ui_variables_t* win) {
     CHIPS_ASSERT(win && win->valid);
     ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
@@ -238,18 +238,18 @@ void ui_sequencer_draw(ui_sequencer_t* win) {
     ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##sequencer_state", ImVec2(0, 0), true);
-        _ui_sequencer_draw_state(win);
+        _ui_variables_draw_state(win);
         ImGui::EndChild();
     }
     ImGui::End();
 }
 
-void ui_sequencer_save_settings(ui_sequencer_t* win, ui_settings_t* settings) {
+void ui_variables_save_settings(ui_variables_t* win, ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     ui_settings_add(settings, win->title, win->open);
 }
 
-void ui_sequencer_load_settings(ui_sequencer_t* win, const ui_settings_t* settings) {
+void ui_variables_load_settings(ui_variables_t* win, const ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     win->open = ui_settings_isopen(settings, win->title);
 }
