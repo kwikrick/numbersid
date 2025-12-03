@@ -5,15 +5,15 @@ NumberSid is a tool for making music from number sequences using the SID chip. T
 Getting Started
 ---------------
 Some things to try:
-- Open the "Parameters" window from the "Sequencer" menu. Move it around and make them big enough to see all input fields.
+- Open the "Parameters" window from the "Sequencer" menu. Move it around and make it big enough to see all input fields.
 - In the window, locate the GATE value for Voice 1.
 - Replace the 0 with 1 (by typing in the edit box). 
 - You should now hear a constant tone (440Hz). 
 - Replace the 0 with (the letter) S.
 - You should now hear a regular pattern of the same note (on-off-on-off...).
-- Change the value of the NOTE from 0 to 1 (or 2 or -1 or anything). You will l hear a different tone. 
+- Change the value of the NOTE from 0 to 1 (or 2 or -1 or anything). You will hear a different tone. 
 - Change the value of the NOTE from 0 to A. You will now hear a simple melody. 
-- Open the "Variables" window from the "Sequncer" menu, move and resize it to see all inputs. 
+- Open the "Variables" window from the "Sequencer" menu, move and resize it to see all inputs. 
 - Change the DIV1 value in row S, from 10 to 5. The pattern of note activations will now sound twice as fast.
 - Change the MUL1 value in row A, from 2 to 31. The pattern of tone of the notes played will now change.
 
@@ -77,12 +77,10 @@ NOTE value 0 is the first note in the scale of octave 0. Octave 0 always starts 
 Variables
 ---------
 
-The "Variables" window allows the variables to be specified that can be
-used in the "Parameters" section. When variables take on different values over 
-time, they represent number sequences which can be used to create music.
+The "Variables" window allows the variables to be specified that can be used in the "Parameters" section. Each variable is calculated each tick according the 
+specification in this window. When a variable takes on different values over time, it creates a number sequence, which can be used to create music.
 
-In this window, a table is displayed. Each table row corresponds to a variable, represented by a single captial letter, i.e. variables are named A-Z. 
-Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row.
+In this window, a table is displayed. Each table row corresponds to a variable, represented by a single captial letter, i.e. variables are named A-Z. Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row.
 
 The first column (VAR) is the output variable of the sequence, and the other columns are inputs, and may contain values or variables. The second column (COUNT) is the starting value for the calculation, and typically a variable is used that counts time, e.g. T (see: Special variables). The other columns are parameters for subsequent operations to be performed on the value.
 
@@ -100,12 +98,26 @@ MUL2            Multiply current value by the given parameter.
 DIV2            Divide current value by given parameter. Skipped if 0. 
 ADD2            Add parameter to the the current value.
 
-The order of the rows can be changed using the Up (^) an Down (v) buttons. This is relevant when one row uses the output variable from another row as input. The rows are evaluated from top to bottom. If you use a variable from a 
-lower row, it's value will not have been calculated yet in this clock frame, and you'll get the previous value instead (it will sound 1/60th second behind). 
+The order of the rows can be changed using the Up (^) an Down (v) buttons. This is relevant when one row uses the output variable from another row as input. The rows are evaluated from top to bottom. If you use a variable from a lower row, it's value will not have been calculated yet in this clock frame, and you'll get the previous value instead (it will sound 1/60th second behind). 
 
-The BASE parameter allows to make many interesting number sequences. The "sum the number of digits in given base" operation results in fractal-like, self-similar patterns which can be used for complex melodies or rhythms. Some interesting patterns to try: set BASE=2 and MUL1=1,3,5,7,15,31,63... (2^K-1).  
+The BASE parameter allows to make many interesting number sequences. The "sum the number of digits in given base" operation results in fractal-like, self-similar patterns which can be used for complex melodies or rhythms. 
+For example, if we count numbers in base 2:
 
-The ARRAY parameter is useful when a particular set of numbers is needed, and also allows you to choose between sequences by using variables in the array. But the length and number of of arrays is (intentionally) limited. 
+decimal    base 2      sum of digits
+-------------------------------------  
+0          0           0
+1          1           1
+2         10           1
+3         11           2
+4        100           1
+5        101           2
+6        110           2
+7        111           3
+8       1000           1
+
+So the sequence for BASE=2: 0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4... Notice that from a sequence of length 2^K, the sequence of double the length 2^(K+1) can be contructed by appending the first 2^K numbers and adding 1. So the sequence consists of increasingly long repetitions of the same pattern shifted up by 1. Using a step greater than 1 between the input numbers, results in very different patterns. This can be achieved using the MUL1 column. Some interesting patterns to try: set BASE=2 and MUL1=1,3,5,7,15,31,63... (2^K-1). Different BASE values also create different patterns, and the MOD1 and MOD2 values have interesting effects.  
+
+The ARRAY parameter is useful when a particular set of numbers is needed, and also allows you to choose between sequences by using variables in the array. But the length and number of of arrays is (intentionally) limited. See "Arrays" window for more information. 
 
 Note that the addition, multiplication, division and modulus operations appear twice in the sequence. The reason is that this allows to perform a linear transformation before the (non-linear) sum-of-digits (BASE) operation and a linear transformation after it. Also, because all intermediate values are integers, and rounded down after division, the order of the operations is important. The first set of operations allow to control the tempo at which the sequence plays and other time based characteristics of the sequence, while the second allows the control the range of values of the output variable.
 
@@ -123,29 +135,20 @@ MUL2   multiply output range (larger steps)
 DIV2   divide output range (rounded down)
 ADD2   move output range up/down
 
-Using variables for these parameters allows the design of complex sequences.
+Using variables for these parameters that alos change over time, allows the design of complex music.
 
 Arrays
 ------
 In the Array window, a collection of arrays can be defined in a table.
 
-Arrays are numbered, starting from #1, up to #16, displayed as rows of the table.
-Each array can have a variable number of elements, up to 16 elements displayed
-as columsn of the table, labeled [0]...[16].
-Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row.
-The size of each array can be increased or decreased, adding columns to the right, 
-usign the "+" and "-" buttons in each row. 
+Arrays are numbered, starting from #1 (up to #16 in the current version),
+displayed as rows of the table. Each array can have a variable number of elements displayed as columsn of the table, labeled [0], [1], [2]...(up to 16 elements, currently). Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row. The size of each array can be increased or decreased, adding columns to the right, usign the "+" and "-" buttons in each row. 
 
 An array can contain integer values or variables. 
 
-Arrays can be used in the construction of number sequences, by specifying an array number in the ARRAY column in the "Variables" window. 
-When the value in the ARRAY column (either specified directly by a number, or indirectly by a variable that is evaluated) is >=1 and <=16, the given array will be 
-indexed (using the current value of the sequence variable during the evalution proces).
-If the array contains a number at that index, the number is used in the rest of the sequence evaluation. If the array contains a variable at that index, the current value of that variable will be taken and used in the rest of the sequence evaluation.
+Arrays can be used in the construction of number sequences, by specifying an array number in the ARRAY column in the "Variables" window.  When the value in the ARRAY column is >=1 and <=16 (either specified directly by a number, or indirectly by a variable) the array with that number will be indexed. The index used is the current value of the sequence variable (VAR) in the calculation proces (i.e. the value obtained so far by applying the columns to the left of the ARRAY column). If the array contains a number at that index, the number is used in the rest of the calculation. If the array contains a variable at that index, the current value of that variable will be taken and used in the rest of the calculation.
 
-Note that the variables in an array are evaluated when the array is used during the
-evaluation process. When an array is used in a sequence, and the array contains a variable, that has not yet been evaluated during the current tick, the value will be used that was computed during the previous tick.     
-
+Note that when an array is being indexed, and the array contains a variable that has not yet been calculated during the current tick, the previous value of that variable will be used, i.e. the value that was computed during the previous tick.
 
 Special variables
 -----------------
@@ -169,8 +172,7 @@ The UVW variables can be used to create effects that restart with each note, e.g
 
 The XYZ variables can be used to tie the progression notes played by a voice to the rhythm of the voice. 
 
-Note: The variable that controls the voice gate should be evaluated before the the U,W,V,X,Y,Z values. So if variable A controls voice 1 gate, then A should be evaluated before (placed above) the rows where U or X 
-are used. Otherwise, the value of the dependend variable will be one tick behind. 
+Note: The variable that controls the voice gate should be evaluated before the the U,W,V,X,Y,Z values. So if variable A controls voice 1 gate, then A should be evaluated before (placed above) the rows where U or X are used. Otherwise, the value of the dependend variable will be one tick behind. 
 
 Note: special variables can be used as output variables for sequences, but the values will be overwritten each tick before sequence evaluation. 
 
