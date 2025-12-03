@@ -141,12 +141,11 @@ Arrays
 ------
 In the Array window, a collection of arrays can be defined in a table.
 
-Arrays are numbered, starting from #1 (up to #16 in the current version),
-displayed as rows of the table. Each array can have a variable number of elements displayed as columsn of the table, labeled [0], [1], [2]...(up to 16 elements, currently). Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row. The size of each array can be increased or decreased, adding columns to the right, usign the "+" and "-" buttons in each row. 
+Arrays are numbered, starting from #1 (up to #16 in the current version), displayed as rows of the table. Each array can have a variable number of elements displayed as columsn of the table, labeled [0], [1], [2]...(up to 16 elements, currently). Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row. The size of each array can be increased or decreased, adding columns to the right, usign the "+" and "-" buttons in each row. 
 
 An array can contain integer values or variables. 
 
-Arrays can be used in the construction of number sequences, by specifying an array number in the ARRAY column in the "Variables" window.  When the value in the ARRAY column is >=1 and <=16 (either specified directly by a number, or indirectly by a variable) the array with that number will be indexed. The index used is the current value of the sequence variable (VAR) in the calculation proces (i.e. the value obtained so far by applying the columns to the left of the ARRAY column). If the array contains a number at that index, the number is used in the rest of the calculation. If the array contains a variable at that index, the current value of that variable will be taken and used in the rest of the calculation.
+Arrays can be used in the construction of number sequences, by specifying an array number in the ARRAY column in the "Variables" window. When the value in the ARRAY column is >=1 and <=16 (either specified directly by a number, or indirectly by a variable) the array with that number will be indexed. The index used is the current value of the sequence variable (VAR) in the calculation proces (i.e. the value obtained so far by applying the columns to the left of the ARRAY column). If the array contains a number at that index, the number is used in the rest of the calculation. If the array contains a variable at that index, the current value of that variable will be taken and used in the rest of the calculation.
 
 Note that when an array is being indexed, and the array contains a variable that has not yet been calculated during the current tick, the previous value of that variable will be used, i.e. the value that was computed during the previous tick.
 
@@ -180,8 +179,7 @@ Data window
 -----------
 The data window allows exporting and importing the sequencer data as text. 
 
-The "Export" button writes the current data into the text area in the window. Select all text (Ctrl+A) and copy it (Ctrl+C) into the clipboard. 
-You may then store it any way you like, e.g. in a text file or use it in your favourite 6502 Assember. 
+The "Export" button writes the current data into the text area in the window. Select all text (Ctrl+A) and copy it (Ctrl+C) into the clipboard. You may then store it any way you like, e.g. in a text file or use it in your favourite 6502 Assember. 
 
 The "Import" button reads the values from the text area and updates the sequencer state. To use it, first clear the text area (using the "Clear" button) then paste any previously exported data in to the text area. Then press "Import". A popup will report succes or failure (due to incorrectly formatted or incomplete data).
 
