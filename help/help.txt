@@ -5,22 +5,22 @@ NumberSid is a tool for making music from number sequences using the SID chip. T
 Getting Started
 ---------------
 Some things to try:
-- Open the sequencer window from the menu. Make it as big as possible if it isn't already.
-- In the "Sound parameters" area, find the GATE value for Voice 1.
+- Open the "Parameters" window from the "Sequencer" menu. Move it around and make them big enough to see all input fields.
+- In the window, locate the GATE value for Voice 1.
 - Replace the 0 with 1 (by typing in the edit box). 
 - You should now hear a constant tone (440Hz). 
 - Replace the 0 with (the letter) S.
 - You should now hear a regular pattern of the same note (on-off-on-off...).
 - Change the value of the NOTE from 0 to 1 (or 2 or -1 or anything). You will l hear a different tone. 
 - Change the value of the NOTE from 0 to A. You will now hear a simple melody. 
-- Further down in the "Sequence generator" area, find the row that starts with S.
+- Open the "Variables" window from the "Sequncer" menu, move and resize it to see all inputs. 
 - Change the DIV1 value in row S, from 10 to 5. The pattern of note activations will now sound twice as fast.
 - Change the MUL1 value in row A, from 2 to 31. The pattern of tone of the notes played will now change.
 
 
-The sequencer window
+The sequencer windows
 ---------------------
-The sequencer window consists of three parts: time control, sound parameters and the sequence editor. 
+The sequencer consists of four main parts: time control, parameters, variables and array. 
 
 Time controls
 -------------
@@ -30,11 +30,11 @@ The clock starts out running when starting the application, but can be frozen by
 
 When the clock is not running, the sound chip may still generate sound, but can be silenced using the "Mute" checkbox.
 
-The sound parameters
-------------------
+Parameters
+----------
 The SID chip has three channels, each with it's own oscillator and envelope generator. The sequencer has three voices, each corresponding to a channel. (Note: the terms are similar but not the same. A voice has logic that it implements on top of the SID's channels). The chip also has a single filter, through which each of the channels can be routed.
 
-Each voice has a number of parameters that can be set, and the filter parameters can also be set, in the sound parameters section. Each parameter can be set to an integer value (range -32768 to 32767) or set to a variable, identified by a single letter A to Z. The values of the variables vary over time - these are the number sequences that are the core idea of the program, and which are controlled in the "sequence generator" section. 
+Each voice has a number of parameters that can be set, and the filter parameters can also be set in this window. Each parameter can be set to an integer value (range -32768 to 32767) or set to a variable, identified by a single letter A to Z. The values of the variables vary over time - these are the number sequences that are the core idea of the program. The values that are taken on by the variables are controlled in the "Variables" window. 
 
 Note that all values (constants and variables) are 16 bit signed integers, ranging from -32768 to 32767. Some parameters are bit fields: Only some of the binary bits of the integer number are used, and different bits may have different meanings. 
 
@@ -74,12 +74,17 @@ Examples:
 
 NOTE value 0 is the first note in the scale of octave 0. Octave 0 always starts at 440Hz. Note 1 is the second note in the scale, Note -1 is the last note in the scale one octave lower, etc. If there are M notes in the scale, then octave=FLOOR(N/M) and index=FLOORMOD(N,M). Note that, the fewer notes are in a scale, the further apart two adjacent NOTE values will sound. From the octave and note index, we compute the corresponding semitone of the chromatic scale (i.e. which piano key), which is in turn converted to a frequency for the oscillator. The TRANS value allows to transpose the scale up or down by a number of semitones. The PITCH value allows the frequency to be tuned up or down by a given number of cents (100th of a semitone).
 
-Sequence Generator
----------------
-This section allows the number sequences to be specified that can be used in the "sound parameters" section. 
-Each row corresponds to a sequence, represented by a one letter variable name.
+Variables
+---------
 
-The first column (VAR) is the output variable of the sequence, and the other columns are input parameters (values or variables). The second column (COUNT) is the starting value for the calculation, and typically a variable is used that counts time, e.g. T (see: Special variables). The other columns are parameters for subsequent operations to be performed on the value. 
+The "Variables" window allows the variables to be specified that can be
+used in the "Parameters" section. When variables take on different values over 
+time, they represent number sequences which can be used to create music.
+
+In this window, a table is displayed. Each table row corresponds to a variable, represented by a single captial letter, i.e. variables are named A-Z. 
+Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row.
+
+The first column (VAR) is the output variable of the sequence, and the other columns are inputs, and may contain values or variables. The second column (COUNT) is the starting value for the calculation, and typically a variable is used that counts time, e.g. T (see: Special variables). The other columns are parameters for subsequent operations to be performed on the value.
 
 The meanings of the columns is as follows:
 VAR             The output variable
@@ -88,7 +93,8 @@ ADD1            Add parameter to the the current value
 DIV1            Divide current value by given parameter. Skipped if 0. 
 MUL1            Multiply current value by the given parameter.
 MOD1            Take modulus of the current value and given parameter. Skipped if 0. 
-BASE            Sum the digits in the current value when converted to given base. Skipped if <2.
+BASE            Sum the digits of the current value when converted to a given base. Skipped if <2.
+ARRAY           Take value from the array with this number, using current value as the index. Skipped if <1.  
 MOD2            Take modulus of the current value and given parameter. Skipped if 0.
 MUL2            Multiply current value by the given parameter.
 DIV2            Divide current value by given parameter. Skipped if 0. 
@@ -97,27 +103,53 @@ ADD2            Add parameter to the the current value.
 The order of the rows can be changed using the Up (^) an Down (v) buttons. This is relevant when one row uses the output variable from another row as input. The rows are evaluated from top to bottom. If you use a variable from a 
 lower row, it's value will not have been calculated yet in this clock frame, and you'll get the previous value instead (it will sound 1/60th second behind). 
 
-The BASE parameter allows to make the most interesting number sequences. The "count the number of digits in given base" operation results in fractal-like, self-similar patterns which can be used for complex melodies or rhythms. The MUL1 parameter also has a significant effect on the pattern produced. Some interesting patterns are found when BASE=2 and MUL1=2^M-1 = 7, 15, 31, 63, etc. 
+The BASE parameter allows to make many interesting number sequences. The "sum the number of digits in given base" operation results in fractal-like, self-similar patterns which can be used for complex melodies or rhythms. Some interesting patterns to try: set BASE=2 and MUL1=1,3,5,7,15,31,63... (2^K-1).  
+
+The ARRAY parameter is useful when a particular set of numbers is needed, and also allows you to choose between sequences by using variables in the array. But the length and number of of arrays is (intentionally) limited. 
 
 Note that the addition, multiplication, division and modulus operations appear twice in the sequence. The reason is that this allows to perform a linear transformation before the (non-linear) sum-of-digits (BASE) operation and a linear transformation after it. Also, because all intermediate values are integers, and rounded down after division, the order of the operations is important. The first set of operations allow to control the tempo at which the sequence plays and other time based characteristics of the sequence, while the second allows the control the range of values of the output variable.
 
-The parameters can be used for the following effects:
+When COUNT is a variable that linearly counts time (e.g. T), 
+parameters can be used for the following effects:
 
 ADD1   offset the sequence in time
 DIV1   control tempo of the sequence
 MUL1   set step size for the sum-of-digits, creates different patterns
 MOD1   creates repetitions of sequence in time
-BASE   >=2 for the sum-of digits function
+BASE   create interesting number sequences
+ARRAY  select from different sequences and special values 
 MOD2   limit output range (introduces drops in value)
 MUL2   multiply output range (larger steps)
 DIV2   divide output range (rounded down)
 ADD2   move output range up/down
 
-Using variables for these parameters allows for much more complicated sequences.
+Using variables for these parameters allows the design of complex sequences.
+
+Arrays
+------
+In the Array window, a collection of arrays can be defined in a table.
+
+Arrays are numbered, starting from #1, up to #16, displayed as rows of the table.
+Each array can have a variable number of elements, up to 16 elements displayed
+as columsn of the table, labeled [0]...[16].
+Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row.
+The size of each array can be increased or decreased, adding columns to the right, 
+usign the "+" and "-" buttons in each row. 
+
+An array can contain integer values or variables. 
+
+Arrays can be used in the construction of number sequences, by specifying an array number in the ARRAY column in the "Variables" window. 
+When the value in the ARRAY column (either specified directly by a number, or indirectly by a variable that is evaluated) is >=1 and <=16, the given array will be 
+indexed (using the current value of the sequence variable during the evalution proces).
+If the array contains a number at that index, the number is used in the rest of the sequence evaluation. If the array contains a variable at that index, the current value of that variable will be taken and used in the rest of the sequence evaluation.
+
+Note that the variables in an array are evaluated when the array is used during the
+evaluation process. When an array is used in a sequence, and the array contains a variable, that has not yet been evaluated during the current tick, the value will be used that was computed during the previous tick.     
+
 
 Special variables
 -----------------
-Some variables are set by the software automatically and can be used as parameters. 
+Some variables are set by the sequencer automatically and can be used as parameters. 
 
 Most significant is T, which is the tick counter, which increments every 60th second. User defined sequences will typically derive from T. 
 
@@ -142,6 +174,18 @@ are used. Otherwise, the value of the dependend variable will be one tick behind
 
 Note: special variables can be used as output variables for sequences, but the values will be overwritten each tick before sequence evaluation. 
 
+Data window
+-----------
+The data window allows exporting and importing the sequencer data as text. 
+
+The "Export" button writes the current data into the text area in the window. Select all text (Ctrl+A) and copy it (Ctrl+C) into the clipboard. 
+You may then store it any way you like, e.g. in a text file or use it in your favourite 6502 Assember. 
+
+The "Import" button reads the values from the text area and updates the sequencer state. To use it, first clear the text area (using the "Clear" button) then paste any previously exported data in to the text area. Then press "Import". A popup will report succes or failure (due to incorrectly formatted or incomplete data).
+
+Visualization windows
+---------------------
+
 Preview
 -------
 The preview windows allows the user to inspect the number sequences generated.
@@ -149,29 +193,20 @@ The preview windows allows the user to inspect the number sequences generated.
 In top row of the table, type the single letter of a variable to display it in that column. 
 
 The following rows correspond to subsequent frame numbers (tick count). If "follow" is checked, the frame numbers follow the time used by the sequencer. If unchecked, the user can set the start value for the frame number using "offset". The "step" value determines the time step between the frames shown in the preview. Increase it to skip values and show a longer time interval. 
+Use the "+" and "-" buttons to add and remove columns to the table, to see more or fewer variables.  
 
 Audio, SID, FFT
----------------------
-Visualization of the SID chip's internal state and the audio output. Inherited from the chips project. Maybe useful for diagnostics.
-The FFT (fast fourier transform) shows the frequency spectrum of the audio over time. It is also used as the screenshot for snapshots. 
-
-Data window
------------
-The data window allows exporting and importing the sequencer data as text.
-
-The "Export" button writes the current data into the text area in the window. Select all text (Ctrl+A) and copy it (Ctrl+C) into the clipboard. 
-You may then store it any way you like, e.g. in a text file or use it in your favourite 6502 Assember. 
-
-The "Import" button reads the values from the text area and updates the sequencer state. To use it, first clear the text area (using the "Clear" button) then paste any previously exported data in to the text area. Then press "Import". A popup will report succes or failure (due to incorrectly formatted or incomplete data).
+----------------
+Visualization of the SID chip's internal state and the audio output. Inherited from the chips project. Maybe useful for diagnostics. The FFT (fast fourier transform) shows the frequency spectrum of the audio over time. It is also used as the screenshot for snapshots. 
 
 System menu
 -----------
-Reboot, resets the sequencer state, sound parameters and sequence parameters. 
+Function "Reboot", resets the sequencer state, sound parameters and sequence parameters. 
 
-Save Snapshot will save the sequencer state in a semi-permanent place. It can be retrieved using the Load Snapshot function. Each snapshot
+Function "Save Snapshot" will save the sequencer state in a semi-permanent place. It can be retrieved using the "Load Snapshot" function. Each snapshot
 is identified by an image of the FFT. 
 
-The data is not stored in a file of your choosing, but in a temporary space. In the browser this is usually cleared when the browser cache is cleared. 
+Noet that snapshots are not stored in a file of your choosing, but in a temporary space. In the browser this is usually cleared when the browser cache is cleared. 
 On desktop systems, the data is stored in the systems temporary files directory (which on systems is cleared when rebooting the system). To export data to a file or other permanent medium, use the Data window. 
 
 History & Background
