@@ -12,7 +12,7 @@
 // N must be less than FFT_MAX and must be a power of two
 
 #include <complex>
-void FFT(std::complex<double>* f, int N, double d);
+void FFT(std::complex<double>* f, int N);
 
 extern "C" {
 #endif
