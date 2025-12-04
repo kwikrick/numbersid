@@ -145,26 +145,18 @@ void sequencer_init(sequencer_t* sequencer) {
         sequencer->voices[i].waveform.number = 1;
         sequencer->voices[i].sustain.number = 15;
     }
-    for (int i=0;i<MAX_SEQUENCES;i++){
-        sequencer->sequences[i].mul1.number = 1;
-        sequencer->sequences[i].mul2.number = 1;
-    }
     // add a test sequence
     sequencer->num_sequences = 4;
     sequencer->sequences[0] = (sequence_t){
         .variable = 'S',
         .count = (var_or_number_t){.variable = 'T'},
         .div1 = (var_or_number_t){.number = 10},
-        .mul1 = (var_or_number_t){.number = 1},
         .base = (var_or_number_t){.number = 0},
-        .mul2 = (var_or_number_t){.number = 1},
     };
     sequencer->sequences[1] = (sequence_t){
         .variable = 'A',
         .count = (var_or_number_t){.variable = 'S'},
-        .mul1 = (var_or_number_t){.number = 1},
         .base = (var_or_number_t){.number = 2},
-        .mul2 = (var_or_number_t){.number = 1},
     };
     // some empty arrays
     sequencer->num_arrays = 2;
@@ -261,7 +253,9 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
         value = value / div1;
     }
 
-    value = value * mul1;
+    if (mul1 != 0) {
+        value = value * mul1;
+    }
     
     if (mod1 != 0) {                     // TODO: more options?
         value = floor_mod(value,mod1);
@@ -281,7 +275,9 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
         value = floor_mod(value,mod2); 
     }
     
-    value = value * mul2;
+    if (mul2 != 0) {
+        value = value * mul2;
+    }
     
     if (div2 != 0) {
         value = value / div2;

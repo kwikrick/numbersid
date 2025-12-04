@@ -89,12 +89,12 @@ VAR             The output variable
 COUNT           The starting value for the calculation (often a counting variable)
 ADD1            Add parameter to the the current value
 DIV1            Divide current value by given parameter. Skipped if 0. 
-MUL1            Multiply current value by the given parameter.
+MUL1            Multiply current value by the given parameter. Skipped if 0.
 MOD1            Take modulus of the current value and given parameter. Skipped if 0. 
 BASE            Sum the digits of the current value when converted to a given base. Skipped if <2.
 ARRAY           Take value from the array with this number, using current value as the index. Skipped if <1.  
 MOD2            Take modulus of the current value and given parameter. Skipped if 0.
-MUL2            Multiply current value by the given parameter.
+MUL2            Multiply current value by the given parameter. Skipped if 0.
 DIV2            Divide current value by given parameter. Skipped if 0. 
 ADD2            Add parameter to the the current value.
 
