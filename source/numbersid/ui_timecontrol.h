@@ -108,7 +108,7 @@ void ui_timecontrol_init(ui_timecontrol_t* win, const ui_timecontrol_desc_t* des
     win->init_x = (float) desc->x;
     win->init_y = (float) desc->y;
     win->init_w = (float) ((desc->w == 0) ? 400 : desc->w);
-    win->init_h = (float) ((desc->h == 0) ?  : desc->h);
+    win->init_h = (float) ((desc->h == 0) ? 100 : desc->h);
     win->open = win->last_open = desc->open;
     win->valid = true;
 }

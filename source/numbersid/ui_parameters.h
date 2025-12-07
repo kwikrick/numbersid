@@ -154,17 +154,55 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
     
-    if (ImGui::BeginTable("##voices", 4, ImGuiTableFlags_SizingFixedFit)) {
+    if (ImGui::BeginTable("##voices", sequencer->num_voices + 1, ImGuiTableFlags_SizingFixedFit)) {
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
-        ImGui::TableSetupColumn("Voice 1", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("Voice 2", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("Voice 3", ImGuiTableColumnFlags_WidthFixed, cw);
+        for (int i = 0; i < sequencer->num_voices; i++) {
+            char col_name[16];
+            snprintf(col_name, sizeof(col_name), "Voice %d", i + 1);
+            ImGui::TableSetupColumn(col_name, ImGuiTableColumnFlags_WidthFixed, cw);
+        }
         ImGui::TableHeadersRow();
         ImGui::TableNextColumn();
+
+        // row for buttons
+        if (sequencer->num_voices > 0) {
+            if (ImGui::Button("-")) {
+                sequencer->num_voices--;
+            }
+        }
+        ImGui::SameLine();
+        if (sequencer->num_voices < MAX_VOICES) {
+            if (ImGui::Button("+")) {
+                sequencer->num_voices++;
+            }
+        }
+        ImGui::TableNextColumn();
+        for (int i = 0; i < sequencer->num_voices; i++) {
+            ImGui::PushID(i);
+            if (ImGui::ArrowButton("<", ImGuiDir_Left)) {
+                    int j=floor_mod(i-1, sequencer->num_voices);
+                    voice_t temp = sequencer->voices[j];
+                    sequencer->voices[j] = sequencer->voices[i];
+                    sequencer->voices[i] = temp;
+                
+            }
+            ImGui::SameLine();
+            if (ImGui::ArrowButton(">", ImGuiDir_Right)) {
+                    int j=floor_mod(i+1, sequencer->num_voices);
+                    voice_t temp = sequencer->voices[j];
+                    sequencer->voices[j] = sequencer->voices[i];
+                    sequencer->voices[i] = temp;
+            }
+            ImGui::PopID();
+            ImGui::TableNextColumn();
+        }
+        
+
+        //ImGui::TableNextColumn();
         ImGui::Text("GATE"); 
         ImGui::SetItemTooltip("Gate open/close; bit 0: 0=close, 1=open");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].gate, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -178,7 +216,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("NOTE");
         ImGui::SetItemTooltip("Note number; 0 = first note in scale of octave 0"); 
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].note, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -192,7 +230,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("SCALE");
         ImGui::SetItemTooltip("Musical Scale; 12 bits: select semitones in one octave; 0=4095=chromatic; 2741=c-major; 1352=a-minor");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].scale, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -206,7 +244,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("TRANS"); 
         ImGui::SetItemTooltip("Transpose scale; number of semitones");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
                 ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].transpose, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -220,7 +258,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("PITCH"); 
         ImGui::SetItemTooltip("Tune frequency; number of cents = 1/100 semitone");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].pitch, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -234,7 +272,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("WAVE");
         ImGui::SetItemTooltip("Waveform; bit 0=TRIANGLE; bit 1=SAW; bit 2=PULSE; bit 3=NOISE. Noise cannot be combined.");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].waveform, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -248,7 +286,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("PULSEWIDTH"); 
         ImGui::SetItemTooltip("Pulse width; 12 bits; range 0-4095; used when WAVE bit 2 is set.");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
                 ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].pulsewidth, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -262,7 +300,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("RING"); 
         ImGui::SetItemTooltip("Ring modulation; bit 0: 1=ON, 0=OFF; input from left channel");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
                 ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].ring, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -276,7 +314,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("SYNC"); 
         ImGui::SetItemTooltip("Synchonisation; bit 0: 1=ON, 0=OFF; input from left channel");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].sync, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -290,7 +328,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("ATTACK");
         ImGui::SetItemTooltip("Attack time; range 0-15 (4 bits)");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].attack, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -304,7 +342,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("DECAY");
         ImGui::SetItemTooltip("Decay time; range 0-15 (4 bits)");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
                 ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].decay, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -318,7 +356,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("SUSTAIN");
         ImGui::SetItemTooltip("Sustain level; range 0-15 (4 bits)");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
                 ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].sustain, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -332,7 +370,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("RELEASE");
         ImGui::SetItemTooltip("Release time; range 0-15 (4 bits)");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
                 ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].release, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -346,7 +384,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::Text("FILTER");
         ImGui::SetItemTooltip("Filter enable; bit 0: 1=ON, 0=OFF");
         ImGui::TableNextColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < sequencer->num_voices; i++) {
             ImGui::PushID(i);
             ui_varonum_to_string(&win->sequencer->voices[i].filter, str, IM_ARRAYSIZE(str));
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -359,6 +397,31 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         }
         ImGui::EndTable();
     }
+
+    if (ImGui::BeginTable("##channels", 4, ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
+        ImGui::TableSetupColumn("Channel 1", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("Channel 2", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("Channel 3", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableHeadersRow();
+        ImGui::TableNextColumn();
+        ImGui::Text("VOICE");
+        ImGui::SetItemTooltip("Voice number (0-16) to use for this channel");
+        ImGui::TableNextColumn();
+        for (int i = 0; i < NUM_CHANNELS; i++) {
+            ImGui::PushID(i);
+            ui_varonum_to_string(&win->sequencer->channel_voice_params[i], str, IM_ARRAYSIZE(str));
+            ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
+            bool edited = ImGui::InputText("##voice", str, IM_ARRAYSIZE(str));
+            if (edited) {
+                ui_string_to_varonum(str,&win->sequencer->channel_voice_params[i]);
+            }
+            ImGui::PopID();
+            ImGui::TableNextColumn();
+        }
+        ImGui::EndTable();
+    }
+
     if (ImGui::BeginTable("##filter", 2, ImGuiTableFlags_SizingFixedFit)) {
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
         ImGui::TableSetupColumn("Filter", ImGuiTableColumnFlags_WidthFixed, cw);
@@ -366,7 +429,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
         ImGui::TableNextColumn();
         
         ImGui::Text("FILTER MODE");
-        ImGui::SetItemTooltip("Filters: bit 0=LOWPASS; bit 1=BANDPASS; bit 2=HIGHPASS; bit 3=Mute Voice 3");
+        ImGui::SetItemTooltip("Filters: bit 0=LOWPASS; bit 1=BANDPASS; bit 2=HIGHPASS; bit 3=Mute Channel 3");
         ImGui::TableNextColumn();
         ui_varonum_to_string(&win->sequencer->filter_mode, str, IM_ARRAYSIZE(str));
         ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned

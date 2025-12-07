@@ -74,6 +74,8 @@ typedef struct {
 #define MAX_VARIABLES   26    // A-Z
 #define MAX_ARRAYS      16
 #define MAX_ARRAY_SIZE  16
+#define MAX_VOICES      16
+#define NUM_CHANNELS    3    // SID hardware channels
 
 typedef struct {
     // time control
@@ -81,7 +83,9 @@ typedef struct {
     bool muted;
     int frame;
     // sound control
-    voice_t voices[3];
+    voice_t voices[MAX_VOICES];
+    uint8_t num_voices;
+    var_or_number_t channel_voice_params[NUM_CHANNELS];
     var_or_number_t filter_mode;
     var_or_number_t cutoff;
     var_or_number_t resonance;
@@ -141,7 +145,11 @@ void sequencer_init(sequencer_t* sequencer) {
     sequencer->volume.number = 15;
     sequencer->preview.step = 1;
     sequencer->preview.follow = true;
-    for (int i=0;i<3;i++){
+    sequencer->num_voices = NUM_CHANNELS;
+    sequencer->channel_voice_params[0] = (var_or_number_t){.number = 1};
+    sequencer->channel_voice_params[1] = (var_or_number_t){.number = 2};
+    sequencer->channel_voice_params[2] = (var_or_number_t){.number = 3};
+    for (int i=0;i<sequencer->num_voices;i++){
         sequencer->voices[i].waveform.number = 1;
         sequencer->voices[i].sustain.number = 15;
     }
@@ -291,11 +299,15 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     // determine change first bit from zero to non-zero
     if ((old%2) == 0 && (value%2) != 0) {
         // used as voice gate? increment X,Y,Z, reset U,V,W
-        for (int voice=0;voice<3;++voice){
-            if (sequencer->voices[voice].gate.variable == sequence->variable) {
-                uint8_t gate_count_index = 'X' + voice - 'A';
+        for (int channel=0;channel<sequencer->num_voices;++channel){
+            var_or_number_t* voice_param = &sequencer->channel_voice_params[channel];
+            int16_t voice_index = varonum_eval(voice_param, sequencer)-1;
+            if (voice_index < 0 || voice_index >= MAX_VOICES) continue;
+            voice_t* voice = &sequencer->voices[voice_index];
+            if (voice->gate.variable == sequence->variable) {
+                uint8_t gate_count_index = 'X' + channel - 'A';
                 sequencer->values[gate_count_index] += 1;           // TODO: skip if time is not updated!
-                uint8_t gate_time_index = 'U' + voice - 'A';
+                uint8_t gate_time_index = 'U' + channel - 'A';
                 sequencer->values[gate_time_index] = 0;
             }
         }
@@ -335,34 +347,47 @@ void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
         return;
     }
 
-    for (int v=0;v<3;v++) {
+    int16_t channel_filter[NUM_CHANNELS] = {0,0,0};     // TODO: keep per voice filter settings for when channel has no voice assigned
 
+    for (int channel=0;channel<sequencer->num_voices;++channel){
+        var_or_number_t* voice_param = &sequencer->channel_voice_params[channel];
+        int16_t voice_index = varonum_eval(voice_param, sequencer)-1;
+        if (voice_index < 0 || voice_index >= sequencer->num_voices) {
+            // close channel gate, keep all olther control bits the same
+            uint8_t ctrl = sid->voice[channel].ctrl & ~(M6581_CTRL_GATE);
+            _m6581_set_ctrl(&sid->voice[channel], ctrl);
+            continue;
+        };
+        voice_t* voice = &sequencer->voices[voice_index];
+    
         // ctrl
-        int16_t gate = varonum_eval(&sequencer->voices[v].gate, sequencer);
-        int16_t sync = varonum_eval(&sequencer->voices[v].sync, sequencer);
-        int16_t ring = varonum_eval(&sequencer->voices[v].ring, sequencer);
-        int16_t wave = varonum_eval(&sequencer->voices[v].waveform, sequencer);
-        _m6581_set_ctrl(&sid->voice[v], (gate&1) + ((sync&1)<<1) + ((ring&1)<<2 ) + ((wave&15)<<4));
+        int16_t gate = varonum_eval(&voice->gate, sequencer);
+        int16_t sync = varonum_eval(&voice->sync, sequencer);
+        int16_t ring = varonum_eval(&voice->ring, sequencer);
+        int16_t wave = varonum_eval(&voice->waveform, sequencer);
+        _m6581_set_ctrl(&sid->voice[channel], (gate&1) + ((sync&1)<<1) + ((ring&1)<<2 ) + ((wave&15)<<4));
         
-        float freq = compute_freq(sequencer, v);
-
+        // freq
+        float freq = compute_freq(sequencer, voice_index);
         int16_t sid_freq_value = freq_to_sid_value_pal(freq);
-        _m6581_set_freq_hi(&sid->voice[v], (sid_freq_value>>8));
-        _m6581_set_freq_lo(&sid->voice[v], (sid_freq_value&0xFF));
+        _m6581_set_freq_hi(&sid->voice[channel], (sid_freq_value>>8));
+        _m6581_set_freq_lo(&sid->voice[channel], (sid_freq_value&0xFF));
 
         // pulsewidth
-        int16_t pulsewidth = varonum_eval(&sequencer->voices[v].pulsewidth, sequencer);
-        _m6581_set_pw_lo(&sid->voice[v], (pulsewidth&0xFF));
-        _m6581_set_pw_hi(&sid->voice[v], (pulsewidth>>8));
+        int16_t pulsewidth = varonum_eval(&voice->pulsewidth, sequencer);
+        _m6581_set_pw_lo(&sid->voice[channel], (pulsewidth&0xFF));
+        _m6581_set_pw_hi(&sid->voice[channel], (pulsewidth>>8));
 
         // envelope
-        int16_t attack = varonum_eval(&sequencer->voices[v].attack, sequencer);
-        int16_t decay = varonum_eval(&sequencer->voices[v].decay, sequencer);
-        int16_t sustain = varonum_eval(&sequencer->voices[v].sustain, sequencer);
-        int16_t release = varonum_eval(&sequencer->voices[v].release, sequencer);
-        _m6581_set_atkdec(&sid->voice[v], ((attack&15)<<4) + (decay&15));
-        _m6581_set_susrel(&sid->voice[v], ((sustain&15)<<4) + (release&15));
-        
+        int16_t attack = varonum_eval(&voice->attack, sequencer);
+        int16_t decay = varonum_eval(&voice->decay, sequencer);
+        int16_t sustain = varonum_eval(&voice->sustain, sequencer);
+        int16_t release = varonum_eval(&voice->release, sequencer);
+        _m6581_set_atkdec(&sid->voice[channel], ((attack&15)<<4) + (decay&15));
+        _m6581_set_susrel(&sid->voice[channel], ((sustain&15)<<4) + (release&15));
+
+        // save filter setting for this channel
+        channel_filter[channel] = varonum_eval(&voice->filter, sequencer);
     }
 
     int16_t cutoff = varonum_eval(&sequencer->cutoff, sequencer);
@@ -370,12 +395,9 @@ void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
     _m6581_set_cutoff_hi(&sid->filter, (cutoff>>3));             // bits 3-10
 
     int16_t resonance = varonum_eval(&sequencer->resonance, sequencer);
-    int16_t filter1 = varonum_eval(&sequencer->voices[0].filter, sequencer);
-    int16_t filter2 = varonum_eval(&sequencer->voices[1].filter, sequencer);
-    int16_t filter3 = varonum_eval(&sequencer->voices[2].filter, sequencer);
-    
+
     _m6581_set_resfilt(&sid->filter, 
-        ((resonance&15)<<4)  + (filter1&1) + ((filter2&1)<<1) + ((filter3&1)<<2));
+        ((resonance&15)<<4)  + (channel_filter[0]&1) + ((channel_filter[1]&1)<<1) + ((channel_filter[2]&1)<<2));
 
      int16_t volume = varonum_eval(&sequencer->volume, sequencer);
      int16_t filter_mode = varonum_eval(&sequencer->filter_mode, sequencer);
@@ -383,24 +405,24 @@ void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
     
 }
 
-void update_sequence_variables(sequencer_t* sequencer, int frame) {
+void update_variables(sequencer_t* sequencer, int frame) {
 
     // update gate time counters
     int16_t new_t = frame;       // narrowing
     int16_t old_t = sequencer->values['T'-'A'];
     int delta_frame = new_t - old_t;
     if (delta_frame == 1) {
-        for (int voice=0;voice<3;++voice) {
-            uint8_t gate_time_index = 'U' + voice - 'A';
+        for (int channel=0;channel<NUM_CHANNELS;++channel) {
+            uint8_t gate_time_index = 'U' + channel - 'A';
             sequencer->values[gate_time_index] += delta_frame; 
         }
     }
     else {
         // reset gate count/time variables when jumpign in time
-        for (int voice=0;voice<3;++voice){
-            uint8_t gate_count_index = 'X' + voice - 'A';
+        for (int channel=0;channel<NUM_CHANNELS;++channel) {
+            uint8_t gate_count_index = 'X' + channel - 'A';
             sequencer->values[gate_count_index] = 0; 
-            uint8_t gate_time_index = 'U' + voice - 'A';
+            uint8_t gate_time_index = 'U' + channel - 'A';
             sequencer->values[gate_time_index] = 0; 
         }
     }
@@ -424,7 +446,7 @@ void update_preview(sequencer_t* sequencer)
 
     int frame = preview->follow ? sequencer->frame : preview->offset;
 
-    update_sequence_variables(sequencer, frame);
+    update_variables(sequencer, frame);
     
     for (int row=0;row<NUM_PREVIEW_ROWS;++row) {
 
@@ -445,7 +467,7 @@ void update_preview(sequencer_t* sequencer)
             // Needed for UVWXYZ and effects dependend on evaluation order.
             // note: changes sequencer variable states
 
-            update_sequence_variables(sequencer, frame);
+            update_variables(sequencer, frame);
         }
     }
 
@@ -458,7 +480,7 @@ void sequencer_update(sequencer_t* sequencer)
     update_preview(sequencer);
 
     // update variables using frame number as input (and previous state)
-    update_sequence_variables(sequencer, sequencer->frame);
+    update_variables(sequencer, sequencer->frame);
         
     if (sequencer->running) {    
         sequencer->frame += 1;
@@ -509,7 +531,9 @@ int export_uint8(uint8_t variable, char* buffer, int size)
 void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int words_per_line)
 {
     int pos = 0;
-    for (int v=0; v<3; v++) {
+
+    export_uint8(sequencer->num_voices, &buffer[pos],size-pos);
+    for (int v=0; v<sequencer->num_voices; v++) {
         voice_t* voice = &sequencer->voices[v];
         pos += varonum_export(&voice->gate, &buffer[pos],size-pos);
         pos += varonum_export(&voice->note, &buffer[pos],size-pos);
@@ -526,6 +550,11 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
         pos += varonum_export(&voice->release, &buffer[pos],size-pos);
         pos += varonum_export(&voice->filter, &buffer[pos],size-pos);
     }
+
+    for (int channel=0; channel<NUM_CHANNELS; channel++) {
+        pos += varonum_export(&sequencer->channel_voice_params[channel], &buffer[pos],size-pos);
+    }
+
     pos += varonum_export(&sequencer->filter_mode, &buffer[pos],size-pos);
     pos += varonum_export(&sequencer->cutoff, &buffer[pos],size-pos);
     pos += varonum_export(&sequencer->resonance, &buffer[pos],size-pos);
@@ -621,7 +650,11 @@ bool import_uint8(uint8_t* variable, char* buffer, int* pos)
 bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
 {
     int pos = 0;
-    for (int v=0; v<3; v++) {
+
+    if(!import_uint8(&sequencer->num_voices, buffer, &pos)) return false;
+    if (sequencer->num_voices > MAX_VOICES) sequencer->num_voices = MAX_VOICES;
+
+    for (int v=0; v<sequencer->num_voices; v++) {
         voice_t* voice = &sequencer->voices[v];
         if(!varonum_import(&voice->gate, buffer, &pos)) return false;
         if(!varonum_import(&voice->note, buffer, &pos)) return false;
@@ -638,6 +671,11 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         if(!varonum_import(&voice->release, buffer, &pos)) return false;
         if(!varonum_import(&voice->filter, buffer, &pos)) return false;
     }
+
+    for (int channel=0; channel<NUM_CHANNELS; channel++) {
+        if(!varonum_import(&sequencer->channel_voice_params[channel], buffer, &pos)) return false;
+    }
+
     if(!varonum_import(&sequencer->filter_mode, buffer, &pos)) return false;
     if(!varonum_import(&sequencer->cutoff, buffer, &pos)) return false;
     if(!varonum_import(&sequencer->resonance, buffer, &pos)) return false;
