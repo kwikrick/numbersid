@@ -32,7 +32,7 @@ When the clock is not running, the sound chip may still generate sound, but can 
 
 Parameters
 ----------
-The SID chip has three channels, each with it's own oscillator and envelope generator. The sequencer has three voices, each corresponding to a channel. (Note: the terms are similar but not the same. A voice has logic that it implements on top of the SID's channels). The chip also has a single filter, through which each of the channels can be routed.
+The SID chip has three channels, each with it's own oscillator and envelope generator. The sequencer has a variable number of voices (up to 16), and each channel can be assigned a voice to play. The chip also has a single filter, through which each of the channels can be routed (but which can be set per voice).
 
 Each voice has a number of parameters that can be set, and the filter parameters can also be set in this window. Each parameter can be set to an integer value (range -32768 to 32767) or set to a variable, identified by a single letter A to Z. The values of the variables vary over time - these are the number sequences that are the core idea of the program. The values that are taken on by the variables are controlled in the "Variables" window. 
 
@@ -55,12 +55,18 @@ SUSTAIN        Sustain level of the envelope generator. Range 0-15 (4 bits)
 RELEASE        Release time of the envelope generator. Range 0-15 (4 bits)
 FILTER         Bit 0: if 1 then route channel output through filter, if 0 no filter
 
+Per channel (1,2,3), a voice can be selected with the parameter:
+
+VOICE        The voice played on the channel. If VOICE<1 or VOICE>number of voices, the channels GATE will be 0.
+
 The filter has the following parameters:
 
 MODE          Bit 0: lowpass, Bit 1: bandpass, Bit 2: high pass. Can be combined. (Bit 3 to silence voice 3) 
 CUTOFF        Range 0-2047 (11 bits). Linearly related to frequency (approx. 30-12000Hz)
 RESONANCE     Strength of filter resonance. Range 0-15 (4 bits)
 VOLUME        Range 0-15 (4 bits)
+
+Note that the number of voices can be increased and decreased usign the "+" and "-" buttons. And the voice data can be swapped with an adjacent voice, using the "<" and ">" arrow buttons. 
 
 When GATE goes from low to high, the attack phase of the envelope starts (and will continue into
 decay and sustain phase). When GATE goes from low to high, the release phase of the envelope starts. 
