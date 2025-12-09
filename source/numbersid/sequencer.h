@@ -59,6 +59,13 @@ typedef struct {
 
 #define NUM_PREVIEW_ROWS 50
 #define MAX_PREVIEW_COLS 32
+#define MAX_HIGHLIGHTERS 8
+
+typedef struct {
+    int value;
+    int modulo;
+    float color[4];
+} highlighter_t;
 
 typedef struct {
     int step;
@@ -68,6 +75,8 @@ typedef struct {
     char variables[MAX_PREVIEW_COLS];
     uint16_t frames[NUM_PREVIEW_ROWS];
     int16_t values[NUM_PREVIEW_ROWS][MAX_PREVIEW_COLS];
+    highlighter_t highlighters[MAX_HIGHLIGHTERS];
+    int num_highlighters;
 } preview_t;
 
 #define MAX_SEQUENCES   64

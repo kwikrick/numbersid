@@ -135,6 +135,44 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
     ImGui::SameLine(); ImGui::Checkbox("Follow", &preview->follow);    
     ImGui::PopItemWidth();
 
+     if (ImGui::CollapsingHeader("Highlighters")) {
+        // highlighters UI
+        for (int i=0;i<preview->num_highlighters;++i) {
+            highlighter_t* hl = &preview->highlighters[i];
+            ImGui::PushID(i);
+            ImGui::ColorEdit4("Color", (float*)&hl->color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            ImGui::SameLine();
+            ImGui::PushItemWidth(cw0);
+            ImGui::InputInt("##Value",&hl->value);
+            ImGui::SameLine();
+            ImGui::Text("MOD");
+            ImGui::SameLine();
+            ImGui::InputInt("##Mod",&hl->modulo);
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            if (ImGui::Button("X")) {
+                // remove highlighter
+                for (int j=i;j<preview->num_highlighters-1;++j) {
+                    preview->highlighters[j] = preview->highlighters[j+1];
+                }
+                preview->num_highlighters--;
+                i--;    // stay at same index
+            }
+            ImGui::PopID();
+        }
+        if (preview->num_highlighters < MAX_HIGHLIGHTERS) {
+            if (ImGui::Button("+")) {
+                highlighter_t* hl = &preview->highlighters[preview->num_highlighters++];
+                hl->value = 0;
+                hl->modulo = 0;
+                hl->color[0] =  1.0f;
+                hl->color[1] =  1.0f;
+                hl->color[2] =  1.0f;
+                hl->color[3] =  0.25f; 
+            }
+        }
+    }
+
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
     int numcols = preview->num_columns;
@@ -171,6 +209,7 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
             str[0] = preview->variables[col];
             str[1] = 0;
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
+            //ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.8f,0.8f,0.0f,1.0f)); // variable color);
             if (ImGui::InputText("##var",str, IM_ARRAYSIZE(str))) {
                 char new_variable = ImToUpper(str[0]);
                 // TODO: in future may want to support more variables
@@ -178,6 +217,7 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
                     preview->variables[col] = new_variable;
             }
             ImGui::TableNextColumn();
+            //ImGui::PopStyleColor();
             ImGui::PopID();
         }
         ImGui::TableNextColumn();   // empty col at end
@@ -192,10 +232,37 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
             for (int col=0; col<numcols;++col) {
                 int index = preview->variables[col] - 'A';
                 if (index >= 0 && index < MAX_VARIABLES) { 
-                    ImGui::Text("%6i",preview->values[row][col]);
+                    
+                    int16_t value = preview->values[row][col];
+
+                    // highlighting
+                    float cell_bg_color_array[4] = {0.0f,0.0f,0.0f,0.0f};
+                    int highlighted = 0;
+                    for (int h=0;h<preview->num_highlighters;++h) {
+                        highlighter_t* hl = &preview->highlighters[h];
+                        if ( (hl->modulo == 0 && value == hl->value) ||
+                             (hl->modulo != 0 && (value % hl->modulo) == hl->value) ) {
+                            cell_bg_color_array[0] += hl->color[0];
+                            cell_bg_color_array[1] += hl->color[1];
+                            cell_bg_color_array[2] += hl->color[2];
+                            cell_bg_color_array[3] += hl->color[3];
+                            highlighted++;
+                        }
+                    }
+                    if (highlighted > 0) {
+                        // clamp alpha
+                        cell_bg_color_array[0] = cell_bg_color_array[0] / (float)highlighted;
+                        cell_bg_color_array[1] = cell_bg_color_array[1] / (float)highlighted;
+                        cell_bg_color_array[2] = cell_bg_color_array[2] / (float)highlighted;
+                        cell_bg_color_array[3] = cell_bg_color_array[3] / (float)highlighted;
+                        ImU32 cell_bg_color = ImGui::GetColorU32( ImVec4(cell_bg_color_array[0],cell_bg_color_array[1],cell_bg_color_array[2],cell_bg_color_array[3]) );
+                        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, cell_bg_color);
+                    }
+
+                    ImGui::Text("%6i",value);
                 }
                 else {
-                    ImGui::Text("");
+                    ImGui::TextUnformatted("");
                 }
                 ImGui::TableNextColumn();
             }
@@ -203,7 +270,7 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
         }
         ImGui::EndTable();
     }
-    
+
     ImGui::PopStyleVar();
     
 }
