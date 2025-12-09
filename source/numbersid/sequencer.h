@@ -339,7 +339,7 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     uint16_t old = sequencer->values[var_index];
 
     // used as voice gate or used as channel-voice? update gate states
-    for (int channel=0;channel<sequencer->num_voices;++channel){
+    for (int channel=0;channel<NUM_CHANNELS;++channel){
         var_or_number_t* voice_param = &sequencer->channel_voice_params[channel];
         if (voice_param->variable == sequence->variable) {
             update_gate_state(sequencer, channel);
@@ -391,7 +391,7 @@ void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
 
     int16_t channel_filter[NUM_CHANNELS] = {0,0,0};     // TODO: keep per voice filter settings for when channel has no voice assigned
 
-    for (int channel=0;channel<sequencer->num_voices;++channel){
+    for (int channel=0;channel<NUM_CHANNELS;++channel){
         var_or_number_t* voice_param = &sequencer->channel_voice_params[channel];
         int16_t voice_index = varonum_eval(voice_param, sequencer)-1;
         if (voice_index < 0 || voice_index >= sequencer->num_voices) {
