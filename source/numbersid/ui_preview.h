@@ -162,13 +162,14 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
         }
         if (preview->num_highlighters < MAX_HIGHLIGHTERS) {
             if (ImGui::Button("+")) {
-                highlighter_t* hl = &preview->highlighters[preview->num_highlighters++];
+                highlighter_t* hl = &preview->highlighters[preview->num_highlighters];
                 hl->value = 0;
                 hl->modulo = 0;
-                hl->color[0] =  1.0f;
-                hl->color[1] =  1.0f;
-                hl->color[2] =  1.0f;
+                hl->color[0] = (preview->num_highlighters%3==0) ? 1.0f : 0.0f;
+                hl->color[1] = (preview->num_highlighters%3==1) ? 1.0f : 0.0f;
+                hl->color[2] = (preview->num_highlighters%3==2) ? 1.0f : 0.0f;
                 hl->color[3] =  0.25f; 
+                preview->num_highlighters++;
             }
         }
     }
@@ -209,7 +210,6 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
             str[0] = preview->variables[col];
             str[1] = 0;
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-            //ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.8f,0.8f,0.0f,1.0f)); // variable color);
             if (ImGui::InputText("##var",str, IM_ARRAYSIZE(str))) {
                 char new_variable = ImToUpper(str[0]);
                 // TODO: in future may want to support more variables
@@ -217,7 +217,6 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
                     preview->variables[col] = new_variable;
             }
             ImGui::TableNextColumn();
-            //ImGui::PopStyleColor();
             ImGui::PopID();
         }
         ImGui::TableNextColumn();   // empty col at end
@@ -250,7 +249,6 @@ static void _ui_preview_draw_state(ui_preview_t* win) {
                         }
                     }
                     if (highlighted > 0) {
-                        // clamp alpha
                         cell_bg_color_array[0] = cell_bg_color_array[0] / (float)highlighted;
                         cell_bg_color_array[1] = cell_bg_color_array[1] / (float)highlighted;
                         cell_bg_color_array[2] = cell_bg_color_array[2] / (float)highlighted;
