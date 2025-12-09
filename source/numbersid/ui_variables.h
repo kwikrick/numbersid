@@ -139,11 +139,11 @@ static void _ui_variables_draw_state(ui_variables_t* win) {
         ImGui::TableSetupColumn("MUL1", ImGuiTableColumnFlags_WidthFixed, cw);
         ImGui::TableSetupColumn("MOD1", ImGuiTableColumnFlags_WidthFixed, cw);
         ImGui::TableSetupColumn("BASE", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableSetupColumn("ARRAY", ImGuiTableColumnFlags_WidthFixed, cw);
         ImGui::TableSetupColumn("MOD2", ImGuiTableColumnFlags_WidthFixed, cw);
         ImGui::TableSetupColumn("MUL2", ImGuiTableColumnFlags_WidthFixed, cw);
         ImGui::TableSetupColumn("DIV2", ImGuiTableColumnFlags_WidthFixed, cw);
         ImGui::TableSetupColumn("ADD2", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableSetupColumn("ARRAY", ImGuiTableColumnFlags_WidthFixed, cw);
 
         ImGui::TableHeadersRow();
         ImGui::TableNextColumn();
@@ -158,11 +158,11 @@ static void _ui_variables_draw_state(ui_variables_t* win) {
                 &seq->mul1,
                 &seq->mod1,
                 &seq->base,
-                &seq->array,
                 &seq->mod2,
                 &seq->mul2,
                 &seq->div2,
-                &seq->add2
+                &seq->add2,
+                &seq->array
             };
             str[0] = seq->variable; str[1] = 0;
 

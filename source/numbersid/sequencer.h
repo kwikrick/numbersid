@@ -32,12 +32,13 @@ typedef struct {
     var_or_number_t mod1;
 
     var_or_number_t base;
-    var_or_number_t array;
 
     var_or_number_t mod2;
     var_or_number_t mul2;
     var_or_number_t div2;
     var_or_number_t add2;
+
+    var_or_number_t array;
 } sequence_t;
 
 typedef struct {
@@ -109,6 +110,8 @@ typedef struct {
     preview_t preview;
     // current variable values
     int16_t values[MAX_VARIABLES];
+    // gate states
+    bool gate_states[NUM_CHANNELS];
 } sequencer_t;
 
 
@@ -244,6 +247,34 @@ uint8_t decode_scale(int16_t scale, uint8_t* finger_notes)
     return fingers;
 }
 
+void update_gate_state(sequencer_t* sequencer, int channel) {
+    bool old_state = sequencer->gate_states[channel];
+    bool new_state = false;
+    var_or_number_t* channel_voice_param = &sequencer->channel_voice_params[channel];
+    int16_t voice_index = varonum_eval(channel_voice_param, sequencer)-1;
+    if (voice_index < 0 || voice_index >= MAX_VOICES) {
+        new_state = false;
+    }
+    else {
+        voice_t* voice = &sequencer->voices[voice_index];
+        int16_t gate_value = varonum_eval(&voice->gate, sequencer);
+        new_state = (gate_value&1 != 0);
+    }
+    if (new_state != old_state) {
+        // gate state changed
+        if (new_state) {
+            // gate on: reset gate time
+            uint8_t gate_time_index = 'U' + channel - 'A';
+            sequencer->values[gate_time_index] = 0;
+            // increment gate count
+            uint8_t gate_count_index = 'X' + channel - 'A';
+            sequencer->values[gate_count_index] += 1;
+        }
+        sequencer->gate_states[channel] = new_state;
+    }
+
+}
+
 void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     if (sequence->variable == 0) return;    // inactive sequence
     
@@ -255,12 +286,13 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     int16_t mod1 = varonum_eval(&sequence->mod1, sequencer);
 
     int16_t base = varonum_eval(&sequence->base, sequencer);
-    int16_t array = varonum_eval(&sequence->array, sequencer);
     
     int16_t mod2 = varonum_eval(&sequence->mod2, sequencer);
     int16_t mul2 = varonum_eval(&sequence->mul2, sequencer);
     int16_t div2 = varonum_eval(&sequence->div2, sequencer);
     int16_t add2 = varonum_eval(&sequence->add2, sequencer);
+
+    int16_t array = varonum_eval(&sequence->array, sequencer);
 
     int16_t value = count; 
     
@@ -279,14 +311,6 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     }
     
     value = sum_digits(base, value);
-
-    if (array >= 1 && array <= sequencer->num_arrays) {
-        uint8_t array_size = sequencer->array_sizes[array-1];
-        if (array_size > 0) {
-            var_or_number_t v = sequencer->arrays[array-1][floor_mod(value, array_size)];
-            value = varonum_eval(&v, sequencer);
-        }
-    }
     
     if (mod2 != 0) {                     // TODO: more options?
         value = floor_mod(value,mod2); 
@@ -299,29 +323,38 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
     if (div2 != 0) {
         value = value / div2;
     }
+    
     value = value + add2;
+
+    if (array >= 1 && array <= sequencer->num_arrays) {
+        uint8_t array_size = sequencer->array_sizes[array-1];
+        if (array_size > 0) {
+            var_or_number_t v = sequencer->arrays[array-1][floor_mod(value, array_size)];
+            value = varonum_eval(&v, sequencer);
+        }
+    }
 
     // get old sequence value
     uint8_t var_index = (sequence->variable - 'A') % MAX_VARIABLES;
     uint16_t old = sequencer->values[var_index];
 
-    // determine change first bit from zero to non-zero
-    if ((old%2) == 0 && (value%2) != 0) {
-        // used as voice gate? increment X,Y,Z, reset U,V,W
-        for (int channel=0;channel<sequencer->num_voices;++channel){
-            var_or_number_t* voice_param = &sequencer->channel_voice_params[channel];
+    // used as voice gate or used as channel-voice? update gate states
+    for (int channel=0;channel<sequencer->num_voices;++channel){
+        var_or_number_t* voice_param = &sequencer->channel_voice_params[channel];
+        if (voice_param->variable == sequence->variable) {
+            update_gate_state(sequencer, channel);
+        }
+        else 
+        {
             int16_t voice_index = varonum_eval(voice_param, sequencer)-1;
             if (voice_index < 0 || voice_index >= MAX_VOICES) continue;
             voice_t* voice = &sequencer->voices[voice_index];
             if (voice->gate.variable == sequence->variable) {
-                uint8_t gate_count_index = 'X' + channel - 'A';
-                sequencer->values[gate_count_index] += 1;           // TODO: skip if time is not updated!
-                uint8_t gate_time_index = 'U' + channel - 'A';
-                sequencer->values[gate_time_index] = 0;
+                update_gate_state(sequencer, channel);        
             }
         }
     }
-    
+
     // store result
     sequencer->values[var_index] = value;
 }
@@ -452,6 +485,8 @@ void update_preview(sequencer_t* sequencer)
     // backup variable values
     int16_t backup[MAX_VARIABLES];
     memcpy(backup, sequencer->values,sizeof(backup));
+    bool gate_backup[NUM_CHANNELS];
+    memcpy(gate_backup, sequencer->gate_states,sizeof(gate_backup));
 
     int frame = preview->follow ? sequencer->frame : preview->offset;
 
@@ -482,6 +517,7 @@ void update_preview(sequencer_t* sequencer)
 
     // restore variable values
     memcpy(sequencer->values,backup,sizeof(backup));
+    memcpy(sequencer->gate_states,gate_backup,sizeof(gate_backup));
 }
 
 void sequencer_update(sequencer_t* sequencer) 
@@ -580,11 +616,11 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
         pos += varonum_export(&seq->mul1, &buffer[pos],size-pos);
         pos += varonum_export(&seq->mod1, &buffer[pos],size-pos);
         pos += varonum_export(&seq->base, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->array, &buffer[pos],size-pos);
         pos += varonum_export(&seq->mod2, &buffer[pos],size-pos);
         pos += varonum_export(&seq->mul2, &buffer[pos],size-pos);
         pos += varonum_export(&seq->div2, &buffer[pos],size-pos);
         pos += varonum_export(&seq->add2, &buffer[pos],size-pos);
+        pos += varonum_export(&seq->array, &buffer[pos],size-pos);
     }
     assert(size-pos>0);
 
@@ -702,11 +738,11 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         if(!varonum_import(&seq->mul1, buffer, &pos)) return false;
         if(!varonum_import(&seq->mod1, buffer, &pos)) return false;
         if(!varonum_import(&seq->base, buffer, &pos)) return false;
-        if(!varonum_import(&seq->array, buffer, &pos)) return false;
         if(!varonum_import(&seq->mod2, buffer, &pos)) return false;
         if(!varonum_import(&seq->mul2, buffer, &pos)) return false;
         if(!varonum_import(&seq->div2, buffer, &pos)) return false;
         if(!varonum_import(&seq->add2, buffer, &pos)) return false;
+        if(!varonum_import(&seq->array, buffer, &pos)) return false;
     }
 
     if(!import_uint8(&sequencer->num_arrays, buffer, &pos)) return false;

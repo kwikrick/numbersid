@@ -98,11 +98,11 @@ DIV1            Divide current value by given parameter. Skipped if 0.
 MUL1            Multiply current value by the given parameter. Skipped if 0.
 MOD1            Take modulus of the current value and given parameter. Skipped if 0. 
 BASE            Sum the digits of the current value when converted to a given base. Skipped if <2.
-ARRAY           Take value from the array with this number, using current value as the index. Skipped if <1.  
 MOD2            Take modulus of the current value and given parameter. Skipped if 0.
 MUL2            Multiply current value by the given parameter. Skipped if 0.
 DIV2            Divide current value by given parameter. Skipped if 0. 
 ADD2            Add parameter to the the current value.
+ARRAY           Take value from the array with this number, using current value as the index. Skipped if <1.  
 
 The order of the rows can be changed using the Up (^) an Down (v) buttons. This is relevant when one row uses the output variable from another row as input. The rows are evaluated from top to bottom. If you use a variable from a lower row, it's value will not have been calculated yet in this clock frame, and you'll get the previous value instead (it will sound 1/60th second behind). 
 
@@ -135,11 +135,11 @@ DIV1   control tempo of the sequence
 MUL1   set step size for the sum-of-digits, creates different patterns
 MOD1   creates repetitions of sequence in time
 BASE   create interesting number sequences
-ARRAY  select from different sequences and special values 
 MOD2   limit output range (introduces drops in value)
 MUL2   multiply output range (larger steps)
 DIV2   divide output range (rounded down)
 ADD2   move output range up/down
+ARRAY  select from different sequences and special values 
 
 Using variables for these parameters that alos change over time, allows the design of complex music.
 
