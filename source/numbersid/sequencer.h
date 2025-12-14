@@ -563,11 +563,11 @@ int var_export(char variable, char* buffer, int size)
 }
 
 
-int export_uint8(uint8_t variable, char* buffer, int size) 
+int export_uint8(uint8_t value, char* buffer, int size) 
 {
     // TODO: we currently don't distingish 16 bit words or 8 bit bytes in the output
     // it's just list of numbers.  
-    int n = snprintf(buffer, size, "%d, ",variable);
+    int n = snprintf(buffer, size, "%d, ",value);
     assert(n>0 && size-n>0);
     return n;
 }
@@ -577,7 +577,7 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
 {
     int pos = 0;
 
-    export_uint8(sequencer->num_voices, &buffer[pos],size-pos);
+    pos += export_uint8(sequencer->num_voices, &buffer[pos],size-pos);
     for (int v=0; v<sequencer->num_voices; v++) {
         voice_t* voice = &sequencer->voices[v];
         pos += varonum_export(&voice->gate, &buffer[pos],size-pos);
@@ -622,7 +622,6 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
         pos += varonum_export(&seq->add2, &buffer[pos],size-pos);
         pos += varonum_export(&seq->array, &buffer[pos],size-pos);
     }
-    assert(size-pos>0);
 
     pos += export_uint8(sequencer->num_arrays, &buffer[pos],size-pos);
 
@@ -633,7 +632,9 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
         }
     }
 
+    
     // terminate string
+    assert(pos<size);
     buffer[pos] = 0;
 
     // format with newlines
