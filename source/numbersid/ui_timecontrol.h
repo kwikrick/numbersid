@@ -135,6 +135,17 @@ static void _ui_timecontrol_draw_state(ui_timecontrol_t* win) {
     ImGui::SameLine();
     ImGui::Checkbox("Mute",&sequencer->muted);
     ImGui::PopItemWidth();
+    ImGui::SameLine();
+    if (ImGui::Button("Play")) {
+        sequencer->running = true;
+        sequencer->muted = false;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Stop")) {
+        sequencer->running = false;
+        sequencer->muted = true;
+    }
+    
 
     ImGui::PopStyleVar(1);
     

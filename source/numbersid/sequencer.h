@@ -383,9 +383,11 @@ float compute_freq(sequencer_t* sequencer, int v)       // voice v
 void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
 {
     if (sequencer->muted) {
-        int16_t volume = 0;
-        int16_t filter_mode = varonum_eval(&sequencer->filter_mode, sequencer);
-        _m6581_set_modevol(sid, (volume&15) + ((filter_mode&15)<<4));
+        // close all channel gates, keep all olther control bits the same
+        for (int channel=0;channel<NUM_CHANNELS;++channel) {
+            uint8_t ctrl = sid->voice[channel].ctrl & ~(M6581_CTRL_GATE);
+            _m6581_set_ctrl(&sid->voice[channel], ctrl);
+        }
         return;
     }
 
