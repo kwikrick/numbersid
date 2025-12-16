@@ -128,7 +128,7 @@ static void _ui_variables_draw_state(ui_variables_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
-    if (ImGui::BeginTable("##sequences", 15,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
+    if (ImGui::BeginTable("##sequences", 15,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn("##up", ImGuiTableColumnFlags_WidthFixed,16);
         ImGui::TableSetupColumn("##down", ImGuiTableColumnFlags_WidthFixed,16);
         ImGui::TableSetupColumn("VAR", ImGuiTableColumnFlags_WidthFixed, cw);
@@ -164,7 +164,6 @@ static void _ui_variables_draw_state(ui_variables_t* win) {
                 &seq->add2,
                 &seq->array
             };
-            str[0] = seq->variable; str[1] = 0;
 
             if (ImGui::ArrowButton("^",ImGuiDir_Up)) 
             {
@@ -184,6 +183,9 @@ static void _ui_variables_draw_state(ui_variables_t* win) {
             } 
             ImGui::TableNextColumn();
 
+            // output variable
+            str[0] = seq->variable; str[1] = 0;
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgActive)); // highlight output variable
             ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
             if (ImGui::InputText("##var", str, IM_ARRAYSIZE(str))) {
                 char new_variable = ImToUpper(str[0]);
@@ -192,17 +194,14 @@ static void _ui_variables_draw_state(ui_variables_t* win) {
                 seq->variable = new_variable;
             }
             ImGui::TableNextColumn();
+            ImGui::PopStyleColor();
             
             ImGui::TextUnformatted("");        //=
             ImGui::TableNextColumn();
 
             for (int col=0;col<11;++col) {
                 ImGui::PushID(col);
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                ui_varonum_to_string(varonums[col], str, IM_ARRAYSIZE(str));
-                if (ImGui::InputText("##parameter", str, IM_ARRAYSIZE(str))) {
-                    ui_string_to_varonum(str,varonums[col]);
-                }
+                draw_varonum(varonums[col], "##param");
                 ImGui::TableNextColumn();
                 ImGui::PopID();
             }

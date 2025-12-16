@@ -128,7 +128,7 @@ static void _ui_arrays_draw_state(ui_arrays_t* win) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
 
-    if (ImGui::BeginTable("##arrays", 4+MAX_ARRAY_SIZE ,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit)) {
+    if (ImGui::BeginTable("##arrays", 4+MAX_ARRAY_SIZE ,ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn("##up", ImGuiTableColumnFlags_WidthFixed,16);
         ImGui::TableSetupColumn("##down", ImGuiTableColumnFlags_WidthFixed,16);
         ImGui::TableSetupColumn("ARRAY", ImGuiTableColumnFlags_WidthFixed,cw);
@@ -191,11 +191,7 @@ static void _ui_arrays_draw_state(ui_arrays_t* win) {
 
             for (int col=0;col<sequencer->array_sizes[i];++col) {
                 ImGui::PushID(col);
-                ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
-                ui_varonum_to_string(&sequencer->arrays[i][col], str, IM_ARRAYSIZE(str));
-                if (ImGui::InputText("##parameter", str, IM_ARRAYSIZE(str))) {
-                    ui_string_to_varonum(str,&sequencer->arrays[i][col]);
-                }
+                draw_varonum(&sequencer->arrays[i][col], "##elem");
                 ImGui::TableNextColumn();
                 ImGui::PopID();
             }
