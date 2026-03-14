@@ -542,34 +542,37 @@ void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, 
 
 // ----------- import/export ------------
 
-int varonum_export(var_or_number_t* varonum, char* buffer, int size) 
+int varonum_export(var_or_number_t* varonum, char* name, char* buffer, int size) 
 {
-    // encode varonum in a single 16 bit value, 
-    // Option 1: 1 bit to indicate type, number range limited to 15 bits, union with variable number
-    //   disadvantage: processer per parameter more expensive (matters on c64)
-    // Option 2: encode type separate from the number and variable in bit fields
-    //    e.g  we have 42 SID parameters -> 42 bits = 7 bytes. 
-    //   could be decoded in to easier to process 42 bytes on c64 at load time    
-    int n = snprintf(buffer, size, "%d, %d, ",varonum->variable, varonum->number);
+    // encode varonum in a single 16 bit value,
+    // with bit 15 as type (0=number, 1=variable), bits 0-14 for value (number or variable index)
+    uint16_t encoded = 0;
+    if (varonum->variable == 0) {
+        // number, set bit 15 to 0
+        encoded = varonum->number & 0x7FFF;     // 15 bits for number
+    }
+    else {
+        // variable, set bit 15 to 1
+        encoded = 0x8000 | ((varonum->variable - 'A') & 0xFF);   // 8 bits for variable, starting from 0 for 'A'
+    }
+    
+    int n = snprintf(buffer, size, ".word %d // %s\n", encoded, name);
     assert(n>0 && size-n>0);
     return n;
 }
 
-int var_export(char variable, char* buffer, int size) 
+int var_export(char variable, char* name, char* buffer, int size) 
 {
-    // TODO: for C64 code, could be less than a byte?
-    // Now using a whole word if put on the same .word list as the rest
-    int n = snprintf(buffer, size, "%d, ",variable);
+    // encode variable as its index (0 for 'A', 1 for 'B', etc.)
+    int n = snprintf(buffer, size, ".byte %d // %s\n",(variable-'A'), name);
     assert(n>0 && size-n>0);
     return n;
 }
 
 
-int export_uint8(uint8_t value, char* buffer, int size) 
+int export_uint8(uint8_t value, const char* name, char* buffer, int size) 
 {
-    // TODO: we currently don't distingish 16 bit words or 8 bit bytes in the output
-    // it's just list of numbers.  
-    int n = snprintf(buffer, size, "%d, ",value);
+    int n = snprintf(buffer, size, ".byte %d // %s\n", value, name);
     assert(n>0 && size-n>0);
     return n;
 }
@@ -579,58 +582,60 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
 {
     int pos = 0;
 
-    pos += export_uint8(sequencer->num_voices, &buffer[pos],size-pos);
+    pos += export_uint8(sequencer->num_voices, "num_voices", &buffer[pos],size-pos);
     for (int v=0; v<sequencer->num_voices; v++) {
         voice_t* voice = &sequencer->voices[v];
-        pos += varonum_export(&voice->gate, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->note, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->scale, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->transpose, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->pitch, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->waveform, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->pulsewidth, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->ring, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->sync, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->attack, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->decay, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->sustain, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->release, &buffer[pos],size-pos);
-        pos += varonum_export(&voice->filter, &buffer[pos],size-pos);
+        pos += varonum_export(&voice->gate, "gate", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->note, "note", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->scale, "scale", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->transpose, "transpose", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->pitch, "pitch", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->waveform, "waveform", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->pulsewidth, "pulsewidth", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->ring, "ring", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->sync, "sync", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->attack, "attack", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->decay, "decay", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->sustain, "sustain", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->release, "release", &buffer[pos],size-pos);
+        pos += varonum_export(&voice->filter, "filter", &buffer[pos],size-pos);
     }
 
     for (int channel=0; channel<NUM_CHANNELS; channel++) {
-        pos += varonum_export(&sequencer->channel_voice_params[channel], &buffer[pos],size-pos);
+        char name[32];
+        snprintf(name, sizeof(name), "channel[%d] voice", channel);
+        pos += varonum_export(&sequencer->channel_voice_params[channel], name, &buffer[pos],size-pos);
     }
 
-    pos += varonum_export(&sequencer->filter_mode, &buffer[pos],size-pos);
-    pos += varonum_export(&sequencer->cutoff, &buffer[pos],size-pos);
-    pos += varonum_export(&sequencer->resonance, &buffer[pos],size-pos);
-    pos += varonum_export(&sequencer->volume, &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->filter_mode, "filter_mode", &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->cutoff, "cutoff", &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->resonance, "resonance", &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->volume, "volume", &buffer[pos],size-pos);
     
-    pos += export_uint8(sequencer->num_sequences, &buffer[pos],size-pos);
+    pos += export_uint8(sequencer->num_sequences, "num_sequences", &buffer[pos],size-pos);
     
     for (int s=0; s<sequencer->num_sequences; s++) {
         sequence_t* seq = &sequencer->sequences[s];
-        pos += var_export(seq->variable, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->count, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->add1, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->div1, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->mul1, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->mod1, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->base, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->mod2, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->mul2, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->div2, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->add2, &buffer[pos],size-pos);
-        pos += varonum_export(&seq->array, &buffer[pos],size-pos);
+        pos += var_export(seq->variable, "variable", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->count, "count", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->add1, "add1", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->div1, "div1", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mul1, "mul1", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mod1, "mod1", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->base, "base", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mod2, "mod2", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->mul2, "mul2", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->div2, "div2", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->add2, "add2", &buffer[pos],size-pos);
+        pos += varonum_export(&seq->array, "array", &buffer[pos],size-pos);
     }
 
-    pos += export_uint8(sequencer->num_arrays, &buffer[pos],size-pos);
+    pos += export_uint8(sequencer->num_arrays, "num_arrays", &buffer[pos],size-pos);
 
     for (int a=0; a<sequencer->num_arrays; a++) {
-        pos += export_uint8(sequencer->array_sizes[a], &buffer[pos],size-pos);
+        pos += export_uint8(sequencer->array_sizes[a], "array_size", &buffer[pos],size-pos);
         for (int i=0; i<sequencer->array_sizes[a]; i++) {
-            pos += varonum_export(&sequencer->arrays[a][i], &buffer[pos],size-pos);
+            pos += varonum_export(&sequencer->arrays[a][i], "element", &buffer[pos],size-pos);
         }
     }
 
@@ -640,42 +645,64 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
     buffer[pos] = 0;
 
     // format with newlines
-    int count = 0;
-    pos = 0;
-    while (buffer[pos]!=0){
-        if (buffer[pos]==',') {
-            count++;
-            if (count == words_per_line) {
-                count = 0;
-                buffer[pos+1]='\n';
-            }
-        }
-        pos++;
-    }
+    // int count = 0;
+    // pos = 0;
+    // while (buffer[pos]!=0){
+    //     if (buffer[pos]==',') {
+    //         count++;
+    //         if (count == words_per_line) {
+    //             count = 0;
+    //             buffer[pos+1]='\n';
+    //         }
+    //     }
+    //     pos++;
+    // }
 }
 
 
 bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos) 
 {
-    int argsread = sscanf(&buffer[*pos], "%hhd, %hd,", &varonum->variable, &varonum->number);
-    if (argsread != 2) return false;
+    // read spaces
+    while (buffer[*pos] == ' ') (*pos)++;
+    // read .word and encoded value
+    uint16_t encoded;
+    int argsread = sscanf(&buffer[*pos], ".word %hd", &encoded);
+    if (argsread != 1) return false;
+    // decode
+    if (encoded & 0x8000) {
+        // variable
+        varonum->variable = (encoded & 0xFF) + 'A'; // 8 bits for variable, starting from 0 for 'A'
+        varonum->number = 0;
+    }
+    else {
+        // number
+        varonum->variable = 0;
+        varonum->number = encoded & 0x7FFF; // 15 bits for number
+    }
+    // read until next newline
     int count=0;
     while (buffer[*pos]!=0) {
-        if (buffer[*pos]==',') count+=1;
+        if (buffer[*pos]=='\n') count+=1;
         (*pos)++;
-        if (count==2) break;
+        if (count==1) break;
     }
-    return (count==2);
+    return (count==1);
 }
 
 
 bool var_import(char* variable, char* buffer, int* pos) 
 {
-    int argsread = sscanf(&buffer[*pos], "%hhd,", variable);
+     // read spaces
+    while (buffer[*pos] == ' ') (*pos)++;
+    // read .byte and variable value
+    char value;
+    int argsread = sscanf(&buffer[*pos], ".byte %hhd", &value);
     if (argsread != 1) return false;
+    *variable = value + 'A'; // convert index back to variable, 0 -> 'A', 1->'B', etc.
+    // read until next newline
     int count=0;
     while (buffer[*pos]!=0) {
-        if (buffer[*pos]==',') count+=1;
+        if (buffer[*pos]=='\n') count+=1;
         (*pos)++;
         if (count==1) break;
     }
@@ -684,11 +711,15 @@ bool var_import(char* variable, char* buffer, int* pos)
 
 bool import_uint8(uint8_t* variable, char* buffer, int* pos) 
 {
-    int argsread = sscanf(&buffer[*pos], "%hhd,", variable);
+    // read spaces
+    while (buffer[*pos] == ' ') (*pos)++;
+    // read .byte and value
+    int argsread = sscanf(&buffer[*pos], ".byte %hhd", variable);
     if (argsread != 1) return false;
+    // read until next newline
     int count=0;
     while (buffer[*pos]!=0) {
-        if (buffer[*pos]==',') count+=1;
+        if (buffer[*pos]=='\n') count+=1;
         (*pos)++;
         if (count==1) break;
     }
