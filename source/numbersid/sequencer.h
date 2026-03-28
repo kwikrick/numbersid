@@ -678,6 +678,9 @@ bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos)
         // number
         varonum->variable = 0;
         varonum->number = encoded & 0x7FFF; // 15 bits for number
+        if (varonum->number & 0x4000) {          // if sign bit is set
+            varonum->number = varonum->number - 0x8000; // convert to negative value
+        }
     }
     // read until next newline
     int count=0;
