@@ -122,6 +122,9 @@ void ui_string_to_varonum(char* str, var_or_number_t* varonum)
     {
         varonum->variable = 0;
         varonum->number = atoi(str);
+        // clamp to 15 bits with sign
+        if (varonum->number > 16383) varonum->number -= 32768;
+        if (varonum->number < -16384) varonum->number += 32768;
     }
     
 }
