@@ -16,6 +16,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 typedef struct {
     char variable;           // if 0, then number
@@ -544,27 +545,24 @@ void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, 
 
 int varonum_export(var_or_number_t* varonum, char* name, char* buffer, int size) 
 {
-    // encode varonum in a single 16 bit value,
-    // with bit 15 as type (0=number, 1=variable), bits 0-14 for value (number or variable index)
-    uint16_t encoded = 0;
-    if (varonum->variable == 0) {
-        // number, set bit 15 to 0
-        encoded = varonum->number & 0x7FFF;     // 15 bits for number
+    int n = 0;
+    if (varonum->variable != 0) {
+        n = snprintf(buffer, size, "%c // %s\n", varonum->variable, name);
     }
     else {
-        // variable, set bit 15 to 1
-        encoded = 0x8000 | ((varonum->variable - 'A') & 0xFF);   // 8 bits for variable, starting from 0 for 'A'
+         n = snprintf(buffer, size, "%d // %s\n", varonum->number, name);
     }
-    
-    int n = snprintf(buffer, size, ".word %d // %s\n", encoded, name);
     assert(n>0 && size-n>0);
     return n;
 }
 
 int var_export(char variable, char* name, char* buffer, int size) 
 {
-    // encode variable as its index (0 for 'A', 1 for 'B', etc.)
-    int n = snprintf(buffer, size, ".byte %d // %s\n",(variable-'A'), name);
+    char c = variable;
+    if (c=='\0') {
+        c = '0';   // don't write null character
+    }
+    int n = snprintf(buffer, size, "%c // %s\n",c, name);
     assert(n>0 && size-n>0);
     return n;
 }
@@ -572,7 +570,7 @@ int var_export(char variable, char* name, char* buffer, int size)
 
 int export_uint8(uint8_t value, const char* name, char* buffer, int size) 
 {
-    int n = snprintf(buffer, size, ".byte %d // %s\n", value, name);
+    int n = snprintf(buffer, size, "%d // %s\n", value, name);
     assert(n>0 && size-n>0);
     return n;
 }
@@ -664,23 +662,24 @@ bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos)
 {
     // read spaces
     while (buffer[*pos] == ' ') (*pos)++;
-    // read .word and encoded value
-    uint16_t encoded;
-    int argsread = sscanf(&buffer[*pos], ".word %hd", &encoded);
-    if (argsread != 1) return false;
-    // decode
-    if (encoded & 0x8000) {
-        // variable
-        varonum->variable = (encoded & 0xFF) + 'A'; // 8 bits for variable, starting from 0 for 'A'
+    // read string until next non-alphanumeric character
+    const size_t INPUT_LEN = 32;
+    char input_string[INPUT_LEN];
+    memset(input_string,0,INPUT_LEN);
+    int input_pos=0;
+    while (buffer[*pos]!=0 && input_pos<INPUT_LEN-1) {
+        char c = buffer[(*pos)++];
+        if (!isalnum(c)) break;
+        input_string[input_pos++] = c;
+    }
+    if (isalpha(input_string[0])) {
+        varonum->variable = input_string[0];
         varonum->number = 0;
     }
-    else {
-        // number
+    else
+    {
         varonum->variable = 0;
-        varonum->number = encoded & 0x7FFF; // 15 bits for number
-        if (varonum->number & 0x4000) {          // if sign bit is set
-            varonum->number = varonum->number - 0x8000; // convert to negative value
-        }
+        varonum->number = atoi(input_string);
     }
     // read until next newline
     int count=0;
@@ -697,11 +696,11 @@ bool var_import(char* variable, char* buffer, int* pos)
 {
      // read spaces
     while (buffer[*pos] == ' ') (*pos)++;
-    // read .byte and variable value
-    char value;
-    int argsread = sscanf(&buffer[*pos], ".byte %hhd", &value);
-    if (argsread != 1) return false;
-    *variable = value + 'A'; // convert index back to variable, 0 -> 'A', 1->'B', etc.
+    // read variable character
+    *variable = buffer[(*pos)++];     // should be a letter
+    if (*variable == '\0') {
+        *variable = 0;     // no variable selected 
+    }
     // read until next newline
     int count=0;
     while (buffer[*pos]!=0) {
@@ -716,8 +715,8 @@ bool import_uint8(uint8_t* variable, char* buffer, int* pos)
 {
     // read spaces
     while (buffer[*pos] == ' ') (*pos)++;
-    // read .byte and value
-    int argsread = sscanf(&buffer[*pos], ".byte %hhd", variable);
+    // read value
+    int argsread = sscanf(&buffer[*pos], "%hhd", variable);
     if (argsread != 1) return false;
     // read until next newline
     int count=0;
