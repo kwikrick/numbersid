@@ -3,6 +3,7 @@ from itertools import count
 import os
 import sys
 
+# --- misc utilities ---
 
 def read_line_stripped(file):
     line = file.readline()
@@ -10,11 +11,25 @@ def read_line_stripped(file):
     return parts[0].strip()
 
 
+# --- numbersid data structures ---
+
 class Varonum:
     def __init__(self, variable: int, number:int):
         self.variable = variable    # variable index, 0 if it's a number
         self.number = number        # an integer
 
+    def type(self):
+        return "Variable" if self.variable != 0 else "Number"
+    
+    def generate_sequence_evaluation(self, function, always: bool = False):
+        if not always and self.type() == "Number" and self.number == 0:
+            return ""
+        if self.type() == "Variable":
+            s = f"{function}({self.type()},{self.variable})\n"
+        else:
+            s = f"{function}({self.type()},{self.number})\n"
+        return s
+    
     @staticmethod
     def parse(s):
         # parse string of the form "variable=number" or "number"
@@ -225,8 +240,30 @@ class NumberSidData:
             data.arrays.append(arr)
         return data
 
+# ------------- code generation -------------
+
 def generate(data: NumberSidData) -> str:
-    return "// generated code\n"
+    s = "// numbersid generated code\n"
+
+    for i, seq in enumerate(data.sequences):
+        s += f"eval_seq_{i}:\n"         # label for sequence
+        s += seq.count.generate_sequence_evaluation("Load_Accumulator", True)
+        s += seq.add1.generate_sequence_evaluation("Eval_Add")
+        s += seq.mul1.generate_sequence_evaluation("Eval_Mul")
+        s += seq.div1.generate_sequence_evaluation("Eval_Div")
+        s += seq.mod1.generate_sequence_evaluation("Eval_Mod")
+        s += seq.base.generate_sequence_evaluation("Eval_Base")
+        s += seq.mod2.generate_sequence_evaluation("Eval_Mod")
+        s += seq.mul2.generate_sequence_evaluation("Eval_Mul")
+        s += seq.div2.generate_sequence_evaluation("Eval_Div")
+        s += seq.add2.generate_sequence_evaluation("Eval_Add")
+        s += seq.array.generate_sequence_evaluation("Eval_Array")
+        s += f"Store_Accumulator({seq.variable})\n"
+        s += "rts\n"
+    return s
+
+
+# ------------- main -------------
 
 def main():
     if len(sys.argv) != 3:
@@ -244,13 +281,10 @@ def main():
     output_file = open(output_file_name, 'w')
     
     data = NumberSidData.read_from(input_file)
-
     print(data)
-
-
     code = generate(data)
+    print(code)
     
-
     output_file.write(code)
     input_file.close()
     output_file.close()
