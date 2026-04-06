@@ -25,9 +25,9 @@ class Varonum:
         if not always and self.type() == "Number" and self.number == 0:
             return ""
         if self.type() == "Variable":
-            s = f"{function}({self.type()},{self.variable})\n"
+            s = f"   {function}({self.type()},{self.variable})\n"
         else:
-            s = f"{function}({self.type()},{self.number})\n"
+            s = f"   {function}({self.type()},{self.number})\n"
         return s
     
     @staticmethod
@@ -119,12 +119,13 @@ class Sequence:
         self.div2 = None
         self.add2 = None
         self.array = None
-        
+    
     @staticmethod
     def read_from(input_file):
         seq = Sequence()
         var_or_zero = read_line_stripped(input_file)
         if not var_or_zero.isalpha():
+            print(f"Waning: invalid sequence output variable: {var_or_zero}")
             return None
         seq.variable = ord(var_or_zero[0])
         seq.count = Varonum.parse(read_line_stripped(input_file))
@@ -179,6 +180,12 @@ class Array:
         return s
 
 
+class VariableUsage:
+    def __init__(self, variable):
+        self.variable = variable
+        self.sequence_indices = set()   # indices of sequences that use this variable
+        self.voice_parameters = set()         # use this variable in a voice parameter
+
 class NumberSidData:
     def __init__(self):
         self.voices = []
@@ -189,6 +196,27 @@ class NumberSidData:
         self.volume = None
         self.sequences = []
         self.arrays = []
+        self.variable_to_usage = {}
+
+    def map_variable_usage(self):
+        for i, seq in enumerate(self.sequences):
+            self.map_sequence_varonum_to_useage(seq.count, i)
+            self.map_sequence_varonum_to_useage(seq.add1, i)
+            self.map_sequence_varonum_to_useage(seq.mul1, i)
+            self.map_sequence_varonum_to_useage(seq.div1, i)
+            self.map_sequence_varonum_to_useage(seq.mod1, i)
+            self.map_sequence_varonum_to_useage(seq.base, i)
+            self.map_sequence_varonum_to_useage(seq.mod2, i)
+            self.map_sequence_varonum_to_useage(seq.mul2, i)
+            self.map_sequence_varonum_to_useage(seq.div2, i)
+            self.map_sequence_varonum_to_useage(seq.add2, i)
+            self.map_sequence_varonum_to_useage(seq.array, i)
+                
+    def map_sequence_varonum_to_useage(self, varonum, seq_index):
+        if varonum.variable != 0:
+            if varonum.variable not in self.variable_to_usage:
+                self.variable_to_usage[varonum.variable] = VariableUsage(varonum.variable)
+            self.variable_to_usage[varonum.variable].sequence_indices.add(seq_index)
 
     def __str__(self):
         s = "NumberSidData\n"
@@ -245,6 +273,7 @@ class NumberSidData:
 def generate(data: NumberSidData) -> str:
     s = "// numbersid generated code\n"
 
+    # generate code for sequences
     for i, seq in enumerate(data.sequences):
         s += f"eval_seq_{i}:\n"         # label for sequence
         s += seq.count.generate_sequence_evaluation("Load_Accumulator", True)
@@ -258,14 +287,32 @@ def generate(data: NumberSidData) -> str:
         s += seq.div2.generate_sequence_evaluation("Eval_Div")
         s += seq.add2.generate_sequence_evaluation("Eval_Add")
         s += seq.array.generate_sequence_evaluation("Eval_Array")
-        s += f"Store_Accumulator({seq.variable})\n"
-        s += "rts\n"
+        if data.variable_to_usage.get(seq.variable):
+            s += f"   Compare_Accumulator({seq.variable})\n"
+            s += f"   beq eval_seq_{i}_finish\n"
+            s += f"   jsr variable_changed_{seq.variable}\n"
+            s += f"   Store_Accumulator({seq.variable})\n"
+            s += f"eval_seq_{i}_finish:\n"         # label for sequence
+        else:
+            print(f"Warning: sequence {i} output variable {chr(seq.variable)} is not used in any voice or sequence")
+            s += f"   Store_Accumulator({seq.variable})\n"
+        s += "   rts\n"
 
     s+= "sequence_eval_count:\n"
     s+= f"  .byte {len(data.sequences)}\n"
     s+= "sequence_eval_table:\n"
     for i, seq in enumerate(data.sequences):
         s += f"  .word eval_seq_{i}-1\n"
+ 
+
+    # generate code for variable_changed subroutines
+
+    for variable, usage in data.variable_to_usage.items():
+        s += f"variable_changed_{variable}:\n"
+        s += f"   Mark_Variable_Dirty({variable})\n"
+        for seq_index in usage.sequence_indices:
+            s+= f"   Mark_Sequence_Dirty({seq_index})\n"
+        s += f"   rts\n"
 
     return s
 
@@ -289,6 +336,7 @@ def main():
     
     data = NumberSidData.read_from(input_file)
     print(data)
+    data.map_variable_usage()
     code = generate(data)
     print(code)
     
