@@ -124,10 +124,9 @@ class Sequence:
     def read_from(input_file):
         seq = Sequence()
         var_or_zero = read_line_stripped(input_file)
-        if var_or_zero == "0":
-            seq.variable = 0
-        else:
-            seq.variable = ord(var_or_zero[0])
+        if not var_or_zero.isalpha():
+            return None
+        seq.variable = ord(var_or_zero[0])
         seq.count = Varonum.parse(read_line_stripped(input_file))
         seq.add1 = Varonum.parse(read_line_stripped(input_file))
         seq.div1 = Varonum.parse(read_line_stripped(input_file))
@@ -232,7 +231,8 @@ class NumberSidData:
         num_sequences = int(read_line_stripped(input_file))
         for i in range(num_sequences):
             seq = Sequence.read_from(input_file)
-            data.sequences.append(seq)
+            if seq:
+                data.sequences.append(seq)
         # arrays        
         num_arrays = int(read_line_stripped(input_file))
         for i in range(num_arrays):
@@ -260,6 +260,13 @@ def generate(data: NumberSidData) -> str:
         s += seq.array.generate_sequence_evaluation("Eval_Array")
         s += f"Store_Accumulator({seq.variable})\n"
         s += "rts\n"
+
+    s+= "sequence_eval_count:\n"
+    s+= f"  .byte {len(data.sequences)}\n"
+    s+= "sequence_eval_table:\n"
+    for i, seq in enumerate(data.sequences):
+        s += f"  .word eval_seq_{i}-1\n"
+
     return s
 
 
