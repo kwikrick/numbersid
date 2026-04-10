@@ -1,0 +1,127 @@
+Basic idea:
+
+We let our tool (numbersid C code + Python?) generate assemby code (Kickass) for calculating 
+sequences and updating the dirty flags and lists of dirty sequences/parameters. 
+The generated code is (hopyfully) somewhat compact and crunchable by exomizer.
+
+The static code then calls the generated code for each dirty sequence and 
+each dirty parameter. 
+  
+
+
+Operations:
+
+Sequence structure:
+
+output_variable = input_variable [operand varonum]*
+
+lower level:
+
+read_value_to_accumulator value:word
+	lda #<value
+	sta ACCUMULATOR
+	lda #>value
+	sta ACCUMULATOR+1
+
+
+read_variable_to_accumulator variable:byte
+	ldx #variable
+	lda variables_low,x
+	sta ACCUMULATOR
+	lda variables_high,x
+	sta ACCUMULATOR+1
+
+
+read_value_to_operand value:word
+	lda #<value
+	sta OPERAND
+	lda #>value
+	sta OPERAND+1
+
+read_variable_to_operand variable:byte
+	ldx #variable
+	lda variables_low,x
+	sta OPERAND
+	lda variables_high,x
+	sta OPERAND+1
+
+add (operand to accumulator)
+ jsr operation_add
+
+	operation_add:
+		Word_Cmp_Value(OEPRAND, 0)
+		bne return:
+		Word_Add_Word(ACCUMULATOR, OPERAND, ACCUMULATOR)
+	return:
+		rts
+
+mul (operand to accumulator)
+div (operand to accumulator)
+base
+array
+etc..
+
+write_accumulator_to_variable
+
+Afer sequence evaluation, followed by something like:
+ 
+ if ouput variabale value changed:
+     mark dirty sequence A,B, etc
+     mark dirty parameter Voice 1 GATE, VOICE 2 NOTE, etc... 
+     mark dirty channel-voice-selector 1,2 or 3
+     mark dirty array 5,6 etc
+     
+----
+
+Algorithm/program structure:
+
+data:
+ - generated
+    - code to evaluatate each sequence
+    - code to update dirty-flags/lists for each variable
+    - 
+ 
+ - runtime data
+      - variable values
+            - variables_low: .fill 256
+            - variables_high: .fill 256
+      - arrays of dirty flags for 
+			- sequences
+			- voice parameters
+			- filter/volume parameters
+			- channel-voice selectors
+			- arrays
+	  - lists of dirty items for
+			- sequences (adress of code to call?)
+			- voice parameters
+			- filter/volume parameters
+			- channel-voice selectors
+			- arrays
+
+init:
+ 
+
+each_frame:
+ clear all dirty flags
+ clear all dirty lists
+
+ update T = T+1
+ mark dirty all sequences using T (generated code)
+ same for U,V,W,X,Y,Z (generated code)
+
+ for each sequence in dirty_seqeunce_list:
+     evalualue sequence (generated code)
+     if output changed:
+       mark dirty all affected sequences, parameters, selectors, arrays (generated code)
+ 
+ for each parameter in dirty_paramter_list:
+   get channel from channel-voice
+        update channel parameter to sid 
+
+
+mark_dirty: (item is sequence or parameter or array)
+  check if item dirty flag set
+  if not:
+     mark iem dirty flag
+     add item to dirty_item_list 
+
