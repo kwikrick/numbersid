@@ -222,7 +222,8 @@ zero:
 .macro Store_Accumulator(variable) {
   Word_Copy(ZP_ACCUMULATOR, variable_adress(variable))
   .print("Store_Accumulator "+(variable-'A'))
-  .if (true) {
+  
+  .if (false) {
 		PrintChar(variable)
 		WordToHex(ZP_ACCUMULATOR,text_string)
 		PrintString(text_string)

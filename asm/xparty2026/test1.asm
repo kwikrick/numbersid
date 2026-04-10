@@ -44,7 +44,7 @@ init_voice_parameter_values:
    lda #<15
    sta voice_parameter_values+22
    // voice 1 waveform
-   lda #<2
+   lda #<1
    sta voice_parameter_values+42
    // voice 1 sustain
    lda #<15

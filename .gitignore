@@ -5,3 +5,6 @@ fips-files/deploy/
 .fips-*
 CMakeUserPresets.json
 *.pyc
+*.prg
+*.vs
+*.sym
