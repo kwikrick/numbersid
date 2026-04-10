@@ -64,6 +64,7 @@ class Voice:
         self.sustain = None
         self.release = None
         self.filter = None
+        self.parameters = ["gate", "note", "scale", "transpose", "pitch", "waveform", "pulsewidth", "ring", "sync", "attack", "decay", "sustain", "release", "filter"]
 
     @staticmethod
     def read_from(input_file):
@@ -183,8 +184,8 @@ class Array:
 class VariableUsage:
     def __init__(self, variable):
         self.variable = variable
-        self.sequence_indices = set()   # indices of sequences that use this variable
-        self.voice_parameters = set()         # use this variable in a voice parameter
+        self.sequence_indices = set()         # indices of sequences that use this variable
+        self.voice_parameters = set()         # use of this variable in a voice parameter (voicenr, param_name)
 
 class NumberSidData:
     def __init__(self):
@@ -211,6 +212,14 @@ class NumberSidData:
             self.map_sequence_varonum_to_useage(seq.div2, i)
             self.map_sequence_varonum_to_useage(seq.add2, i)
             self.map_sequence_varonum_to_useage(seq.array, i)
+
+        for voicenr, voice in enumerate(self.voices):
+            for param_name in voice.parameters:
+                param_varonum = getattr(voice, param_name)
+                if param_varonum.type() == "Variable":
+                    if param_varonum.variable not in self.variable_to_usage:
+                        self.variable_to_usage[param_varonum.variable] = VariableUsage(param_varonum.variable)
+                    self.variable_to_usage[param_varonum.variable].voice_parameters.add((voicenr, param_name))
                 
     def map_sequence_varonum_to_useage(self, varonum, seq_index):
         if varonum.variable != 0:
@@ -236,6 +245,8 @@ class NumberSidData:
         s += f"{len(self.arrays)} arrays\n"
         for i, arr in enumerate(self.arrays):
             s += f"array {i}: {arr}\n"
+        for variable, usage in self.variable_to_usage.items():
+            s += f"variable {chr(variable)} used in sequences {usage.sequence_indices} and voice parameters {usage.voice_parameters}\n"
         return s
 
     @staticmethod
@@ -306,13 +317,36 @@ def generate(data: NumberSidData) -> str:
  
 
     # generate code for variable_changed subroutines
-
     for variable, usage in data.variable_to_usage.items():
         s += f"variable_changed_{variable}:\n"
+        # TODO: check if already dirty to avoid redundant updates?
+        #  although not a problem if each sequence output to just one variable...
+        #  or remove marking dirty entirey, not useful anymore? 
         s += f"   Mark_Variable_Dirty({variable})\n"
         for seq_index in usage.sequence_indices:
             s+= f"   Mark_Sequence_Dirty({seq_index})\n"
+        for voice_param in usage.voice_parameters:
+            s+= f"   Apply_Variable_To_Voice_Parameter({variable}, {voice_param[0]}, Param_{voice_param[1]})\n"
         s += f"   rts\n"
+
+
+    # generatate code for init_voice-parameter_values:
+    s += "init_voice_parameter_values:\n"
+    for voicenr, voice in enumerate(data.voices):
+        for paramnr, param_name in enumerate(voice.parameters):
+             param_varonum = getattr(voice, param_name)
+             if param_varonum.type() == "Number":
+                value = param_varonum.number
+                offset = (voicenr * 16 + paramnr) *2   # reserved 16 words per voice
+                if value != 0:
+                    s += f"   // voice {voicenr} {param_name}\n"
+                    s += f"   lda #<{value}\n"
+                    s += f"   sta voice_parameter_values+{offset}\n"
+                    if (value > 255):
+                        s += f"   lda #>{value}\n"
+                        s += f"   sta voice_parameter_values+1+{offset}\n"
+                    
+    s+= "   rts\n"
 
     return s
 
@@ -335,8 +369,8 @@ def main():
     output_file = open(output_file_name, 'w')
     
     data = NumberSidData.read_from(input_file)
-    print(data)
     data.map_variable_usage()
+    print(data)
     code = generate(data)
     print(code)
     

@@ -18,7 +18,7 @@ A // gate
 0 // scale
 0 // transpose
 0 // pitch
-1 // waveform
+2 // waveform
 0 // pulsewidth
 0 // ring
 0 // sync
