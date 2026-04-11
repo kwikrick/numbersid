@@ -323,8 +323,8 @@ def generate(data: NumberSidData) -> str:
         if data.variable_to_usage.get(seq.variable):
             s += f"   Compare_Accumulator({seq.variable})\n"
             s += f"   beq eval_seq_{i}_finish\n"
-            s += f"   jsr variable_changed_{seq.variable}\n"
             s += f"   Store_Accumulator({seq.variable})\n"
+            s += f"   jsr variable_changed_{seq.variable}\n"
             s += f"eval_seq_{i}_finish:\n"         # label for sequence
         else:
             print(f"Warning: sequence {i} output variable {chr(seq.variable)} is not used in any voice or sequence")
