@@ -186,18 +186,23 @@ class VariableUsage:
         self.variable = variable
         self.sequence_indices = set()         # indices of sequences that use this variable
         self.voice_parameters = set()         # use of this variable in a voice parameter (voicenr, param_name)
+        self.filter_mode = False          # use of this variable as cutoff
+        self.filter_cutoff = False       # use of this variable as frequency
+        self.filter_resonance = False          # use of this variable as volume
+        self.volume = False
 
 class NumberSidData:
     def __init__(self):
         self.voices = []
         self.channel_voices = []
-        filter_mode = None
-        self.cutoff = None
-        self.resonance = None
+        self.filter_mode = None
+        self.filter_cutoff = None
+        self.filter_resonance = None
         self.volume = None
         self.sequences = []
         self.arrays = []
         self.variable_to_usage = {}
+        self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume"]
 
     def map_variable_usage(self):
         for i, seq in enumerate(self.sequences):
@@ -220,7 +225,18 @@ class NumberSidData:
                     if param_varonum.variable not in self.variable_to_usage:
                         self.variable_to_usage[param_varonum.variable] = VariableUsage(param_varonum.variable)
                     self.variable_to_usage[param_varonum.variable].voice_parameters.add((voicenr, param_name))
-                
+
+        for param_name in self.global_parameter_names:
+            self.map_filter_volume_usage(param_name)
+        
+    def map_filter_volume_usage(self, parameter_name):
+        varonum = getattr(self,parameter_name)
+        if varonum != None and varonum.type() == "Variable":
+            variable = varonum.variable
+            if variable not in self.variable_to_usage:
+                self.variable_to_usage[variable] = VariableUsage(variable)
+            setattr(self.variable_to_usage[variable], parameter_name, True)        
+           
     def map_sequence_varonum_to_useage(self, varonum, seq_index):
         if varonum.variable != 0:
             if varonum.variable not in self.variable_to_usage:
@@ -235,9 +251,9 @@ class NumberSidData:
         s += "channel voices:\n"
         for i, channel_voice in enumerate(self.channel_voices):
             s += f"  channel {i}: {channel_voice}\n"
-        s += f"filter mode: {self.filter_mode}\n"
-        s += f"cutoff: {self.cutoff}\n"
-        s += f"resonance: {self.resonance}\n"
+        s += f"filter_mode: {self.filter_mode}\n"
+        s += f"filter_cutoff: {self.filter_cutoff}\n"
+        s += f"filter_resonance: {self.filter_resonance}\n"
         s += f"volume: {self.volume}\n"
         s += f"{len(self.sequences)} sequences\n"
         for i, seq in enumerate(self.sequences):
@@ -246,7 +262,13 @@ class NumberSidData:
         for i, arr in enumerate(self.arrays):
             s += f"array {i}: {arr}\n"
         for variable, usage in self.variable_to_usage.items():
-            s += f"variable {chr(variable)} used in sequences {usage.sequence_indices} and voice parameters {usage.voice_parameters}\n"
+            s += f"variable {chr(variable)} used in:"
+            s += f"  sequences {usage.sequence_indices}"
+            s += f"  voice parameters {usage.voice_parameters}\n"
+            s += f"  filter_mode {usage.filter_mode}\n"
+            s += f"  filter_cutoff {usage.filter_cutoff}\n"
+            s += f"  filter_resonance {usage.filter_resonance}\n"
+            s += f"  volume {usage.volume}\n"
         return s
 
     @staticmethod
@@ -263,8 +285,8 @@ class NumberSidData:
             data.channel_voices.append(channel_voice)
         # filter volume
         data.filter_mode = Varonum.parse(read_line_stripped(input_file))
-        data.cutoff = Varonum.parse(read_line_stripped(input_file))
-        data.resonance = Varonum.parse(read_line_stripped(input_file))
+        data.filter_cutoff = Varonum.parse(read_line_stripped(input_file))
+        data.filter_resonance = Varonum.parse(read_line_stripped(input_file))
         data.volume = Varonum.parse(read_line_stripped(input_file))
         # sequences
         num_sequences = int(read_line_stripped(input_file))
@@ -319,16 +341,19 @@ def generate(data: NumberSidData) -> str:
     # generate code for variable_changed subroutines
     for variable, usage in data.variable_to_usage.items():
         s += f"variable_changed_{variable}:\n"
-        # TODO: check if already dirty to avoid redundant updates?
-        #  although not a problem if each sequence output to just one variable...
-        #  or remove marking dirty entirey, not useful anymore? 
-        s += f"   Mark_Variable_Dirty({variable})\n"
         for seq_index in usage.sequence_indices:
             s+= f"   Mark_Sequence_Dirty({seq_index})\n"
         for voice_param in usage.voice_parameters:
-            s+= f"   Apply_Variable_To_Voice_Parameter({variable}, {voice_param[0]}, Param_{voice_param[1]})\n"
+            s+= f"   Apply_Variable_To_Voice_Parameter({variable}, {voice_param[0]}, Voice_Param_{voice_param[1]})\n"
+        if usage.filter_mode == True:
+            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_filter_mode)\n"
+        if usage.filter_cutoff == True:
+            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_filter_cutoff)\n"
+        if usage.filter_resonance == True:
+            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_filter_resonance)\n"
+        if usage.volume == True:
+            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_volume)\n"
         s += f"   rts\n"
-
 
     # generatate code for init_voice-parameter_values:
     s += "init_voice_parameter_values:\n"
@@ -345,6 +370,21 @@ def generate(data: NumberSidData) -> str:
                     if (value > 255):
                         s += f"   lda #>{value}\n"
                         s += f"   sta voice_parameter_values+1+{offset}\n"
+    s+= "   rts\n"
+
+    #generate code for init_global_parameter_values:
+    s += "init_global_parameter_values:\n"
+    for param_name in data.global_parameter_names:
+        param_varonum = getattr(data, param_name)
+        if param_varonum and param_varonum.type() == "Number" and param_varonum.number != 0:
+             value = param_varonum.number
+             if value != 0:
+                s += f"   // {param_name}\n"
+                s += f"   lda #<{value}\n"
+                s += f"   sta {param_name}_parameter_value\n"
+                if (value > 255):
+                    s += f"   lda #>{value}\n"
+                    s += f"   sta {param_name}_parameter_value+1\n"
                     
     s+= "   rts\n"
 

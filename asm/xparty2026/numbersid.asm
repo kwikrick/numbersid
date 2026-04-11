@@ -126,20 +126,26 @@ zero:
 
 .const Variable = 'V'
 .const Number = 'N'
-.const Param_gate = 0
-.const Param_note = 1 
-.const Param_scale = 2 
-.const Param_transpose = 3
-.const Param_pitch = 4
-.const Param_waveform = 5 
-.const Param_pulsewidth = 6 
-.const Param_ring = 7
-.const Param_sync = 8 
-.const Param_attack = 9 
-.const Param_decay = 10 
-.const Param_sustain = 11 
-.const Param_release = 12 
-.const Param_filter = 13 
+.const Voice_Param_gate = 0
+.const Voice_Param_note = 1 
+.const Voice_Param_scale = 2 
+.const Voice_Param_transpose = 3
+.const Voice_Param_pitch = 4
+.const Voice_Param_waveform = 5 
+.const Voice_Param_pulsewidth = 6 
+.const Voice_Param_ring = 7
+.const Voice_Param_sync = 8 
+.const Voice_Param_attack = 9 
+.const Voice_Param_decay = 10 
+.const Voice_Param_sustain = 11 
+.const Voice_Param_release = 12 
+.const Voice_Param_filter = 13 
+
+.const Global_Param_filter_mode = 0
+.const Global_Param_filter_cutoff = 1
+.const Global_Param_filter_resonance = 2
+.const Global_Param_volume = 3
+
 
 .encoding "ascii"
 .function variable_adress(variable) {
@@ -252,49 +258,69 @@ zero:
 	sta sequence_dirty,x
 }
 
-.macro Apply_Parameter(parameter)
+.macro Apply_Voice_Parameter(parameter)
 {
-	.if (parameter==Param_gate) {
+	.if (parameter==Voice_Param_gate) {
 		jsr apply_gate
 	}
-	.if (parameter==Param_note) {
+	.if (parameter==Voice_Param_note) {
 		jsr apply_note
 	}
-	.if (parameter==Param_scale) {
+	.if (parameter==Voice_Param_scale) {
 		jsr apply_scale
 	}
-	.if (parameter==Param_transpose) {
+	.if (parameter==Voice_Param_transpose) {
 		jsr apply_transpose
 	}
-	.if (parameter==Param_pitch) {
+	.if (parameter==Voice_Param_pitch) {
 		jsr apply_pitch
 	}
-	.if (parameter==Param_waveform) {
+	.if (parameter==Voice_Param_waveform) {
 		jsr apply_waveform
 	}
-	.if (parameter==Param_pulsewidth) {
+	.if (parameter==Voice_Param_pulsewidth) {
 		jsr apply_pulsewidth
 	}
-	.if (parameter==Param_ring) {
+	.if (parameter==Voice_Param_ring) {
 		jsr apply_ring
 	}
-	.if (parameter==Param_sync) {
+	.if (parameter==Voice_Param_sync) {
 		jsr apply_ring
 	}
-	.if (parameter==Param_attack) {
+	.if (parameter==Voice_Param_sync) {
+		jsr apply_sync
+	}
+	.if (parameter==Voice_Param_attack) {
 		jsr apply_attack
 	}
-	.if (parameter==Param_decay) {
+	.if (parameter==Voice_Param_decay) {
 		jsr apply_decay
 	}
-	.if (parameter==Param_sustain) {
+	.if (parameter==Voice_Param_sustain) {
 		jsr apply_sustain
 	}
-	.if (parameter==Param_release) {
+	.if (parameter==Voice_Param_release) {
 		jsr apply_release
 	}
-	.if (parameter==Param_filter) {
+	.if (parameter==Voice_Param_filter) {
 		jsr apply_filter
+	}
+}
+
+
+.macro Apply_Global_Parameter(parameter)
+{
+	.if (parameter==Global_Param_filter_mode) {
+		jsr apply_filter_mode
+	}
+	.if (parameter==Global_Param_filter_cutoff) {
+		jsr apply_filter_cutoff
+	}
+	.if (parameter==Global_Param_filter_resonance) {
+		jsr apply_filter_resonance
+	}
+	.if (parameter==Global_Param_volume) {
+		jsr apply_volume
 	}
 }
 
@@ -321,10 +347,20 @@ zero:
 	
 	jsr copy_from_variable_in_x_to_voice_parameter_in_y
 	
-	Apply_Parameter(parameter)
+	Apply_Voice_Parameter(parameter)
 
 }
 
+
+.macro Apply_Variable_To_Global_Parameter(variable, parameter) {
+	jsr set_global
+	ldx #variable-'A'
+	ldy #parameter
+	
+	jsr copy_from_variable_in_x_to_global_parameter_in_y
+	
+	Apply_Global_Parameter(parameter)
+}
 // --------- sequence ------
 
 // update all sequences
@@ -374,163 +410,7 @@ skip:
 	bne loop
 }
 
-
-// TODO: REMOVE; JUST FOR REFERENCE
-
-/*
-// input values:
-//  ZP_CHANNEL (0,1 or 2)
-// output:
-//  writes to sid_data
-.macro UpdateChannel() {
-
-	
-	// set ZP_EVAL_IN_PTR to channel_voices (3 varonums)
-	lda channel_voices_start_ptr
-	sta ZP_EVAL_IN_PTR
-	lda channel_voices_start_ptr+1
-	sta ZP_EVAL_IN_PTR+1
-	
-	// y indexes channel (word sized)
-	lda ZP_CHANNEL
-	asl		// word index
-	tay
-
-	// eval vaonum and store result as voice
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	sta ZP_VOICE
-
-	// note: voice 0 is silent, active voices start at 1
-	lda ZP_VOICE
-	bne not_silent
-	jmp silent		// need long jump
-	
-not_silent:
-	
-	// ZP_FREE is ZP_VOICE * ZP_VOICE_SIZE
-	sec				
-	sbc #1				// voice 1 is index 0 in voice data
-	sta ZP_FREE
-	lda #VOICE_SIZE
-	sta ZP_FREE+1
-	Word_Mul_LoHi(ZP_FREE)
-	
-	// set ZP_EVAL_IN_PTR to point to start of voice varonums
-	Word_Store_Value(ZP_EVAL_IN_PTR, numbersid_data+1)		// start of varonums of first voice
-	Word_Add_Word(ZP_EVAL_IN_PTR, ZP_FREE, ZP_EVAL_IN_PTR)		// +offset for voice
-	
-	// gate (y=0)
-	ldy #0
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	and #1
-	sta ZP_FREE				// ZP_FREE = gate 0 or 1
-	
-	// waveform (y=10)
-	ldy #10
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	clc
-	asl
-	asl
-	asl
-	asl					// shift left 4 
-	ora ZP_FREE			// or with gate value	
-	ldy #SID_CR
-	sta (ZP_SIDDATA_PTR),y	
-		
-	// note
-	ldy #2
-	jsr eval_varonum_indirect_zp_y
-	Word_Add_Value(ZP_EVAL_OUT, -LOWEST_SEMITONE, ZP_EVAL_OUT)
-	lda ZP_EVAL_OUT
-	asl  // word index
-	tax
-	lda freq_table,x
-	ldy #SID_FREQ_L
-	sta (ZP_SIDDATA_PTR),y	
-	lda freq_table+1,x
-	ldy #SID_FREQ_H
-	sta (ZP_SIDDATA_PTR),y
-	
-	// TODO: 
-	// scale (y=4)
-	// transpose (y=6)
-	// pitch (y=8)
-	
-
-	// TODO
-	// pulsewidth (y=12)
-	ldy #12
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	ldy #SID_PW_L
-	sta (ZP_SIDDATA_PTR),y
-	lda ZP_EVAL_OUT+1
-	ldy #SID_PW_H
-	sta (ZP_SIDDATA_PTR),y
-	
-	
-	// TODO
-	// ring (y=14)
-	// sync (y=16)
-	
-	// attack (y=18)
-	ldy #18
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	and #$0F
-	clc
-	asl
-	asl
-	asl
-	asl
-	sta ZP_FREE			// ZP_FREE is attack in high nibble
-	
-	// decay (y=20)
-	ldy #20
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	and #$0F				// low nybble
-	ora ZP_FREE			// or with attack high nibble
-	// store in sid_data for this voice
-	ldy #SID_ATT_DEC
-	sta (ZP_SIDDATA_PTR),y
-	
-	// sustain (y=22)
-	ldy #22
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	and #$0F
-	clc
-	asl
-	asl
-	asl
-	asl
-	sta ZP_FREE			// ZP_FREE is sustain in high nibble
-	
-	// release (y=24)
-	ldy #24
-	jsr eval_varonum_indirect_zp_y
-	lda ZP_EVAL_OUT
-	and #$0F				// low nybble
-	ora ZP_FREE			// or with sustain high nibble
-	// store in sid_data for this voice
-	ldy #SID_SUS_REL
-	sta (ZP_SIDDATA_PTR),y
-	
-	// TODO
-	// filter (y=28)
-	
-	
-	
-	silent:
-	// TODO: silence channel if voice is 0
-	
-}
-
-*/
+// --------- misc macros -------
 
 // fill an array with max 255 bytes
 .macro FillX(adress, size, value) {
@@ -576,13 +456,10 @@ BasicUpstart2(main)
 main:
 
 
-	// clear tables 
-	FillX(variable_values, MAX_VARIABLES*2, 0)
-	FillX(variable_dirty, MAX_VARIABLES, 0)
-	FillX(sequence_dirty, MAX_SEQUENCES, 0)
-	FillXY(voice_parameter_values, MAX_VOICES*16*2, 0)
-	//Fill256(voice_parameter_dirty, MAX_VOICES*16, 0)
-	
+	// clear memory for variables, sequences, arrays, voice data, global data, etc.
+	//FillXY(clear_mem_start, clear_mem_end-clear_mem_start, 0)
+	FillXY(clear_mem_start, $1000, 0)		// compilor cannot compute, guess
+
 	PrintClearScreen()
     
     SetCursor(2,0)
@@ -653,6 +530,7 @@ clear_sid_data_loop:
 	
 	// note: generated function
 	jsr init_voice_parameter_values
+	jsr init_global_parameter_values
 	
 	// apply all initial parameter values
 	// TODO do for all voices
@@ -661,27 +539,31 @@ clear_sid_data_loop:
 		lda #channel
 		jsr set_voice
 		
-		Apply_Parameter(Param_gate)
-		Apply_Parameter(Param_note)
-		Apply_Parameter(Param_scale)
-		Apply_Parameter(Param_transpose)
-		Apply_Parameter(Param_pitch)
-		Apply_Parameter(Param_waveform)
-		Apply_Parameter(Param_pulsewidth)
-		Apply_Parameter(Param_sync)
-		Apply_Parameter(Param_ring)
-		Apply_Parameter(Param_attack)
-		Apply_Parameter(Param_decay)
-		Apply_Parameter(Param_sustain)
-		Apply_Parameter(Param_release)
-		Apply_Parameter(Param_filter)
+		Apply_Voice_Parameter(Voice_Param_gate)
+		Apply_Voice_Parameter(Voice_Param_note)
+		Apply_Voice_Parameter(Voice_Param_scale)
+		Apply_Voice_Parameter(Voice_Param_transpose)
+		Apply_Voice_Parameter(Voice_Param_pitch)
+		Apply_Voice_Parameter(Voice_Param_waveform)
+		Apply_Voice_Parameter(Voice_Param_pulsewidth)
+		Apply_Voice_Parameter(Voice_Param_sync)
+		Apply_Voice_Parameter(Voice_Param_ring)
+		Apply_Voice_Parameter(Voice_Param_attack)
+		Apply_Voice_Parameter(Voice_Param_decay)
+		Apply_Voice_Parameter(Voice_Param_sustain)
+		Apply_Voice_Parameter(Voice_Param_release)
+		Apply_Voice_Parameter(Voice_Param_filter)
 		
 		// TODO: all other parameters
 	}
 	
-	
+	jsr set_global
+	Apply_Global_Parameter(Global_Param_filter_mode)
+	Apply_Global_Parameter(Global_Param_filter_cutoff)
+	Apply_Global_Parameter(Global_Param_filter_resonance)
+	Apply_Global_Parameter(Global_Param_volume)
+		
 	InstallRasterIRQHandler(raster_irq_handler, 50)
-
 		
 	loop:
 
@@ -723,8 +605,6 @@ raster_irq_handler:
         // magical computation!
         UpdateSequences()
         
-        // UpdateChannels()
-        
         // copy sid_data to the chip
         .for(var i=0; i<25; i++) {
         	lda sid_data+i
@@ -761,6 +641,7 @@ raster_irq_handler:
 // ZP_VOICE
 // ZP_CHANNEL
 // ZP_PARAMETERS_PTR (word) = zp_voice_parameter_values+(ZP_VOICE*16+0)*2
+// ZP_SIDDATA_PTR (word) = sid_data + ZP_CHANNEL*7
 // 
 set_voice:
 {
@@ -795,27 +676,29 @@ set_voice:
 	rts
 }
 
-/*
-compute_voice_parameters_offset:
+
+// output: 
+// ZP_PARAMETERS_PTR (word) = zp_global_parameter_values
+// ZP_SIDDATA_PTR (word) = sid_data
+set_global:
 {
-	lda ZP_VOICE		
-	asl
-	asl
-	asl
-	asl
-	asl					// a = ZP_VOICE * 32		// note: max 8 voices
+	lda #<sid_data
+	sta ZP_SIDDATA_PTR
+	lda #>sid_data
+	sta ZP_SIDDATA_PTR+1
+
+	lda #<global_parameter_values
 	sta ZP_PARAMETERS_PTR
-	lda #0
+	lda #>global_parameter_values
 	sta ZP_PARAMETERS_PTR+1
-	Word_Add_Value(ZP_PARAMETERS_PTR, voice_parameter_values, ZP_PARAMETERS_PTR)
+	
 	rts
 }
-*/
 
-// input: voice in ZP_VOICE
+// input: 
 //   variable in x
 //   parameter in y
-//   ZP_PARAMETERS_PTR  (set by set_voice compute_voice_parameters_offset)
+//   ZP_PARAMETERS_PTR  (set by set_voice)
 // result:
 //  reads from variable_values
 //  writes to voice_parameter_values
@@ -837,6 +720,30 @@ copy_from_variable_in_x_to_voice_parameter_in_y:
 	rts
 }
 
+// input: 
+//   variable in x
+//   global parameter in y
+//   ZP_PARAMETERS_PTR  (set by set_global)
+// result:
+//  reads from variable_values
+//  writes to global_parameter_values
+copy_from_variable_in_x_to_global_parameter_in_y:
+{
+	txa
+	asl
+	tax					// x = variable*2
+	
+	tya					
+	asl					
+	tay					// y = parameter*2
+	
+	lda variable_values,x
+	sta (ZP_PARAMETERS_PTR),y
+	lda variable_values+1,x
+	iny
+	sta (ZP_PARAMETERS_PTR),y
+	rts
+}
 
 // inputs:
 // ZP_PARAMETERS_PTR (computed with compute_voice_parameters_offset)
@@ -845,7 +752,7 @@ copy_from_variable_in_x_to_voice_parameter_in_y:
 // writes to sid_data
 apply_gate:
 {	
-	ldy #Param_gate*2
+	ldy #Voice_Param_gate*2
 	lda (ZP_PARAMETERS_PTR),y
 	and #1
 	sta ZP_FREE				// ZP_FREE = gate 0 or 1
@@ -860,8 +767,7 @@ apply_gate:
 }
  apply_note:
  {
- 	// note
-	ldy #Param_note*2
+	ldy #Voice_Param_note*2
 	lda (ZP_PARAMETERS_PTR),y
 	sta ZP_FREE
 	iny
@@ -895,8 +801,7 @@ apply_gate:
  }
  apply_waveform:
  {
- 	// note
-	ldy #Param_waveform*2
+	ldy #Voice_Param_waveform*2
 	lda (ZP_PARAMETERS_PTR),y
 	asl
 	asl
@@ -915,28 +820,94 @@ apply_gate:
  
  apply_pulsewidth:
  {
- 	rts
+	ldy #Voice_Param_pulsewidth*2
+	lda (ZP_PARAMETERS_PTR),y
+	sta ZP_FREE
+	iny
+	lda (ZP_PARAMETERS_PTR),y
+	sta ZP_FREE+1
+
+	lda ZP_FREE
+	ldy #SID_PW_L
+	sta (ZP_SIDDATA_PTR),y
+	lda ZP_FREE+1
+	ldy #SID_PW_H
+	sta (ZP_SIDDATA_PTR),y
+	
+	rts
  }
+
  apply_ring:
  {
- 	rts
+ 	ldy #Voice_Param_ring*2
+	lda (ZP_PARAMETERS_PTR),y
+	and #1
+	asl 
+	asl
+	sta ZP_FREE				// ZP_FREE = ring, 0 or 1 in bit 2
+	
+	ldy #SID_CR
+	lda (ZP_SIDDATA_PTR),y		// load from sid_data
+	and #~4						// clear bit 2
+	ora ZP_FREE					// set bit 2
+	sta (ZP_SIDDATA_PTR),y		// save to sid_data  
+
+	rts
  }
+
  apply_sync:
  {
+	ldy #Voice_Param_sync*2
+	lda (ZP_PARAMETERS_PTR),y
+	and #1
+	asl 
+	sta ZP_FREE				// ZP_FREE = sync, 0 or 1 in bit 2
+	
+	ldy #SID_CR
+	lda (ZP_SIDDATA_PTR),y		// load from sid_data
+	and #~2						// clear bit 1
+	ora ZP_FREE					// set bit 1
+	sta (ZP_SIDDATA_PTR),y		// save to sid_data  
+
  	rts
  }
+
  apply_attack:
  {
- 	rts
+ 	ldy #Voice_Param_attack*2
+	lda (ZP_PARAMETERS_PTR),y
+	asl
+	asl
+	asl
+	asl					// shift left 4 
+	sta ZP_FREE
+	
+	ldy #SID_ATT_DEC
+	lda (ZP_SIDDATA_PTR),y		// load from sid_data
+	and #~$F0					// clear upper for bits 
+	ora ZP_FREE					// set attack
+	sta (ZP_SIDDATA_PTR),y		// save to sid_data  
+	
+	rts
  }
  apply_decay:
  {
- 	rts
+ 	ldy #Voice_Param_decay*2
+	lda (ZP_PARAMETERS_PTR),y
+	and #$0F					// mask lower 4 bits
+	sta ZP_FREE
+	
+	ldy #SID_ATT_DEC
+	lda (ZP_SIDDATA_PTR),y		// load from sid_data
+	and #~$0F					// clear lower 4 bits 
+	ora ZP_FREE					// set decay
+	sta (ZP_SIDDATA_PTR),y		// save to sid_data  
+	
+	rts
  }
  apply_sustain:
  {
- 	// note
-	ldy #Param_sustain*2
+	ldy #Voice_Param_sustain*2
 	lda (ZP_PARAMETERS_PTR),y
 	asl
 	asl
@@ -952,13 +923,132 @@ apply_gate:
 	
 	rts
  }
+
  apply_release:
  {
- 	rts
+ 	ldy #Voice_Param_release*2
+	lda (ZP_PARAMETERS_PTR),y
+	and #$0F					// mask lower 4 bits
+	sta ZP_FREE
+	
+	ldy #SID_SUS_REL
+	lda (ZP_SIDDATA_PTR),y		// load from sid_data
+	and #~$0F					// clear lower 4 bits 
+	ora ZP_FREE					// set release
+	sta (ZP_SIDDATA_PTR),y		// save to sid_data  
+	
+	rts
  }
+
  apply_filter:
  {
+ 	ldy #Voice_Param_filter*2
+	lda (ZP_PARAMETERS_PTR),y
+	and #$01					// mask bit 0
+	beq zero
+
+//one:
+	lda ZP_CHANNEL
+	tax
+	lda masks1,x
+	sta ZP_FREE			// ZP_FREE contains 1,2 or 4
+
+	ldy #SID_FILTER_RES_VOICE
+	lda sid_data,y		// load from sid_data
+	ora ZP_FREE			// set bits from mask
+	sta sid_data,y		// save to sid_data  
+
+	rts
+zero:
+	lda ZP_CHANNEL
+	tax
+	lda masks0,x
+	sta ZP_FREE			// ZP_FREE contains 1,2 or 4
+
+	ldy #SID_FILTER_RES_VOICE
+	lda sid_data,y		// load from sid_data
+	and ZP_FREE			// clear bits from mask
+	sta sid_data,y		// save to sid_data  
+	
+	rts
+
+masks1:
+	.byte 1,2,4
+masks0:
+	.byte ~1,~2,~4
+ }
+
+ apply_filter_mode:
+ {
+	ldy #Global_Param_filter_mode*2
+	lda (ZP_PARAMETERS_PTR),y
+	asl
+	asl
+	asl
+	asl								// shift left 4
+	sta ZP_FREE
+
+	ldy #SID_FILTER_VOLUME
+	lda sid_data,y				// load from sid_data
+	and #$0F					// clear upper 4 bits
+	ora ZP_FREE					// set filter mode
+	sta sid_data,y				// save to sid_data
+
  	rts
+ }
+
+ apply_filter_cutoff:
+ {
+ 	ldy #Global_Param_filter_cutoff*2
+	lda (ZP_PARAMETERS_PTR),y
+	sta ZP_FREE
+	iny
+	lda (ZP_PARAMETERS_PTR),y
+	sta ZP_FREE+1
+
+	ldy #SID_FILTER_L
+	lda ZP_FREE
+	sta sid_data,y				// save low byte to sid_data
+	lda ZP_FREE+1
+	ldy #SID_FILTER_H
+	sta sid_data,y				// save high byte to sid_data
+
+	rts
+ }
+
+ apply_filter_resonance:
+ {
+ 	ldy #Global_Param_filter_resonance*2
+	lda (ZP_PARAMETERS_PTR),y
+	asl
+	asl
+	asl
+	asl								// shift left 4
+	sta ZP_FREE
+
+	ldy #SID_FILTER_RES_VOICE
+	lda sid_data,y				// load from sid_data
+	and #$0F					// clear upper 4 bits
+	ora ZP_FREE					// set filter mode
+	sta sid_data,y				// save to sid_data
+
+ 	rts
+ }
+
+ apply_volume:
+ {
+ 	ldy #Global_Param_volume*2
+	lda (ZP_PARAMETERS_PTR),y
+	and #$0F					// mask lower 4 bits
+	sta ZP_FREE
+
+	ldy #SID_FILTER_VOLUME
+	lda sid_data,y				// load from sid_data
+	and #$F0					// clear lower 4 bits
+	ora ZP_FREE					// set volume bits
+	sta sid_data,y				// save to sid_data
+
+	rts
  }
  
 // ----------------------------------------
@@ -1016,7 +1106,7 @@ help_string: .text "NUMBERSID PLAYER - PRESS Q TO QUIT"; .byte 0
 
 *=* "Generated Code"
 
-#import "test1.asm"
+#import "generated.asm"
 
 // --------------------------------------
 // ------------variables ----------------
@@ -1027,9 +1117,17 @@ help_string: .text "NUMBERSID PLAYER - PRESS Q TO QUIT"; .byte 0
 
 *=* "Variables" virtual
 
+clear_mem_start:
+
 frame_counter: .word 0
 text_string: .fill 40,32 ; .byte 0
 sid_data: .fill 25, 0
+
+.label sid_filter_l = sid_data+SID_FILTER_L
+.label sid_filter_h = sid_data+SID_FILTER_H
+.label sid_filter_res_voice = sid_data+SID_FILTER_RES_VOICE
+.label sid_filter_volume = sid_data+SID_FILTER_VOLUME
+
 
 	// TODO: move sid_data to zero_page?
 
@@ -1037,23 +1135,28 @@ sid_data: .fill 25, 0
 variable_values:
 .fillword MAX_VARIABLES, 0
 
-variable_dirty:
-.fill MAX_VARIABLES, 0
-
 sequence_dirty:
 .fill MAX_SEQUENCES, 0
 
 voice_parameter_values:
 .fill MAX_VOICES * 16 * 2, 0			// reserve 16 words per voice; faster to compute by 4xlshift
 
+global_parameter_values:
+filter_mode_parameter_value: .word 0
+filter_cutoff_parameter_value: .word 0
+filter_resonance_parameter_value: .word 0
+volume_parameter_value: .word 0
+
+clear_mem_end:
 
 // TODO: not used?
-//voice_parameter_dirty:
-//.fill MAX_VOICES * 16, 0 				// reserve 16 words per voice; faster to compute by 4xlshift
+/*
 
+voice_parameter_dirty:
+.fill MAX_VOICES * 16, 0 				// reserve 16 words per voice; faster to compute by 4xlshift
 
-	// TODO: move variable_values to zero_page?
-	
+variable_dirty:
+.fill MAX_VARIABLES, 0
 	
 num_voices: .byte 0
 
@@ -1065,43 +1168,4 @@ sequence_data_start_ptr: .word 0		// pointer to start of sequence data
  
 sequence_data_cur_ptr: .word 0			// pointer to currently processing sequence data 
 
-
-/*
-//-------- TODO: next part maybe not needed ----
-
-// runtime numbersid data 
-// created from load-time data 
-// more convenient format
-
-channel_voices:
-.fillword NUM_CHANNELS, 0 
-
-num_voices:
-.byte 0
-
-voices:
-//.fill MAX_VOICES * VOICE_SIZE, 0
-gate: .fillword MAX_VOICES, 0
-note: .fillword MAX_VOICES, 0
-scale: .fillword MAX_VOICES, 0
-transpose: .fillword MAX_VOICES, 0
-pitch: .fillword MAX_VOICES, 0
-waveform: .fillword MAX_VOICES, 0
-pulsewidth: .fillword MAX_VOICES, 0
-ring: .fillword MAX_VOICES, 0
-sync: .fillword MAX_VOICES, 0
-attack:.fillword MAX_VOICES, 0
-decay: .fillword MAX_VOICES, 0
-sustain: .fillword MAX_VOICES, 0
-release: .fillword MAX_VOICES, 0
-filter: .fillword MAX_VOICES, 0
-
-num_sequences:
-.word 0				// Note: extra byte just for printing
-sequences:
-.fill MAX_SEQUENCES * SEQUENCE_SIZE, 0
-num_arrays:
-.byte 0
-arrays:
-.fill MAX_ARRAYS * ARRAY_SIZE, 0 
 */
