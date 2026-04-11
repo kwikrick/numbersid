@@ -409,35 +409,46 @@ skip:
 
 // --------- misc macros -------
 
-// fill an array with max 255 bytes
-.macro FillX(adress, size, value) {
-	.if (size>255) {
-		.error "FillX cannot fille more than 255 bytes" 
-	}
-	
-	lda #value
-	ldx #size
-loop:
-	sta adress,x
-	dex
-	bne loop
-}
-
-.macro FillXY(adress, size, value) 
+.macro Fill(adress, size, value) 
 {
-	.if (size>65535) {
-		.error "FillXY cannot fille more than 65535 bytes" 
+	.if (size==0) {
+		.error "Fill cannot fill 0 bytes" 
 	}
-	ldy #>size
-	lda #value
-loopY:
-	ldx #<size
+
+	.if (size>65535) {
+		.error "Fill cannot fill more than 65535 bytes" 
+	}
+
+	// use zero page indirect addressing to fill memory
+	lda #<adress
+	sta ZP_FREE
+
+	lda #>adress
+	sta ZP_FREE+1
+
+	// fill size/256 blocks of 256 bytes 
+	ldx #>size
+	beq skip				// skip if zero blocks
 loopX:
-	sta adress,x
-	dex
-	bne loopX
+	lda #value
+	ldy #0
+loopY:
+	sta (ZP_FREE),y
 	dey
 	bne loopY
+	Word_Inc(ZP_FREE+1)		// next 256 byte block
+	dex
+	bne loopX
+skip:
+	lda #value
+	// fill remaining size%256 bytes
+	ldy #<size
+	beq skip2
+loopY2:
+	sta (ZP_FREE),y
+	dey
+	bne loopY2
+skip2:
 }
 
 // -------------- code section -------------
@@ -452,10 +463,9 @@ BasicUpstart2(main)
 
 main:
 
-
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
-	//FillXY(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	FillXY(clear_mem_start, $1000, 0)		// compilor cannot compute, guess
+	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
+	Fill(clear_mem_start, $400, 0)		// compilor cannot compute, guess
 
 	PrintClearScreen()
     
@@ -470,21 +480,21 @@ main:
 	// SidSetVolumeConst(15)
 	
 	// clear sid data (25 bytes)
-	
+/*
 	lda #0
 	ldx #25
 clear_sid_data_loop:
 	sta sid_data,x
 	dex
 	bne clear_sid_data_loop	
-
+*/
 	// test code 	
 
+/*
 	// set volume (clear filters)
 	lda #15
 	sta sid_data+SID_FILTER_VOLUME
 
-/*
 	// set a frequency for voice 0
 	lda #0
 	sta sid_data+SID_V1+SID_FREQ_L
@@ -525,7 +535,7 @@ clear_sid_data_loop:
 	sta sid_data+SID_V1+SID_CR
 */	
 	
-	// note: generated function
+	// note: generated functions
 	jsr init_voice_parameter_values
 	jsr init_global_parameter_values
 	
