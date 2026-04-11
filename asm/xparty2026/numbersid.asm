@@ -287,9 +287,6 @@ zero:
 	.if (parameter==Voice_Param_sync) {
 		jsr apply_ring
 	}
-	.if (parameter==Voice_Param_sync) {
-		jsr apply_sync
-	}
 	.if (parameter==Voice_Param_attack) {
 		jsr apply_attack
 	}
@@ -533,7 +530,7 @@ clear_sid_data_loop:
 	jsr init_global_parameter_values
 	
 	// apply all initial parameter values
-	// TODO do for all voices
+	// TODO do for all voices; loop should not be hardcoded
 	//.for (var voice=0;voice<3;voice++) {   
 	.for (var channel=0;channel<3;channel++) {   
 		lda #channel
@@ -553,8 +550,6 @@ clear_sid_data_loop:
 		Apply_Voice_Parameter(Voice_Param_sustain)
 		Apply_Voice_Parameter(Voice_Param_release)
 		Apply_Voice_Parameter(Voice_Param_filter)
-		
-		// TODO: all other parameters
 	}
 	
 	jsr set_global
@@ -663,17 +658,17 @@ set_voice:
 	sta ZP_CHANNEL
 	
 	// compute ZP_SIDDATA_PTR from ZP_CHANNEL
-	// TODO: we should use a look-up-table from channel to SID_DATA_PTR (only values are sid_data+0, sid_data+7, sid_data+14)
-	// TODO: maybe make a funcgtion set_channel? (called from a function set_voice?) 
-	
-	//lda ZP_CHANNEL
+	lda ZP_CHANNEL
+	asl
+	tax							// x = channel*2 (word index)
+	lda zp_data_table,x
 	sta ZP_SIDDATA_PTR
-	lda #7
+	lda zp_data_table+1,x
 	sta ZP_SIDDATA_PTR+1
-	Word_Mul_LoHi(ZP_SIDDATA_PTR)							 	 // SID_DATA_PTR = ZP_CHANNEL*7
-	Word_Add_Value(ZP_SIDDATA_PTR, sid_data, ZP_SIDDATA_PTR)	 // SID_DATA_PTR = sid_data+channel*7
 
 	rts
+zp_data_table:
+	.word sid_data+0, sid_data+7, sid_data+14
 }
 
 
@@ -890,6 +885,7 @@ apply_gate:
 	
 	rts
  }
+
  apply_decay:
  {
  	ldy #Voice_Param_decay*2
@@ -905,6 +901,7 @@ apply_gate:
 	
 	rts
  }
+
  apply_sustain:
  {
 	ldy #Voice_Param_sustain*2
