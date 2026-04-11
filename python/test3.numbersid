@@ -8,8 +8,8 @@ A // note
 0 // pulsewidth
 0 // ring
 0 // sync
-1 // attack
-8 // decay
+0 // attack
+10 // decay
 0 // sustain
 0 // release
 0 // filter
@@ -24,11 +24,11 @@ R // pulsewidth
 0 // sync
 0 // attack
 0 // decay
-4 // sustain
+8 // sustain
 0 // release
 1 // filter
 S // gate
--12 // note
+0 // note
 0 // scale
 0 // transpose
 0 // pitch
@@ -38,7 +38,7 @@ S // gate
 0 // sync
 4 // attack
 4 // decay
-2 // sustain
+8 // sustain
 4 // release
 1 // filter
 1 // channel[0] voice
