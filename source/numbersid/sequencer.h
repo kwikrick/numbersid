@@ -669,7 +669,7 @@ bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos)
     int input_pos=0;
     while (buffer[*pos]!=0 && input_pos<INPUT_LEN-1) {
         char c = buffer[(*pos)++];
-        if (!isalnum(c)) break;
+        if (!isalnum(c) && c != '-' && c != '+') break;
         input_string[input_pos++] = c;
     }
     if (isalpha(input_string[0])) {
