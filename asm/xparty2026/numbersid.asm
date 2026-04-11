@@ -14,16 +14,12 @@
 // constants
 .const debug = true
 
-.const  MAX_SEQUENCES   = 16
 .const  MAX_VARIABLES   = 26    // A-Z
+.const  MAX_SEQUENCES   = 16
+.const  MAX_VOICES      = 8
 .const  MAX_ARRAYS      = 8
 .const  MAX_ARRAY_SIZE  = 16
-.const  MAX_VOICES      = 8
 .const  NUM_CHANNELS    = 3    // SID hardware channels
-
-.const VOICE_SIZE		= 14*2					// 14 words = 28 bytes
-.const SEQUENCE_SIZE	= 11*2 + 1				// 11 words + 1 byte = 23 bytes
-.const ARRAY_SIZE   	= MAX_ARRAY_SIZE * 2	// word values
 
 // for frequency table
 .const FREQ_TABLE_LENGTH = 64
@@ -39,19 +35,6 @@
 .const ZP_ACCUMULATOR = $06 		// WORD
 .const ZP_OPERAND = $08   			// WORD
 .const ZP_SIDDATA_PTR = $10			// WORD
-
-
-//.if (MAX_VOICES*VOICE_SIZE>256) {
-//	.error "space for voice data exeeds 256 bytes"
-//}
-
-//.if (MAX_SEQUENCES*SEQUENCE_SIZE>256) {
-//	.error "space for sequence data exeeds 256 bytes"
-//}
-//.if (MAX_ARRAYS*ARRAY_SIZE>256) {
-//	.error "space for array data exeeds 256 bytes"
-//}
-
 
 // ---- some macros ---- 
 
@@ -108,7 +91,7 @@
 {
 	Word_Copy(accumulator_word, ZP_FREE)
 	Word_Store_Value(accumulator_word, 0)
-	// TODO: first test always usign base 2
+	// TODO: first test always using base 2, generalize later
 	ldx #15
 loop:
 	lda ZP_FREE
@@ -160,7 +143,6 @@ zero:
 //.function voice_parameter_dirty_adress(voice, parameter) {
 //	.return voice_parameter_dirty + (voice * 16 + parameter)
 //}
-
 
 .macro Load_Accumulator(type,varonum) 
 {
@@ -239,7 +221,7 @@ zero:
 
 
 .macro Compare_Accumulator(variable) {
-  Word_Compare_Word(ZP_ACCUMULATOR, variable_adress(variable))
+  Word_Compare_Word(ZP_ACCUMULATOR, variable_adress(variable))		// TODO use jsr to save space
 }
 
 .macro Mark_Variable_Dirty(variable) {
@@ -479,15 +461,6 @@ main:
 	
 	// SidSetVolumeConst(15)
 	
-	// clear sid data (25 bytes)
-/*
-	lda #0
-	ldx #25
-clear_sid_data_loop:
-	sta sid_data,x
-	dex
-	bne clear_sid_data_loop	
-*/
 	// test code 	
 
 /*
@@ -732,6 +705,9 @@ copy_from_variable_in_x_to_voice_parameter_in_y:
 // result:
 //  reads from variable_values
 //  writes to global_parameter_values
+
+// TODO: ecactly the same as copy_from_variable_in_x_to_voice_parameter_in_y?
+
 copy_from_variable_in_x_to_global_parameter_in_y:
 {
 	txa
@@ -770,8 +746,9 @@ apply_gate:
 	
 	rts
 }
- apply_note:
- {
+
+apply_note:
+{
 	ldy #Voice_Param_note*2
 	lda (ZP_PARAMETERS_PTR),y
 	sta ZP_FREE
@@ -804,6 +781,7 @@ apply_gate:
  {
  	rts
  }
+
  apply_waveform:
  {
 	ldy #Voice_Param_waveform*2
@@ -1122,6 +1100,8 @@ help_string: .text "NUMBERSID PLAYER - PRESS Q TO QUIT"; .byte 0
 // note: this is a virtual segment
 // code should reset all to zero (or other default values)
 
+// TODO: move some data to zero_page for speed?
+
 *=* "Variables" virtual
 
 clear_mem_start:
@@ -1134,9 +1114,6 @@ sid_data: .fill 25, 0
 .label sid_filter_h = sid_data+SID_FILTER_H
 .label sid_filter_res_voice = sid_data+SID_FILTER_RES_VOICE
 .label sid_filter_volume = sid_data+SID_FILTER_VOLUME
-
-
-	// TODO: move sid_data to zero_page?
 
 // the values of the variables used in the numbersid sequences
 variable_values:
@@ -1156,23 +1133,3 @@ volume_parameter_value: .word 0
 
 clear_mem_end:
 
-// TODO: not used?
-/*
-
-voice_parameter_dirty:
-.fill MAX_VOICES * 16, 0 				// reserve 16 words per voice; faster to compute by 4xlshift
-
-variable_dirty:
-.fill MAX_VARIABLES, 0
-	
-num_voices: .byte 0
-
-channel_voices_start_ptr: .word 0				// pointer to start of channel-voice data (3 varonums)
-										// followed by filter and volume (4 varonums)
-num_sequences: .byte 0
-
-sequence_data_start_ptr: .word 0		// pointer to start of sequence data 
- 
-sequence_data_cur_ptr: .word 0			// pointer to currently processing sequence data 
-
-*/
