@@ -37,11 +37,11 @@ class Varonum:
         s = s.strip()
         if len(s) == 0:
             return Varonum(0, 0)
-        if s[0].isdigit():
-            return Varonum(0, int(s))  
-        else:
+        if s[0].isalpha():
             return Varonum(ord(s[0]),0)
-
+        else:
+            return Varonum(0, int(s))  
+        
     def __str__(self):
         if self.variable != 0:
             return f"{chr(self.variable)}"
@@ -311,8 +311,8 @@ def generate(data: NumberSidData) -> str:
         s += f"eval_seq_{i}:\n"         # label for sequence
         s += seq.count.generate_sequence_evaluation("Load_Accumulator", True)
         s += seq.add1.generate_sequence_evaluation("Eval_Add")
-        s += seq.mul1.generate_sequence_evaluation("Eval_Mul")
         s += seq.div1.generate_sequence_evaluation("Eval_Div")
+        s += seq.mul1.generate_sequence_evaluation("Eval_Mul")
         s += seq.mod1.generate_sequence_evaluation("Eval_Mod")
         s += seq.base.generate_sequence_evaluation("Eval_Base")
         s += seq.mod2.generate_sequence_evaluation("Eval_Mod")
