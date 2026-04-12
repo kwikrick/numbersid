@@ -42,6 +42,7 @@
 	.const SID_FILTER_V1	    	= 2						// bit 1 - voice 2
 	.const SID_FILTER_V2	    	= 4						// bit 2 - voice 3
 	.const SID_FILTER_EXT			= 8						// bit 3 - external input
+	.const SID_FILTER_RES_MASK		= $F0					// bit 4-7 - filter resonance
 
 .const SID_FILTER_VOLUME 		= 24					// filter type (high nibble) and volume (low nibble) 
 	.const SID_VOLUME_MASK 			= $F						// bit 0-3 volume

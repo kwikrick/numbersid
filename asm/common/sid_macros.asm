@@ -103,7 +103,7 @@
 	ldy #24
 loop:
 	lda #0
-	sta (SID_BASE),y
+	sta SID_BASE,y
 	dey
 	bne loop
 }

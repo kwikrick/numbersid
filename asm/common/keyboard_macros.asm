@@ -20,7 +20,7 @@
 // otherwise, zero is returned in A.
 
 .macro GetKey() {
-    lda 0
+    lda #0
     lda NDX
     beq done            // if no char in buffer, then done 
     jsr GETKBC          // else: get char from buffer, store in A
