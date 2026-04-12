@@ -433,7 +433,9 @@ loopY2:
 skip2:
 }
 
+// -----------------------------------------
 // -------------- code section -------------
+// -----------------------------------------
 
 // generate basic start code
 
@@ -508,10 +510,11 @@ main:
 	sta sid_data+SID_V1+SID_CR
 */	
 	
+	// Set initial parameter values for voices and global parameters
 	// note: generated functions
 	jsr init_voice_parameter_values
 	jsr init_global_parameter_values
-	
+
 	// apply all initial parameter values
 	// TODO do for all voices; loop should not be hardcoded
 	//.for (var voice=0;voice<3;voice++) {   
@@ -540,26 +543,73 @@ main:
 	Apply_Global_Parameter(Global_Param_filter_cutoff)
 	Apply_Global_Parameter(Global_Param_filter_resonance)
 	Apply_Global_Parameter(Global_Param_volume)
-		
+
+	// init frame counter to 0
+	Word_Store_Value(frame_counter, 0)
+	
+	// copy frame counter to variable 'T' 
+	.encoding "ascii"
+	Word_Copy(frame_counter, variable_adress('T'))
+
+	// mark all its dependencies dirty
+	// Note this code must be generated! 84 is ascii for T 
+	jsr variable_changed_84	
+
+	// run first update of sequences to apply initial parameter values to sid data
+	UpdateSequences()
+	
+	// start the raster interrupt handler
 	InstallRasterIRQHandler(raster_irq_handler, 50)
 		
+	// main loop, handles keyboard input
+	// and shows some text
 	loop:
 
 			WaitKey()			// ascii code in A
 			//pha
 			//SetCursor(4,0)
 			//pla
-			//jsr CHROUT
+			//jsr PRT
 			
-			.encoding "petscii_upper"
 			cmp #'Q'
 			beq quit
+			cmp #'P'
+			beq pause_unpause
+			cmp #'N'
+			beq step_next_frame
+			cmp #'B'
+			beq step_prev_frame
 			
+			// no keypress
 			jmp loop
-		
+
+			// handle keypresses
+			pause_unpause:
+			lda paused
+			eor #1
+			sta paused 
+			jmp loop
+
+			step_next_frame:
+			Word_Inc(frame_counter)
+			jmp loop
+
+            step_prev_frame:
+			Word_Dec(frame_counter)
+			jmp loop
+
 	quit:
 		
 	StopRasterIRQ()
+
+	// wait for current irq handler to finish 
+
+quit_wait:
+	lda $D012
+	cmp #200
+	bcs quit_wait
+
+	SidReset()
 	
 	// return to basic
 	rts
@@ -571,28 +621,41 @@ raster_irq_handler:
         asl $d019					// clear VIC-II raster scan interrupt flag
         
         inc $d020					// DEBUG: next border color
-        
-        // copy frame counter to variable 'T'
-        .encoding "ascii"
-        Word_Copy(frame_counter, variable_adress('T'))
-        
-        // mark all its dependencies dirty
-        // Note this code must be generated! 84 is ascii for T 
-        jsr variable_changed_84	
-        
-        // magical computation!
-        UpdateSequences()
-        
+
         // copy sid_data to the chip
         .for(var i=0; i<25; i++) {
         	lda sid_data+i
         	sta SID_BASE+i
         }
         
+		// check for paused state
+		lda paused
+		bne skip_frame_update
+
         // increase frame counter
         Word_Inc(frame_counter)
+
+skip_frame_update:
+
+		Word_Compare_Word(frame_counter, variable_adress('T'))
+		beq skip_mark_dirty
+		// copy frame counter to variable 'T' 
+		.encoding "ascii"
+
+		// copy frame counter to variable 'T'
+        .encoding "ascii"
+        Word_Copy(frame_counter, variable_adress('T'))
+    
+        // mark all its dependencies dirty
+        // Note this code must be generated! 84 is ascii for T 
+        jsr variable_changed_84	
         
-        // show in top left
+skip_mark_dirty:
+
+ 		// magical computation!
+        UpdateSequences()
+        
+        // show counter in top left
         WordToHex(frame_counter,text_string)
         SetCursor(0,0)
         PrintString(text_string)
@@ -1083,7 +1146,7 @@ freq_table:
 *=* "Application Data"
 
 .encoding "petscii_upper"
-help_string: .text "NUMBERSID PLAYER - PRESS Q TO QUIT"; .byte 0
+help_string: .text "Q=QUIT P=PAUSE N=NEXT B=PREV"; .byte 0
 
 // -------------------------------------
 // ----------- generated code -----------
@@ -1105,6 +1168,8 @@ help_string: .text "NUMBERSID PLAYER - PRESS Q TO QUIT"; .byte 0
 *=* "Variables" virtual
 
 clear_mem_start:
+
+paused: .byte 0
 
 frame_counter: .word 0
 text_string: .fill 40,32 ; .byte 0
