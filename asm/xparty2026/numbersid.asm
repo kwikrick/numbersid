@@ -179,7 +179,7 @@ zero:
 .macro Eval_Add(type, varonum)
 {
 	Load_Operand(type, varonum)
-	Word_Div_Word(ZP_ACCUMULATOR, ZP_OPERAND, ZP_ACCUMULATOR)		// TODO: jsr to save space
+	Word_Add_Word(ZP_ACCUMULATOR, ZP_OPERAND, ZP_ACCUMULATOR)		// TODO: jsr to save space
 }
 
 .macro Eval_Mul(type, varonum)
