@@ -345,7 +345,7 @@ zero:
 // update all sequences
 
 .macro UpdateSequences() {
-	 .if (debug) {
+	 .if (false) {
 		SetCursor(4,0)
 	}
 	
@@ -449,15 +449,11 @@ main:
 
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	Fill(clear_mem_start, $400, 0)		// compilor cannot compute, guess
+	Fill(clear_mem_start, $400, 0)		// compiler cannot compute, make a guess
 
 	PrintClearScreen()
-    
     SetCursor(2,0)
-    
 	PrintString(help_string)
-	
-    Word_Store_Value(frame_counter,0)
     
 	SidReset()
 	
@@ -564,8 +560,22 @@ main:
 	// main loop, handles keyboard input
 	// and shows some text
 	loop:
+			// show counter in top left
+			WordToHex(frame_counter,text_string)
+			SetCursor(0,0)
+			PrintString(text_string)
 
-			WaitKey()			// ascii code in A
+			// print all variables
+			.for (var variable=0; variable<MAX_VARIABLES; variable++) {
+				WordToHex(variable_adress(variable+'A'), text_string)
+				SetCursor(variable/2+4,(mod(variable,2)*20))
+				PrintChar('A'+variable)
+				PrintChar('=')
+				PrintString(text_string)
+				PrintChar(32)
+			} 
+
+			GetKey()			// ascii code in A
 			//pha
 			//SetCursor(4,0)
 			//pla
@@ -654,11 +664,6 @@ skip_mark_dirty:
 
  		// magical computation!
         UpdateSequences()
-        
-        // show counter in top left
-        WordToHex(frame_counter,text_string)
-        SetCursor(0,0)
-        PrintString(text_string)
         
         dec $d020					// DEBUG: previous border color
         
