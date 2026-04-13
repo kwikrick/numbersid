@@ -8,3 +8,5 @@ CMakeUserPresets.json
 *.prg
 *.vs
 *.sym
+*.dbg
+.source.txt
