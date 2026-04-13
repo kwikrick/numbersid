@@ -67,7 +67,7 @@
     }
 }
 
-// Shift word at address N times to right
+// Divide by 2^shift_value
 // Note: shift_value must be a variable, not an adress.
 // Will be faster if addr is in zero-page   
 // Affects: A, flags 
@@ -112,7 +112,7 @@ label2:
 
 // Multiply  
 // target_adrr is also a word. Overflow is lost. 
-// TODO: what happens if target is src1 or src2 ???
+// Note: target_addr must not overlap  src1 or src2!
 // Note: uses zero page adresses (ZP_FREE, ZP_FREE+1 = $FB,$FC)
 .macro Word_Mul_Word(src1, src2, target_addr)
 {

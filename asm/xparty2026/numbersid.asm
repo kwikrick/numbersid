@@ -100,7 +100,7 @@ loop:
 one:
 	Word_Inc(accumulator_word)
 zero:
-	Signed_Shift_Right(ZP_FREE,1)
+	Signed_Shift_Right(ZP_FREE,1)	// TODO: signed needed? Just stop shifting after 15?
 	dex
 	bne loop
 }
@@ -185,7 +185,8 @@ zero:
 .macro Eval_Mul(type, varonum)
 {
 	Load_Operand(type, varonum)
-	Word_Mul_Word(ZP_ACCUMULATOR, ZP_OPERAND, ZP_ACCUMULATOR)		// TODO: jsr to save space
+	Word_Copy(ZP_ACCUMULATOR, ZP_FREE+2)		// TODO: can we avoid this copy?
+	Word_Mul_Word(ZP_FREE+2, ZP_OPERAND, ZP_ACCUMULATOR)		// TODO: jsr to save space
 }
 
 .macro Eval_Mod(type, varonum)
