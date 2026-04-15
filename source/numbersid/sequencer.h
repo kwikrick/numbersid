@@ -233,26 +233,6 @@ int16_t sum_digits(int16_t base, int16_t value) {
     return sum;
 }
 
-// returns number of fingers
-// fills finger_note map, must be array of size 12
-uint8_t decode_scale(int16_t scale, uint8_t* finger_notes) 
-{
-    memset(finger_notes, 0, 12);        // clear 12 bytes
-    int16_t remainder = scale;
-    int8_t fingers = 0;
-    int8_t note = 0;
-    while(remainder != 0) {
-        int16_t digit = remainder % 2;
-        if (digit) { 
-            finger_notes[fingers] = note;
-            fingers += 1;
-        }
-        remainder = remainder / 2;
-        note+=1;
-    }
-    return fingers;
-}
-
 void update_gate_state(sequencer_t* sequencer, int channel) {
     bool old_state = sequencer->gate_states[channel];
     bool new_state = false;
@@ -373,17 +353,24 @@ float compute_freq(sequencer_t* sequencer, int v)       // voice v
     int16_t transpose = varonum_eval(&sequencer->voices[v].transpose, sequencer);
     int16_t pitch = varonum_eval(&sequencer->voices[v].pitch, sequencer);
 
-    // TODO: lookup fingers from scales array 
-
-    scale = scale & ((1<<12)-1);            // 12 bits for 2 notes in a scale
-    if (scale == 0) scale = ((1<<12)-1);    // default full chromatic scale
-    uint8_t finger_notes[12];
-    uint8_t fingers = decode_scale(scale, finger_notes);
-    if (fingers == 0) fingers = 1;         // should not happen if scale !=0, but just in case
-    int16_t octave = note / fingers;
-    if (note < 0) octave = (note - fingers+1) / fingers;          // because we want floor(note / fingers) but using integer math 
-    int16_t finger = note - (octave * fingers);
-    int16_t semitone = octave * 12 + finger_notes[finger];
+    int16_t semitone = note;
+    if (scale > 0 && scale <= sequencer->num_scales) {
+        bool* scale_keys = sequencer->scales[scale-1];
+        uint16_t key_notes[SCALE_SIZE];
+        uint8_t num_keys = 0;
+        for (int i=0;i<SCALE_SIZE;++i){ 
+            if (scale_keys[i]==true) {
+                key_notes[num_keys]=i;
+                num_keys++;
+            } 
+        }
+        if (num_keys == 0) num_keys = 1;         // should not happen if scale !=0, but just in case
+        int16_t octave = note / num_keys;
+        if (note < 0) octave = (note - num_keys+1) / num_keys;          // because we want floor(note / fingers) but using integer math 
+        int16_t key = note - (octave * num_keys);
+        
+        semitone = octave * 12 + key_notes[key];
+    }
     semitone += transpose;
     return note_freq(440.0, (float)semitone + (float)pitch/100);
 }
