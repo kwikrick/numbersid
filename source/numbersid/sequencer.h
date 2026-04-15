@@ -570,6 +570,23 @@ int export_uint8(uint8_t value, const char* name, char* buffer, int size)
     return n;
 }
 
+int export_uint16(uint16_t value, const char* name, char* buffer, int size) 
+{
+    int n = snprintf(buffer, size, "%d // %s\n", value, name);
+    assert(n>0 && size-n>0);
+    return n;
+}
+
+uint16_t encode_scale(bool* scale_keys) {
+    uint16_t encoded = 0;
+    for (int i=0;i<SCALE_SIZE;++i) {
+        if (scale_keys[i]==true) {
+            encoded += (1 << i);
+        }
+    }
+    return encoded;
+}
+
 
 void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
 {
@@ -632,6 +649,12 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
         }
     }
 
+    pos += export_uint8(sequencer->num_scales, "num_scales", &buffer[pos],size-pos);
+
+    for (int a=0; a<sequencer->num_scales; a++) {
+        u_int16_t encoded = encode_scale(sequencer->scales[a]);
+        pos += export_uint16(encoded, "scale", &buffer[pos],size-pos);   
+    }
     
     // terminate string
     assert(pos<size);
@@ -709,6 +732,32 @@ bool import_uint8(uint8_t* variable, char* buffer, int* pos)
     return (count==1);
 }
 
+
+bool import_uint16(uint16_t* variable, char* buffer, int* pos) 
+{
+    // read spaces
+    while (buffer[*pos] == ' ') (*pos)++;
+    // read value
+    int argsread = sscanf(&buffer[*pos], "%hd", variable);
+    if (argsread != 1) return false;
+    // read until next newline
+    int count=0;
+    while (buffer[*pos]!=0) {
+        if (buffer[*pos]=='\n') count+=1;
+        (*pos)++;
+        if (count==1) break;
+    }
+    return (count==1);
+}
+
+void decode_scale(uint16_t encoded, bool* scale_keys) {
+    uint16_t mask = 1;
+    for (int i=0;i<SCALE_SIZE;++i) {
+        scale_keys[i]=(encoded & mask);
+        mask<<=1;
+    }
+}
+
 bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
 {
     int pos = 0;
@@ -770,6 +819,14 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         for (int i=0; i<sequencer->array_sizes[a]; i++) {
             if(!varonum_import(&sequencer->arrays[a][i], buffer, &pos)) return false;
         }
+    }
+
+     if(!import_uint8(&sequencer->num_scales, buffer, &pos)) return false;
+    if (sequencer->num_scales > MAX_SCALES) sequencer->num_scales = MAX_SCALES;
+    for (int s=0; s<sequencer->num_scales; s++) {
+        uint16_t encoded;
+        if(!import_uint16(&encoded, buffer, &pos)) return false;
+        decode_scale(encoded,sequencer->scales[s]); 
     }
     return true;
 }
