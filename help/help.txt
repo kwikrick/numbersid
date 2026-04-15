@@ -20,7 +20,7 @@ Some things to try:
 
 The sequencer windows
 ---------------------
-The sequencer consists of four main parts: time control, parameters, variables and array. 
+The sequencer consists of four main parts: time controls, parameters, variables, arrays and scales. 
 
 Time controls
 -------------
@@ -29,6 +29,10 @@ Time is measured in ticks. There are 60 ticks in a second. This corresponds to t
 The clock starts out running when starting the application, but can be frozen by unchecking "Run". The clock can also be controlled manually by typing a number or using the +/- buttons. Use "Reset" to reset the clock to 0.
 
 When the clock is not running, the sound chip may still generate sound, but can be silenced using the "Mute" checkbox.
+
+The Start and Stop buttons conveniently start and stop time, and also unmute and mute the 
+sound generator.
+
 
 Parameters
 ----------
@@ -42,7 +46,7 @@ Each voice has the following parameters:
 
 GATE           Bit 0: 1 to open the channel, 0 to close. Or: odd and even numbers to open and close
 NOTE           Note number in the scale (see below). May be negative. 0=root note
-SCALE          12 bits: each bit represents a piano key in an octave. 0=all keys
+SCALE          The index of the musical scale to be used. 0 is always the chromatic scale.
 TRANS          Number of semitones to transpose tone up or down
 PITCH          Number of cents to pitch the tone up or down
 WAVE           Waveform. Bit 0: Triangle. Bit 1: Sawtooth. Bit 2: Pulse. Bit 3: Noise (Noise cannot ne combined)
@@ -70,13 +74,6 @@ Note that the number of voices can be increased and decreased usign the "+" and 
 
 When GATE goes from low to high, the attack phase of the envelope starts (and will continue into
 decay and sustain phase). When GATE goes from low to high, the release phase of the envelope starts. 
-
-The NOTE value is an index in a musical scale. SCALE a 12 bit number where each bit selects a semitone in an octave, i.e. the 12 piano keys in an octave. Each bit determines whether that key is part of the scale or not.
-Examples: 
-4095 = 111111111111 = chromatic scale
-2741 = 101010110101 = C-major 
-1352 = 010101001010 = A-minor 
-0 = default = chromatic scale
 
 NOTE value 0 is the first note in the scale of octave 0. Octave 0 always starts at 440Hz. Note 1 is the second note in the scale, Note -1 is the last note in the scale one octave lower, etc. If there are M notes in the scale, then octave=FLOOR(N/M) and index=FLOORMOD(N,M). Note that, the fewer notes are in a scale, the further apart two adjacent NOTE values will sound. From the octave and note index, we compute the corresponding semitone of the chromatic scale (i.e. which piano key), which is in turn converted to a frequency for the oscillator. The TRANS value allows to transpose the scale up or down by a number of semitones. The PITCH value allows the frequency to be tuned up or down by a given number of cents (100th of a semitone).
 
@@ -143,18 +140,6 @@ ARRAY  select from different sequences and special values
 
 Using variables for these parameters that alos change over time, allows the design of complex music.
 
-Arrays
-------
-In the Array window, a collection of arrays can be defined in a table.
-
-Arrays are numbered, starting from #1 (up to #16 in the current version), displayed as rows of the table. Each array can have a variable number of elements displayed as columsn of the table, labeled [0], [1], [2]...(up to 16 elements, currently). Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row. The size of each array can be increased or decreased, adding columns to the right, usign the "+" and "-" buttons in each row. 
-
-An array can contain integer values or variables. 
-
-Arrays can be used in the construction of number sequences, by specifying an array number in the ARRAY column in the "Variables" window. When the value in the ARRAY column is >=1 and <=16 (either specified directly by a number, or indirectly by a variable) the array with that number will be indexed. The index used is the current value of the sequence variable (VAR) in the calculation proces (i.e. the value obtained so far by applying the columns to the left of the ARRAY column). If the array contains a number at that index, the number is used in the rest of the calculation. If the array contains a variable at that index, the current value of that variable will be taken and used in the rest of the calculation.
-
-Note that when an array is being indexed, and the array contains a variable that has not yet been calculated during the current tick, the previous value of that variable will be used, i.e. the value that was computed during the previous tick.
-
 Special variables
 -----------------
 Some variables are set by the sequencer automatically and can be used as parameters. 
@@ -180,6 +165,34 @@ The XYZ variables can be used to tie the progression notes played by a voice to 
 Note: The variable that controls the voice gate should be evaluated before the the U,W,V,X,Y,Z values. So if variable A controls voice 1 gate, then A should be evaluated before (placed above) the rows where U or X are used. Otherwise, the value of the dependend variable will be one tick behind. 
 
 Note: special variables can be used as output variables for sequences, but the values will be overwritten each tick before sequence evaluation. 
+
+Arrays
+------
+In the Array window, a collection of arrays can be defined in a table.
+
+Arrays are numbered, starting from #1 (up to #16 in the current version), displayed as rows of the table. Each array can have a variable number of elements displayed as columsn of the table, labeled [0], [1], [2]...(up to 16 elements, currently). Rows can be added and removed at the bottom, using the "+" and "-" buttons. Also, the order of rows can be swapped using the up and down arrow buttons in front of each row. The size of each array can be increased or decreased, adding columns to the right, usign the "+" and "-" buttons in each row. 
+
+An array can contain integer values or variables. 
+
+Arrays can be used in the construction of number sequences, by specifying an array number in the ARRAY column in the "Variables" window. When the value in the ARRAY column is >=1 and <=16 (either specified directly by a number, or indirectly by a variable) the array with that number will be indexed. The index used is the current value of the sequence variable (VAR) in the calculation proces (i.e. the value obtained so far by applying the columns to the left of the ARRAY column). If the array contains a number at that index, the number is used in the rest of the calculation. If the array contains a variable at that index, the current value of that variable will be taken and used in the rest of the calculation.
+
+Note that when an array is being indexed, and the array contains a variable that has not yet been calculated during the current tick, the previous value of that variable will be used, i.e. the value that was computed during the previous tick.
+
+Scales
+------
+The SCALE parameter in each voice refers to a scale defined in the Scales window.
+
+Each scale definition has an index, starting from #1. Use the + sign to add a new scale and - to remove the last scale from the list. Use the up and down buttons to swap scale definions with the
+scale above or below it. Note that when a voice's SCALE is 0, the none of the scales defined
+here will be used, but a full chromatic scale will be used. 
+
+A scale consists of up to 12 tones, labeled C, C#, D, D#, E, F#, G, G#, A, A#, B,
+making up one octave. The tones of a scale can be selected individually by checking the corresponding checkboxes on or off.
+
+When a note is played by a voice, it is mapped to the selected tones in the scale.
+Note that when fewer tones are in the scale, a sequence of played notes will sound further apart,
+because there are fewer tones in an octave. When 0 tones are selected, the scale will
+be the chromatic scale (i.e. the same as selecting all notes).
 
 Data window
 -----------
