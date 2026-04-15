@@ -356,20 +356,25 @@ float compute_freq(sequencer_t* sequencer, int v)       // voice v
     int16_t semitone = note;
     if (scale > 0 && scale <= sequencer->num_scales) {
         bool* scale_keys = sequencer->scales[scale-1];
-        uint16_t key_notes[SCALE_SIZE];
+        uint16_t key_tones[SCALE_SIZE];
         uint8_t num_keys = 0;
         for (int i=0;i<SCALE_SIZE;++i){ 
             if (scale_keys[i]==true) {
-                key_notes[num_keys]=i;
+                key_tones[num_keys]=i;
                 num_keys++;
             } 
         }
-        if (num_keys == 0) num_keys = 1;         // should not happen if scale !=0, but just in case
+        if (num_keys == 0) {
+            num_keys = 12;          // chromatic scale
+            for (int i=0;i<SCALE_SIZE;++i){ 
+                key_tones[i]=i;
+            }
+        }
         int16_t octave = note / num_keys;
         if (note < 0) octave = (note - num_keys+1) / num_keys;          // because we want floor(note / fingers) but using integer math 
         int16_t key = note - (octave * num_keys);
         
-        semitone = octave * 12 + key_notes[key];
+        semitone = octave * 12 + key_tones[key];
     }
     semitone += transpose;
     return note_freq(440.0, (float)semitone + (float)pitch/100);
