@@ -85,6 +85,7 @@ typedef struct {
     ui_parameters_t ui_parameters;
     ui_variables_t ui_variables;
     ui_arrays_t ui_arrays;
+    ui_scales_t ui_scales;
     ui_preview_t ui_preview;
     ui_data_t ui_data;
     ui_help_t ui_help;
@@ -99,7 +100,7 @@ typedef struct {
 
 void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* desc);
 void ui_numbersid_discard(ui_numbersid_t* ui);
-void ui_numbersid_draw(ui_numbersid_t* ui, ui_display_frame_t* frame);
+void ui_numbersid_draw(ui_numbersid_t* ui, const ui_display_frame_t* frame);
 void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings);
 void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* settings);
 
@@ -141,6 +142,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
             ImGui::MenuItem("Parameters", 0, &ui->ui_parameters.open);
             ImGui::MenuItem("Variables", 0, &ui->ui_variables.open);
             ImGui::MenuItem("Arrays", 0, &ui->ui_arrays.open);
+            ImGui::MenuItem("Scales", 0, &ui->ui_scales.open);
             ImGui::MenuItem("Data", 0, &ui->ui_data.open);
             ImGui::EndMenu();
         }
@@ -253,6 +255,16 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.open = true;
         ui_arrays_init(&ui->ui_arrays, &desc);
     }
+     x += dx; y += dy;
+    {
+        ui_scales_desc_t desc = {0};
+        desc.title = "Scales";
+        desc.sequencer = ui_desc->sequencer;
+        desc.x = x;
+        desc.y = y;
+        desc.open = true;
+        ui_scales_init(&ui->ui_scales, &desc);
+    }
     x += dx; y += dy;
     {
         ui_preview_desc_t desc = {0};
@@ -289,6 +301,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_parameters_discard(&ui->ui_parameters);
     ui_variables_discard(&ui->ui_variables);
     ui_arrays_discard(&ui->ui_arrays);
+    ui_scales_discard(&ui->ui_scales);
     ui_preview_discard(&ui->ui_preview);
     ui_data_discard(&ui->ui_data);
     ui_help_discard(&ui->ui_help);
@@ -297,7 +310,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     //ui->sequencer = 0;  // TODO??
 }
 
-void ui_numbersid_draw(ui_numbersid_t* ui, ui_display_frame_t* frame) {
+void ui_numbersid_draw(ui_numbersid_t* ui, const ui_display_frame_t* frame) {
     CHIPS_ASSERT(ui && ui->sequencer);
     _ui_numbersid_draw_menu(ui);
     ui_display_draw(&ui->display, frame);
@@ -308,6 +321,7 @@ void ui_numbersid_draw(ui_numbersid_t* ui, ui_display_frame_t* frame) {
     ui_parameters_draw(&ui->ui_parameters);
     ui_variables_draw(&ui->ui_variables);
     ui_arrays_draw(&ui->ui_arrays);
+    ui_scales_draw(&ui->ui_scales);
     ui_preview_draw(&ui->ui_preview);
     ui_data_draw(&ui->ui_data);
     ui_help_draw(&ui->ui_help);
@@ -326,6 +340,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     ui_parameters_save_settings(&ui->ui_parameters, settings);
     ui_variables_save_settings(&ui->ui_variables, settings);
     ui_arrays_save_settings(&ui->ui_arrays, settings);
+    ui_scales_save_settings(&ui->ui_scales, settings);
     ui_preview_save_settings(&ui->ui_preview, settings);
     ui_data_save_settings(&ui->ui_data, settings);
     ui_help_save_settings(&ui->ui_help, settings);
@@ -341,6 +356,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     ui_variables_load_settings(&ui->ui_variables, settings);
     ui_arrays_load_settings(&ui->ui_arrays, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);
+    ui_scales_load_settings(&ui->ui_scales, settings);
     ui_data_load_settings(&ui->ui_data, settings);
     ui_help_load_settings(&ui->ui_help, settings);
     ui_audio_load_settings(&ui->ui_audio, settings);

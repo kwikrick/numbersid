@@ -145,7 +145,7 @@ static void _ui_data_draw_state(ui_data_t* win) {
         }
     };
     if (ImGui::Button("Export")) {
-        sequencer_export_data(sequencer, buffer, sizeof(buffer), 4);
+        sequencer_export_data(sequencer, buffer, sizeof(buffer));
     }
 
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();

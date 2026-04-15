@@ -127,7 +127,7 @@ void ui_string_to_varonum(char* str, var_or_number_t* varonum)
 }
 
 
-void draw_varonum(var_or_number_t* varonum, char* id_str) {
+void draw_varonum(var_or_number_t* varonum, const char* id_str) {
     char str[16];
     ui_varonum_to_string(varonum, str, IM_ARRAYSIZE(str));
     ImGui::SetNextItemWidth(-FLT_MIN); // Right-aligned
@@ -161,7 +161,7 @@ void ui_parameters_discard(ui_parameters_t* win) {
     win->valid = false;
 }
 
-void draw_voice_parameter_columns(sequencer_t* sequencer, size_t param_offset, char* id_str) {
+void draw_voice_parameter_columns(sequencer_t* sequencer, size_t param_offset, const char* id_str) {
      for (int i = 0; i < sequencer->num_voices; i++) {
         var_or_number_t* varonum = (var_or_number_t*) ((uint8_t*)(&sequencer->voices[i]) + param_offset);
         ImGui::PushID(i);
@@ -177,8 +177,7 @@ static void _ui_parameters_draw_state(ui_parameters_t* win) {
 
     const float cw0 = 84.0f;
     const float cw = 64.0f;
-    char str[16];       // reuse this string for conversions to/from varonum
-
+   
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
     
     if (ImGui::BeginTable("##voices", sequencer->num_voices + 1, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {

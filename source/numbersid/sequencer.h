@@ -86,6 +86,8 @@ typedef struct {
 #define MAX_ARRAYS      16
 #define MAX_ARRAY_SIZE  16
 #define MAX_VOICES      16
+#define MAX_SCALES      16
+#define SCALE_SIZE      12
 #define NUM_CHANNELS    3    // SID hardware channels
 
 typedef struct {
@@ -109,6 +111,9 @@ typedef struct {
     uint8_t array_sizes[MAX_ARRAYS];
     uint8_t num_arrays;       
     preview_t preview;
+    // scales
+    bool scales[MAX_SCALES][SCALE_SIZE];
+    uint8_t num_scales;
     // current variable values
     int16_t values[MAX_VARIABLES];
     // gate states
@@ -130,7 +135,7 @@ typedef struct {
 
 // exported functions
 int16_t floor_mod(int16_t value, int16_t mod);
-void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int words_per_line);
+void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size);
 bool sequencer_import_data(sequencer_t* sequencer, char* buffer);
 void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid);
 void sequencer_update(sequencer_t* sequencer);
@@ -259,7 +264,7 @@ void update_gate_state(sequencer_t* sequencer, int channel) {
     else {
         voice_t* voice = &sequencer->voices[voice_index];
         int16_t gate_value = varonum_eval(&voice->gate, sequencer);
-        new_state = (gate_value&1 != 0);
+        new_state = ((gate_value&1) != 0);
     }
     if (new_state != old_state) {
         // gate state changed
@@ -337,7 +342,7 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
 
     // get old sequence value
     uint8_t var_index = (sequence->variable - 'A') % MAX_VARIABLES;
-    uint16_t old = sequencer->values[var_index];
+    //uint16_t old = sequencer->values[var_index];
 
     // used as voice gate or used as channel-voice? update gate states
     for (int channel=0;channel<NUM_CHANNELS;++channel){
@@ -367,6 +372,8 @@ float compute_freq(sequencer_t* sequencer, int v)       // voice v
     int16_t scale = varonum_eval(&sequencer->voices[v].scale, sequencer);
     int16_t transpose = varonum_eval(&sequencer->voices[v].transpose, sequencer);
     int16_t pitch = varonum_eval(&sequencer->voices[v].pitch, sequencer);
+
+    // TODO: lookup fingers from scales array 
 
     scale = scale & ((1<<12)-1);            // 12 bits for 2 notes in a scale
     if (scale == 0) scale = ((1<<12)-1);    // default full chromatic scale
@@ -537,6 +544,7 @@ void sequencer_update(sequencer_t* sequencer)
 
 void sequencer_update_framebuffer(sequencer_t* sequencer, uint8_t* framebuffer, chips_display_info_t info) 
 {
+    if (sequencer!=NULL && framebuffer!=NULL && info.portrait) {};
     // TODO: what would be a good visualization of the sequencer state?
     // Or just drop it?    
 }
@@ -576,7 +584,7 @@ int export_uint8(uint8_t value, const char* name, char* buffer, int size)
 }
 
 
-void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int words_per_line)
+void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
 {
     int pos = 0;
 
@@ -641,20 +649,6 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size, int w
     // terminate string
     assert(pos<size);
     buffer[pos] = 0;
-
-    // format with newlines
-    // int count = 0;
-    // pos = 0;
-    // while (buffer[pos]!=0){
-    //     if (buffer[pos]==',') {
-    //         count++;
-    //         if (count == words_per_line) {
-    //             count = 0;
-    //             buffer[pos+1]='\n';
-    //         }
-    //     }
-    //     pos++;
-    // }
 }
 
 
@@ -666,7 +660,7 @@ bool varonum_import(var_or_number_t* varonum, char* buffer, int* pos)
     const size_t INPUT_LEN = 32;
     char input_string[INPUT_LEN];
     memset(input_string,0,INPUT_LEN);
-    int input_pos=0;
+    size_t input_pos=0;
     while (buffer[*pos]!=0 && input_pos<INPUT_LEN-1) {
         char c = buffer[(*pos)++];
         if (!isalnum(c) && c != '-' && c != '+') break;
