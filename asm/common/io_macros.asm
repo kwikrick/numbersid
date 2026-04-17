@@ -137,3 +137,23 @@ second:
     ByteToHex(word_addr, hex_string+2)          // low byte
     
 }
+
+// Push and Pop regeisters A,X,Y
+// useful when io macros are used for debugging
+.macro PushRegs()
+{
+    pha     // push A
+    tya
+    pha     // push Y
+    txa
+    pha     // push X
+}
+
+.macro PopRegs()
+{
+    pla     // pull X
+    tax     
+    pla     // pull Y
+    tay     
+    pla     // pull A
+}
