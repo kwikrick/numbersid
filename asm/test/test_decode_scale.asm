@@ -4,7 +4,7 @@
 #import "common/word_macros.asm"
 #import "common/io_macros.asm"
 
-.const debug_scale_decode = true
+.const debug_scale_decode = false
 
 .const SCALE_SIZE = 64
 .const SCALE_MID_INDEX = 38     // TODO: good value?
@@ -109,7 +109,7 @@ skip_note:
 	dex
 	bne next_forward
 
-	ldx #12			// reset encoded 
+    // reload encoded scale
     pla             // note: need x from stack
     tax
 	lda scales_encoded,x
@@ -118,6 +118,8 @@ skip_note:
 	sta encoded_scale+1
     txa
     pha
+
+	ldx #12			// reset encoded 
 
 next_forward:
 
@@ -139,7 +141,19 @@ finish_forward:
         PopRegs()
     }
 
-    // backwards pass
+    // ------- backwards pass ------
+    
+    // reload encode scale 
+
+    pla             // note: need x from stack
+    tax
+	lda scales_encoded,x
+	sta encoded_scale
+    lda scales_encoded+1,x
+	sta encoded_scale+1
+    txa
+    pha
+
 
 	// load note value
 	lda #-1					
@@ -147,6 +161,8 @@ finish_forward:
 
 	ldy #SCALE_MID_INDEX-1		// Y = index in decoded_scale to write to
 	ldx #12					    // count number of shifts
+
+   
 
 loop_backwards:
 	
@@ -174,7 +190,7 @@ skip_note_backwards:
 	dex
 	bne next_backwards
 
-	ldx #12			// reset encoded 
+    // reload encoded scale
     pla             // note: need x from stack
     tax
 	lda scales_encoded,x
@@ -183,6 +199,9 @@ skip_note_backwards:
 	sta encoded_scale+1
     txa
     pha
+
+    ldx #12			// reset shift counter
+
 
 next_backwards:
 
@@ -221,7 +240,7 @@ scales_ptr_array:
 .print ("Size of code for function decode_scales + generated data:")
 .print(* - decode_scales)
 
-*=$2000
+.align $100
 // space to decode to
 scales_decoded:
    .fill 2 * SCALE_SIZE, 0
