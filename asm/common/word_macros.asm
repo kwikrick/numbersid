@@ -86,7 +86,18 @@ done:
 }
 
 
-// TODO: Word_Shift_Left / signed and unsigned
+// Shift word at address N times to left
+// Note: N must be a contant value, not an adress.
+// Will be faster if addr is in zero-page   
+// Affects: only flags (last ROR low byte)
+.macro Word_Shift_Left(addr, shift_value)
+{ 
+    .for (var i=0;i<shift_value;i++) 
+    {
+       asl addr
+       rol addr+1
+    }
+}
 
 // Multiply low byte with high byte at address
 // and store result at same adress (as a two byte word in high-low order) 
