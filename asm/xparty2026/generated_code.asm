@@ -124,7 +124,7 @@ variable_changed_67:
    rts
 init_voice_parameter_values:
    // voice 0 scale
-   lda #<1
+   lda #<2
    sta voice_parameter_values+4
    // voice 0 waveform
    lda #<1
@@ -133,7 +133,7 @@ init_voice_parameter_values:
    lda #<15
    sta voice_parameter_values+22
    // voice 1 scale
-   lda #<1
+   lda #<2
    sta voice_parameter_values+36
    // voice 1 waveform
    lda #<1
@@ -142,7 +142,7 @@ init_voice_parameter_values:
    lda #<15
    sta voice_parameter_values+54
    // voice 2 scale
-   lda #<1
+   lda #<2
    sta voice_parameter_values+68
    // voice 2 waveform
    lda #<1
@@ -162,11 +162,11 @@ init_global_parameter_values:
    lda #<15
    sta volume_parameter_value
    rts
-scales_encoded:
-   .word 2741
-   .word 1354
 scales_decoded:
-   .fill 2 * SCALE_SIZE, 0
+   // scale #0 = 2741
+   .byte -69,-67,-65,-63,-62,-60,-58,-56,-54,-52,-51,-49,-47,-45,-43,-41,-40,-38,-36,-34,-32,-30,-29,-27,-25,-23,-21,-19,-18,-16,-14,-12,-10,-8,-7,-5,-3,-1,0,2,4,5,7,9,11,12,14,16,17,19,21,23,24,26,28,29,31,33,35,36,38,40,41,43
+   // scale #1 = 1354
+   .byte -83,-81,-79,-77,-75,-72,-70,-68,-66,-64,-61,-59,-57,-55,-53,-50,-48,-46,-44,-42,-39,-37,-35,-33,-31,-28,-26,-24,-22,-20,-17,-15,-13,-11,-9,-6,-4,-2,1,3,6,8,10,13,15,18,20,22,25,27,30,32,34,37,39,42,44,46,49,51,54,56,58,61
 scales_ptr_array:
    .word scales_decoded + 0 * SCALE_SIZE
    .word scales_decoded + 1 * SCALE_SIZE

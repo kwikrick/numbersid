@@ -1,7 +1,7 @@
 3 // num_voices
 K // gate
 A // note
-1 // scale
+2 // scale
 0 // transpose
 0 // pitch
 1 // waveform
@@ -15,7 +15,7 @@ A // note
 0 // filter
 L // gate
 B // note
-1 // scale
+2 // scale
 0 // transpose
 0 // pitch
 1 // waveform
@@ -29,7 +29,7 @@ B // note
 0 // filter
 M // gate
 C // note
-1 // scale
+2 // scale
 0 // transpose
 0 // pitch
 1 // waveform

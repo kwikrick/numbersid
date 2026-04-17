@@ -27,8 +27,6 @@
 .const LOWEST_SEMITONE = HIGHEST_SEMITONE-FREQ_TABLE_LENGTH
 .const MIDDLE_C_INDEX = -LOWEST_SEMITONE
 
-.const  SCALE_SIZE		= 64	// note, typically same as freq table size
-
 // ZP adresses
 // TODO: SAFE WHEN PRINTING TEXT VIA KERNAL???  
 
@@ -827,14 +825,56 @@ apply_gate:
 
 apply_note:
 {
+	.const w_note = ZP_FREE		// and ZP_FREE+1
+	.const b_scale = ZP_FREE+2
+	.const w_scale_ptr = ZP_FREE+3 // and ZP_FREE+4
+
+	// load note parameter
 	ldy #Voice_Param_note*2
 	lda (ZP_PARAMETERS_PTR),y
-	sta ZP_FREE
+	sta w_note
 	iny
 	lda (ZP_PARAMETERS_PTR),y
-	sta ZP_FREE+1
-	Word_Add_Value(ZP_FREE, -LOWEST_SEMITONE, ZP_FREE)
-	lda ZP_FREE
+	sta w_note+1
+
+	// load scale parameter
+	ldy #Voice_Param_scale*2		
+	lda (ZP_PARAMETERS_PTR),y
+	sta b_scale   					
+	
+	// check scale exists
+	cmp #1
+	bmi skip_scale
+	cmp #NUM_SCALES
+	bmi skip_scale
+
+	// lookup scale ptr: X=(A-1)*2
+	sec
+	sbc #1
+	asl
+	tax 
+	lda scales_ptr_array,x
+	sta w_scale_ptr
+	lda scales_ptr_array+1,x
+	sta w_scale_ptr+1
+	
+	// lookup semitone value from scale
+	// ZP_FREE byte used to index scale, add offset and clip to size of scale array
+	Word_Add_Value(w_note, SCALE_MIDDLE_INDEX, w_note)
+	lda w_note	
+	and #SCALE_SIZE-1		// assumed power of 2
+	tay
+	lda (w_scale_ptr),y
+	sta w_note 				// Note: now using only low byte for note/semitone
+	lda #0
+	sta w_note+1
+
+skip_scale:
+	// correct offset ZP_FREE for lookup in frequency table
+	Word_Add_Value(w_note, MIDDLE_C_INDEX, w_note)
+
+	lda w_note
+	and #FREQ_TABLE_LENGTH-1		// assumed power of 2 
 	asl  // word index
 	tax
 	lda freq_table,x
@@ -1117,51 +1157,6 @@ masks0:
 	rts
  }
  
-// --------
-
-decode_scales:
-{
-	ldx #NUM_SCALES
-loop:
-	jsr decode_scale
-	dex
-	bne loop
-	rts
-}
-
-// X is index
-decode_scale:
-{
-	txa
-	pha
-
-	lda #<scales_decoded
-	sta ZP_FREE
-	lda #>scales_decoded
-	sta ZP_FREE+1		// WORD ZP_FREE is pointer to decoded scale
-	
-	sta ZP_FREE+2		// ZP_FREE+2 is scale index
-	lda #64 
-	sta ZP_FREE+3
-	Word_Mul_LoHi(ZP_FREE+2)		// ZP_FREE+2 = 64*index
-	Word_Add_Word(ZP_FREE,ZP_FREE+2,ZP_FREE)	// ZP_FREE = scales_decoded+64*index
-	
-	lda scales_encoded,x
-	sta ZP_FREE+2		// ZP_FREE+2 is encoded scale
-
-loop:
-	lda #0		// note value
-	sta (ZP_FREE),y
-	
-	iny
-	cpy #SCALE_SIZE-1
-	bne loop
-
-	pla
-	tax
-	rts
-}
-
 // ----------------------------------------
 // ------------ data section --------------
 // ----------------------------------------

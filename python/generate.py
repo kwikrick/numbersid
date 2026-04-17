@@ -309,6 +309,42 @@ class NumberSidData:
     
 # ------------- code generation -------------
 
+scale_size = 64
+scale_middle_index = 38
+
+def generate_header(data: NumberSidData) -> str:
+    s = "// numbersid generated header\n"
+    s+=f".const NUM_SEQUENCES = {len(data.scales)}\n"
+    s+=f".const NUM_SCALES = {len(data.scales)}\n"
+    s+=f".const SCALE_SIZE = {scale_size}\n"
+    s+=f".const SCALE_MIDDLE_INDEX = {scale_middle_index}\n"
+    return s
+
+def decode_scale(scale):
+    semitones = [0 for i in range(scale_size)]
+    if scale==0: return semitones
+    # forwards pass
+    semitone = 0
+    index = scale_middle_index
+    while index < scale_size:
+        for key in range(0,12):
+            if scale & (1<<key) != 0:
+                semitones[index]=semitone
+                index+=1
+                if index >= scale_size: break
+            semitone+=1
+    # backward pass
+    semitone = -1
+    index = scale_middle_index-1
+    while index >=0:
+        for key in range(11,0,-1):
+            if scale & (1<<key) != 0:
+                semitones[index]=semitone
+                index-=1
+                if index < 0: break
+            semitone-=1
+    
+    return semitones
 
 def generate(data: NumberSidData) -> str:
     s = "// numbersid generated code\n"
@@ -395,24 +431,28 @@ def generate(data: NumberSidData) -> str:
     s+= "   rts\n"
 
     # generate data and space for scales
-    s+=f"scales_encoded:\n"
-    if len(data.scales) > 0:
-        for scale in data.scales:
-            s+=f"   .word {scale}\n"
+    #s+=f"scales_encoded:\n"
+    #if len(data.scales) > 0:
+    #    for scale in data.scales:
+    #        s+=f"   .word {scale}\n"
+    #s+=f"scales_decoded:\n"
+    #if len(data.scales) > 0:
+    #    s+=f"   .fill {len(data.scales)} * SCALE_SIZE, 0\n"
+    
     s+=f"scales_decoded:\n"
-    if len(data.scales) > 0:
-        s+=f"   .fill {len(data.scales)} * SCALE_SIZE, 0\n"
+    for i,scale in enumerate(data.scales):
+        s+=f"   // scale #{i} = {scale}\n"
+        s+=f"   .byte "
+        for value in decode_scale(scale):
+            s+=f"{value},"
+        s=s[:-1]        #remove comma at end 
+        s+="\n"
+    
     s+=f"scales_ptr_array:\n"
     if len(data.scales) > 0:
         for index,scale in enumerate(data.scales):
             s+=f"   .word scales_decoded + {index} * SCALE_SIZE\n"
     
-    return s
-
-def generate_header(data: NumberSidData) -> str:
-    s = "// numbersid generated header"
-    s+=f".const NUM_SEQUENCES = {len(data.scales)}\n"
-    s+=f".const NUM_SCALES = {len(data.scales)}\n"
     return s
 
 
