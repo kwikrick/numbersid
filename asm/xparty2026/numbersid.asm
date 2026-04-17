@@ -1062,10 +1062,13 @@ masks0:
 
 	ldy #SID_FILTER_L
 	lda ZP_FREE
-	sta sid_data,y				// save low byte to sid_data
-	lda ZP_FREE+1
+	and #$07					// mask lower 3 bits
+	sta sid_data,y				// save lowest 3 bits to sid_data+SID_FILTER_L
+
+	Signed_Shift_Right(ZP_FREE, 3)	// shift right 3 to get upper bits
+	lda ZP_FREE
 	ldy #SID_FILTER_H
-	sta sid_data,y				// save high byte to sid_data
+	sta sid_data,y					// save bits 3-10 byte to sid_data_SID_FILTER_H
 
 	rts
  }
