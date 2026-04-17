@@ -827,7 +827,8 @@ apply_note:
 {
 	.const w_note = ZP_FREE		// and ZP_FREE+1
 	.const b_scale = ZP_FREE+2
-	.const w_scale_ptr = ZP_FREE+3 // and ZP_FREE+4
+	.const w_scale_ptr = ZP_FREE+3  // and ZP_FREE+4
+	.const w_transpose = ZP_FREE+2	// overwrites scale, but it's okay
 
 	// load note parameter
 	ldy #Voice_Param_note*2
@@ -865,11 +866,24 @@ apply_note:
 	and #SCALE_SIZE-1		// assumed power of 2
 	tay
 	lda (w_scale_ptr),y
-	sta w_note 				// Note: now using only low byte for note/semitone
+	sta w_note 				// Note: scale has only low byte for note/semitone
 	lda #0
 	sta w_note+1
 
 skip_scale:
+
+	// load transpose parameter
+	ldy #Voice_Param_transpose*2
+	lda (ZP_PARAMETERS_PTR),y
+	sta w_transpose
+	iny
+	lda (ZP_PARAMETERS_PTR),y
+	sta w_transpose+1
+
+	Word_Add_Word(w_note, w_transpose, w_note)
+
+	// TODO: apply pitch
+
 	// correct offset ZP_FREE for lookup in frequency table
 	Word_Add_Value(w_note, MIDDLE_C_INDEX, w_note)
 
@@ -889,14 +903,20 @@ skip_scale:
  
  apply_scale:
  {
+	// TODO: not efficient!
+	jsr apply_note
  	rts
  }
  apply_transpose:
  {
+	// TODO: not efficient!
+	jsr apply_note
  	rts
  }
  apply_pitch:
  {
+	// TODO: not efficient!
+	jsr apply_note
  	rts
  }
 
