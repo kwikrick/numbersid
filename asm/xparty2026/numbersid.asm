@@ -25,6 +25,9 @@
 .const FREQ_TABLE_LENGTH = 64
 .const HIGHEST_SEMITONE = 38
 .const LOWEST_SEMITONE = HIGHEST_SEMITONE-FREQ_TABLE_LENGTH
+.const MIDDLE_C_INDEX = -LOWEST_SEMITONE
+
+.const  SCALE_SIZE		= 64	// note, typically same as freq table size
 
 // ZP adresses
 // TODO: SAFE WHEN PRINTING TEXT VIA KERNAL???  
@@ -35,6 +38,12 @@
 .const ZP_ACCUMULATOR = $06 		// WORD
 .const ZP_OPERAND = $08   			// WORD
 .const ZP_SIDDATA_PTR = $10			// WORD
+
+// -----------------------
+// import generated header
+// ----------------------- 
+
+#import "generated_header.asm"
 
 // ---- some macros ---- 
 
@@ -1108,6 +1117,51 @@ masks0:
 	rts
  }
  
+// --------
+
+decode_scales:
+{
+	ldx #NUM_SCALES
+loop:
+	jsr decode_scale
+	dex
+	bne loop
+	rts
+}
+
+// X is index
+decode_scale:
+{
+	txa
+	pha
+
+	lda #<scales_decoded
+	sta ZP_FREE
+	lda #>scales_decoded
+	sta ZP_FREE+1		// WORD ZP_FREE is pointer to decoded scale
+	
+	sta ZP_FREE+2		// ZP_FREE+2 is scale index
+	lda #64 
+	sta ZP_FREE+3
+	Word_Mul_LoHi(ZP_FREE+2)		// ZP_FREE+2 = 64*index
+	Word_Add_Word(ZP_FREE,ZP_FREE+2,ZP_FREE)	// ZP_FREE = scales_decoded+64*index
+	
+	lda scales_encoded,x
+	sta ZP_FREE+2		// ZP_FREE+2 is encoded scale
+
+loop:
+	lda #0		// note value
+	sta (ZP_FREE),y
+	
+	iny
+	cpy #SCALE_SIZE-1
+	bne loop
+
+	pla
+	tax
+	rts
+}
+
 // ----------------------------------------
 // ------------ data section --------------
 // ----------------------------------------
@@ -1163,7 +1217,7 @@ help_string: .text "Q=QUIT P=PAUSE N=NEXT B=PREV"; .byte 0
 
 *=* "Generated Code"
 
-#import "generated.asm"
+#import "generated_code.asm"
 
 // --------------------------------------
 // ------------variables ----------------
@@ -1204,6 +1258,7 @@ filter_mode_parameter_value: .word 0
 filter_cutoff_parameter_value: .word 0
 filter_resonance_parameter_value: .word 0
 volume_parameter_value: .word 0
+
 
 clear_mem_end:
 

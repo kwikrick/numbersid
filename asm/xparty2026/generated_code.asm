@@ -31,7 +31,7 @@ eval_seq_3:
    Load_Accumulator(Variable,83)
    Eval_Mul(Number,63)
    Eval_Base(Number,2)
-   Eval_Add(Number,-7)
+   Eval_Add(Number,-4)
    Compare_Accumulator(66)
    beq eval_seq_3_finish
    Store_Accumulator(66)
@@ -42,7 +42,7 @@ eval_seq_4:
    Load_Accumulator(Variable,83)
    Eval_Mul(Number,127)
    Eval_Base(Number,2)
-   Eval_Add(Number,-12)
+   Eval_Add(Number,-7)
    Compare_Accumulator(67)
    beq eval_seq_4_finish
    Store_Accumulator(67)
@@ -123,18 +123,27 @@ variable_changed_67:
    Apply_Variable_To_Voice_Parameter(67, 2, Voice_Param_note)
    rts
 init_voice_parameter_values:
+   // voice 0 scale
+   lda #<1
+   sta voice_parameter_values+4
    // voice 0 waveform
    lda #<1
    sta voice_parameter_values+10
    // voice 0 sustain
    lda #<15
    sta voice_parameter_values+22
+   // voice 1 scale
+   lda #<1
+   sta voice_parameter_values+36
    // voice 1 waveform
    lda #<1
    sta voice_parameter_values+42
    // voice 1 sustain
    lda #<15
    sta voice_parameter_values+54
+   // voice 2 scale
+   lda #<1
+   sta voice_parameter_values+68
    // voice 2 waveform
    lda #<1
    sta voice_parameter_values+74
@@ -143,7 +152,21 @@ init_voice_parameter_values:
    sta voice_parameter_values+86
    rts
 init_global_parameter_values:
+   // filter_mode
+   lda #<1
+   sta filter_mode_parameter_value
+   // filter_cutoff
+   lda #<200
+   sta filter_cutoff_parameter_value
    // volume
    lda #<15
    sta volume_parameter_value
    rts
+scales_encoded:
+   .word 2741
+   .word 1354
+scales_decoded:
+   .fill 2 * SCALE_SIZE, 0
+scales_ptr_array:
+   .word scales_decoded + 0 * SCALE_SIZE
+   .word scales_decoded + 1 * SCALE_SIZE

@@ -201,6 +201,7 @@ class NumberSidData:
         self.volume = None
         self.sequences = []
         self.arrays = []
+        self.scales = []
         self.variable_to_usage = {}
         self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume"]
 
@@ -299,9 +300,15 @@ class NumberSidData:
         for i in range(num_arrays):
             arr = Array.read_from(input_file)
             data.arrays.append(arr)
+        # scales
+        num_scales = int(read_line_stripped(input_file))
+        for i in range(num_scales):
+            scale = int(read_line_stripped(input_file))
+            data.scales.append(scale)
         return data
-
+    
 # ------------- code generation -------------
+
 
 def generate(data: NumberSidData) -> str:
     s = "// numbersid generated code\n"
@@ -384,37 +391,61 @@ def generate(data: NumberSidData) -> str:
                 s += f"   sta {param_name}_parameter_value\n"
                 if (value > 255):
                     s += f"   lda #>{value}\n"
-                    s += f"   sta {param_name}_parameter_value+1\n"
-                    
+                    s += f"   sta {param_name}_parameter_value+1\n"          
     s+= "   rts\n"
 
+    # generate data and space for scales
+    s+=f"scales_encoded:\n"
+    if len(data.scales) > 0:
+        for scale in data.scales:
+            s+=f"   .word {scale}\n"
+    s+=f"scales_decoded:\n"
+    if len(data.scales) > 0:
+        s+=f"   .fill {len(data.scales)} * SCALE_SIZE, 0\n"
+    s+=f"scales_ptr_array:\n"
+    if len(data.scales) > 0:
+        for index,scale in enumerate(data.scales):
+            s+=f"   .word scales_decoded + {index} * SCALE_SIZE\n"
+    
+    return s
+
+def generate_header(data: NumberSidData) -> str:
+    s = "// numbersid generated header"
+    s+=f".const NUM_SEQUENCES = {len(data.scales)}\n"
+    s+=f".const NUM_SCALES = {len(data.scales)}\n"
     return s
 
 
 # ------------- main -------------
 
 def main():
-    if len(sys.argv) != 3:
-        print("Usage: generate.py <input_file> <output_file>")
+    if len(sys.argv) != 4:
+        print("Usage: generate.py <input_file> <output_file> <output_header_file>")
         return
 
     input_file_name = sys.argv[1]
     output_file_name = sys.argv[2]
-
+    output_header_file_name = sys.argv[3]
+    
     if not os.path.exists(input_file_name):
         print(f"Input file {input_file_name} does not exist.")
         return
     
     input_file = open(input_file_name, 'r')
     output_file = open(output_file_name, 'w')
+    output_header_file = open(output_header_file_name, 'w')
     
     data = NumberSidData.read_from(input_file)
     data.map_variable_usage()
     print(data)
     code = generate(data)
     print(code)
+    code_header = generate_header(data)
+    print(code_header)
+
     
     output_file.write(code)
+    output_header_file.write(code_header)
     input_file.close()
     output_file.close()
 

@@ -1,7 +1,7 @@
 3 // num_voices
 K // gate
 A // note
-0 // scale
+1 // scale
 0 // transpose
 0 // pitch
 1 // waveform
@@ -15,7 +15,7 @@ A // note
 0 // filter
 L // gate
 B // note
-0 // scale
+1 // scale
 0 // transpose
 0 // pitch
 1 // waveform
@@ -29,7 +29,7 @@ B // note
 0 // filter
 M // gate
 C // note
-0 // scale
+1 // scale
 0 // transpose
 0 // pitch
 1 // waveform
@@ -44,8 +44,8 @@ C // note
 1 // channel[0] voice
 2 // channel[1] voice
 3 // channel[2] voice
-0 // filter_mode
-0 // cutoff
+1 // filter_mode
+200 // cutoff
 0 // resonance
 15 // volume
 8 // num_sequences
@@ -95,7 +95,7 @@ S // count
 0 // mod2
 0 // mul2
 0 // div2
--7 // add2
+-4 // add2
 0 // array
 C // variable
 S // count
@@ -107,7 +107,7 @@ S // count
 0 // mod2
 0 // mul2
 0 // div2
--12 // add2
+-7 // add2
 0 // array
 K // variable
 R // count
@@ -156,3 +156,6 @@ R // count
 0 // element
 0 // element
 0 // element
+2 // num_scales
+2741 // scale
+1354 // scale
