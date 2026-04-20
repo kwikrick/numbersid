@@ -555,7 +555,13 @@ static fs_path_t fs_win32_posix_tmp_dir(void) {
     }
     return fs_path_printf("%s", utf8_tmp_path);
     #else
-    return fs_path_printf("%s", "/tmp");
+    const char* home = getenv("HOME");
+    if (home && home[0] != '\0') {
+        return fs_path_printf("%s/tmp", home);
+    } else {
+        // fallback if HOME is not set
+        return fs_path_printf("/tmp");
+    }
     #endif
 }
 
