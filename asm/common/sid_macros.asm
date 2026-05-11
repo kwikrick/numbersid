@@ -2,6 +2,8 @@
 // SID Play Macros
 //---------------------------------------------------------
 
+#importonce
+
 #import "common/sid_const.asm"
 
 // Usage:
