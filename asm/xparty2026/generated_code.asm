@@ -135,8 +135,11 @@ init_voice_parameter_values:
    // voice 1 scale
    lda #<2
    sta voice_parameter_values+36
+   // voice 1 transpose
+   lda #<-12
+   sta voice_parameter_values+38
    // voice 1 waveform
-   lda #<1
+   lda #<2
    sta voice_parameter_values+42
    // voice 1 sustain
    lda #<15
@@ -144,20 +147,31 @@ init_voice_parameter_values:
    // voice 2 scale
    lda #<2
    sta voice_parameter_values+68
+   // voice 2 transpose
+   lda #<-12
+   sta voice_parameter_values+70
    // voice 2 waveform
-   lda #<1
+   lda #<2
    sta voice_parameter_values+74
    // voice 2 sustain
    lda #<15
    sta voice_parameter_values+86
+   // voice 2 filter
+   lda #<1
+   sta voice_parameter_values+90
    rts
 init_global_parameter_values:
    // filter_mode
    lda #<1
    sta filter_mode_parameter_value
    // filter_cutoff
-   lda #<200
+   lda #<400
    sta filter_cutoff_parameter_value
+   lda #>400
+   sta filter_cutoff_parameter_value+1
+   // filter_resonance
+   lda #<8
+   sta filter_resonance_parameter_value
    // volume
    lda #<15
    sta volume_parameter_value
