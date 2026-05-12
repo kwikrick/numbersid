@@ -9,6 +9,8 @@
 #import "common/sid_const.asm"
 #import "common/sid_macros.asm"
 #import "common/cia_const.asm"
+#import "common/rasterirq_macros.asm"
+#import "common/misc_macros.asm"
 
 // -----------------------
 // import generated header
@@ -22,95 +24,7 @@
 
 #import "numbersid_macros.asm"
 
-// ---- irq macros ---- 
-
-// TODO: get raster_irq_macros from common
-
-.macro InstallRasterIRQHandler(irqhandler, rasterline)
-{
-        sei							// disable interrups
-        lda #<irqhandler
-        sta $0314					// set IRQ low byte
-        lda #>irqhandler
-        sta $0315					// set IRQ high byte
-        asl $d019					// clear VIC-II interrupt flags ?
-        lda #$7b					
-        sta $dc0d					// CIA 1 interrupt control register, clear all interrupt masks
-        lda #$81
-        sta $d01a					// VIC-II raster scan interupt enable
-        lda #$1b
-        sta $d011					// VIC-II show screen, 25 rows, normal vertical position 
-        lda #rasterline    					// raster line for interupt
-        sta $d012					// VIC-II set raster lien for for interupt 
-        cli							// enable interrupts        
-}
-
-
-.macro StopRasterIRQ()
-{
-		sei
-	
-    	lda #0
-    	sta $d01a					// disable all vic interrupts
-    
-    	// install default IRQ handler
-    	.const default_irq_handler = $EA31
-    	lda #<default_irq_handler
-		sta $0314					// set IRQ low byte
-		lda #>default_irq_handler
-		sta $0315					// set IRQ high byte
-		
-		// set cia interrupt enable for timer A
-		lda #129
-		sta CIA1_ICR
-		
-		cli
-    
-}
-
 // --------- misc macros -------
-
-.macro Fill(adress, size, value) 
-{
-	.if (size==0) {
-		.error "Fill cannot fill 0 bytes" 
-	}
-
-	.if (size>65535) {
-		.error "Fill cannot fill more than 65535 bytes" 
-	}
-
-	// use zero page indirect addressing to fill memory
-	lda #<adress
-	sta ZP_FREE
-
-	lda #>adress
-	sta ZP_FREE+1
-
-	// fill size/256 blocks of 256 bytes 
-	ldx #>size
-	beq skip				// skip if zero blocks
-loopX:
-	lda #value
-	ldy #0
-loopY:
-	sta (ZP_FREE),y
-	dey
-	bne loopY
-	Word_Inc(ZP_FREE+1)		// next 256 byte block
-	dex
-	bne loopX
-skip:
-	lda #value
-	// fill remaining size%256 bytes
-	ldy #<size
-	beq skip2
-loopY2:
-	sta (ZP_FREE),y
-	dey
-	bne loopY2
-skip2:
-}
 
 // -----------------------------------------
 // -------------- code section -------------
@@ -189,7 +103,7 @@ main:
 	UpdateSequences()
 	
 	// start the raster interrupt handler
-	InstallRasterIRQHandler(raster_irq_handler, 50)
+	InstallRasterIRQ_WithKernal(raster_irq_handler, 50)
 		
 	// main loop, handles keyboard input
 	// and shows some text
@@ -244,7 +158,7 @@ main:
 
 	quit:
 		
-	StopRasterIRQ()
+	RestoreRasterIRQ_WithKernal()
 
 	// wait for current irq handler to finish 
 
