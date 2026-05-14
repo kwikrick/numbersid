@@ -45,12 +45,8 @@ main:
 	Fill(clear_mem_start, $401, 0)		// compiler cannot compute, make a guess
 
 	PrintClearScreen()
-    SetCursor(2,0)
-	PrintString(help_string)
     
-	SidReset()
-	
-	
+	SidReset()	
 	
 	// Set initial parameter values for voices and global parameters
 	// note: generated functions
@@ -114,70 +110,10 @@ loop_init_voices:
 	// main loop, handles keyboard input
 	// and shows some text
 	loop:
-			// show counter in top left
-			WordToHex(frame_counter,text_string)
-			SetCursor(0,0)
-			PrintString(text_string)
+	jmp loop
 
-			// print all variables
-			.for (var variable=0; variable<MAX_VARIABLES; variable++) {
-				WordToHex(variable_adress(variable+'A'), text_string)
-				SetCursor(variable/2+4,(mod(variable,2)*20))
-				PrintChar('A'+variable)
-				PrintChar('=')
-				PrintString(text_string)
-				PrintChar(32)
-			} 
+// -------end main -------
 
-			GetKey()			// ascii code in A
-			//pha
-			//SetCursor(4,0)
-			//pla
-			//jsr PRT
-			
-			cmp #'Q'
-			beq quit
-			cmp #'P'
-			beq pause_unpause
-			cmp #'N'
-			beq step_next_frame
-			cmp #'B'
-			beq step_prev_frame
-			
-			// no keypress
-			jmp loop
-
-			// handle keypresses
-			pause_unpause:
-			lda paused
-			eor #1
-			sta paused 
-			jmp loop
-
-			step_next_frame:
-			Word_Inc(frame_counter)
-			jmp loop
-
-            step_prev_frame:
-			Word_Dec(frame_counter)
-			jmp loop
-
-	quit:
-		
-	RestoreRasterIRQ_WithKernal()
-
-	// wait for current irq handler to finish 
-
-quit_wait:
-	lda $D012
-	cmp #200
-	bcs quit_wait
-
-	SidReset()
-	
-	// return to basic
-	rts
-	
 raster_irq_handler:
 {
 		// note: IRQ handler at $efff/$ffff pushes a,x,y registers
@@ -235,10 +171,14 @@ skip_mark_dirty:
 
 // ---- routines ------
 
-*=* "Routines"
+*=* "Numbersid routines"
 
 #import "numbersid_routines.asm"
- 
+
+*=* "Text scroll routines"
+
+#import "text_scroll_routines.asm"
+
 // ----------------------------------------
 // ------------ data section --------------
 // ----------------------------------------
@@ -247,11 +187,9 @@ skip_mark_dirty:
 
 #import "numbersid_data.asm"
 
+*=* "Text scroll data"
 
-*=* "Application Data"
-
-.encoding "petscii_upper"
-help_string: .text "Q=QUIT P=PAUSE N=NEXT B=PREV"; .byte 0
+#import "text_scroll_data.asm"
 
 // -------------------------------------
 // ----------- generated code -----------
@@ -281,6 +219,9 @@ text_string: .fill 40,32 ; .byte 0
 
 // numbersid
 #import "numbersid_variables.asm"
+
+// text scroll
+#import "text_scroll_variables.asm"
 
 clear_mem_end:
 
