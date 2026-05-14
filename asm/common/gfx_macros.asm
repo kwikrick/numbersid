@@ -25,6 +25,7 @@ wait_scan:
 }
 
 // ClearScreen: clears screen at given adress with 1024 bytes of given value 
+// Note: this also clears the sprite pointers!
 // affects A 
 // affects X
 
@@ -79,16 +80,16 @@ done:
 // y: adress of unsigned byte (or word, no matter).
 // Affects: A, flags
 
-.macro MoveSprite(spritenr, x, y) {
+.macro MoveSprite(spritenr, x_addr, y_addr) {
 
-    lda y
+    lda y_addr
     sta VIC_SPR0_Y + spritenr*2    // sprite N x pos
 
-    lda x
+    lda x_addr
     sta VIC_SPR0_X + spritenr*2    // sprite N x pos
     
     // sprite N x pos high bit
-    lda x+1
+    lda x_addr+1
     and #1
     beq clear 
     lda VIC_SPR_HX
@@ -101,6 +102,54 @@ done:
     sta VIC_SPR_HX
     
 }
+
+// like MoveSprite, but spritenr is also an adress
+// affect A,X,Y
+.macro MoveSprite2(spritenr_addr, x_addr, y_addr) {
+
+	// Y=spritenr*2
+    lda spritenr_addr
+    asl						
+    tay
+    
+    // store y pos, and x-low pos
+    lda y_addr
+    sta VIC_SPR0_Y,y
+    lda x_addr
+    sta VIC_SPR0_X,y 
+    
+    // make bitmap for high x 
+    lda #1
+	ldy spritenr_addr
+    beq shift_done
+shift:
+    asl
+    dey
+    bne shift
+    
+shift_done:
+	tax			// x holds bitmap
+   
+	// check x high bit
+    lda x_addr+1
+    and #1
+    beq clear 
+    
+set:
+	txa
+	ora VIC_SPR_HX
+	jmp done
+
+clear:
+	txa
+	eor #$FF
+	and VIC_SPR_HX
+
+done:
+    sta VIC_SPR_HX
+    
+}
+
 
 .macro EnableSprite(spritenr)
 {
@@ -116,6 +165,13 @@ done:
     lda VIC_SPR_EN
     and #~(1 << spritenr) 
     sta VIC_SPR_EN
+}
+
+.macro ColorSprite(spritenr, color)
+{
+    // set color from last byte of 64 byte block (low nybble, register ignores top nybble)
+    lda #color         
+    sta VIC_SPR0_COL+spritenr
 }
 
 

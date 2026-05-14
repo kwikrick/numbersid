@@ -67,6 +67,7 @@
     }
 }
 
+// Shift word at address N times to right
 // Divide by 2^shift_value
 // Note: shift_value must be a variable, not an adress.
 // Will be faster if addr is in zero-page   
