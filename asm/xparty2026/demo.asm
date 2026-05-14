@@ -11,6 +11,8 @@
 #import "common/cia_const.asm"
 #import "common/rasterirq_macros.asm"
 #import "common/misc_macros.asm"
+#import "common/vic_const.asm"
+
 
 // -----------------------
 // import generated header
@@ -19,15 +21,17 @@
 #import "generated_header.asm"
 
 // -----------------------
-// numbersaid consts and macros
+//  consts and macros
 // ----------------------- 
 
 #import "numbersid_macros.asm"
 
-// --------- misc macros -------
+#import "text_scroll_macros.asm"
+
+.const NUMBERSID_RASTER_LINE = 150
 
 // -----------------------------------------
-// -------------- code section -------------
+// -------------- Main section -------------
 // -----------------------------------------
 
 // generate basic start code
@@ -42,10 +46,12 @@ main:
 
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	Fill(clear_mem_start, $401, 0)		// compiler cannot compute, make a guess
+	Fill(clear_mem_start, 1427, 0)		// compiler cannot compute, make a guess
 
-	PrintClearScreen()
-    
+	jsr textscroll_init
+
+	// for numbersid play
+
 	SidReset()	
 	
 	// Set initial parameter values for voices and global parameters
@@ -104,22 +110,103 @@ loop_init_voices:
 	// move code to routine and jump, or avoid this update altogether (start frame=-1?)
 	UpdateSequences()
 	
+	// --------------
+	
 	// start the raster interrupt handler
-	InstallRasterIRQ_WithKernal(raster_irq_handler, 50)
+	InstallRasterIRQ_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 		
 	// main loop, handles keyboard input
 	// and shows some text
 	loop:
 	jmp loop
 
-// -------end main -------
 
-raster_irq_handler:
+// ---------------------------
+// -------IRQ handlers -------
+// ---------------------------
+
+raster_irq_handler_startline:
 {
-		// note: IRQ handler at $efff/$ffff pushes a,x,y registers
-		// then call this handler (via vector $314/$315)
-        asl $d019					// clear VIC-II raster scan interrupt flag
-        
+	RasterIRQBegin_WithKernal()	
+	
+	lda scroll_pos
+	and #VIC_MODE2_HSCROLL
+	sta VIC_MODE2
+	
+	RasterIRQNext_WithKernal(raster_irq_handler_endline, SCROLL_END_LINE)
+}
+
+raster_irq_handler_endline:
+{
+	RasterIRQBegin_WithKernal()	
+
+	inc $d020					// DEBUG
+	
+	// reset VIC hscroll to default
+	lda #4
+	and #VIC_MODE2_HSCROLL
+	sta VIC_MODE2
+	
+	// udpate scroll position
+	dec scroll_pos
+	dec scroll_pos		// double speed
+	bpl cont
+	
+	// reset scroll and increment text offset
+	lda #7
+	sta scroll_pos
+	Word_Inc(text_offset)
+	Word_Compare_Value(text_offset,512)
+	bne lt512
+	Word_Store_Value(text_offset,0)
+lt512:
+	
+	// scroll screen buffer
+	ldx #0
+loop:
+	lda screen_row1+1,x
+	sta screen_row1,x
+	lda screen_row2+1,x
+	sta screen_row2,x
+	inx
+	cpx #39						// 39 columns
+	bne loop
+	
+	// copy text to last column on screen
+	.const ROW1PTR = zp_free
+    .const ROW2PTR = zp_free+2
+    
+    lda #<text_buffer_row1
+    sta ROW1PTR
+    lda #>text_buffer_row1
+    sta ROW1PTR+1
+    
+    lda #<text_buffer_row2
+    sta ROW2PTR
+    lda #>text_buffer_row2
+    sta ROW2PTR+1
+    
+    Word_Add_Word(ROW1PTR, text_offset, ROW1PTR)
+    Word_Add_Word(ROW2PTR, text_offset, ROW2PTR)
+    
+	ldy #0
+	lda (ROW1PTR),y
+	sta screen_row1+39
+	lda (ROW2PTR),y
+	sta screen_row2+39
+	
+cont:
+
+	dec $d020					// DEBUG
+	
+	RasterIRQNext_WithKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
+
+}
+
+raster_irq_handler_numbersid:
+{
+		RasterIRQBegin_WithKernal()	
+
         inc $d020					// DEBUG: next border color
 
         // copy sid_data to the chip
@@ -127,20 +214,9 @@ raster_irq_handler:
         	lda sid_data+i
         	sta SID_BASE+i
         }
-        
-		// check for paused state
-		lda paused
-		bne skip_frame_update
-
+        	
         // increase frame counter
         Word_Inc(frame_counter)
-
-skip_frame_update:
-
-		Word_Compare_Word(frame_counter, variable_adress('T'))
-		beq skip_mark_dirty
-		// copy frame counter to variable 'T' 
-		.encoding "ascii"
 
 		// copy frame counter to variable 'T'
         .encoding "ascii"
@@ -149,24 +225,13 @@ skip_frame_update:
         // mark all its dependencies dirty
         // Note this code must be generated! 84 is ascii for T 
         jsr variable_changed_84	
-        
-skip_mark_dirty:
 
  		// magical computation!
         UpdateSequences()
         
         dec $d020					// DEBUG: previous border color
         
-        // jump to default interrupt handler (for keyboard handling)
-		jmp $EA31
-        
-        // Note: default interrupt handler above will also pull stack and return from interrupt
-        //pla							
-        //tay							// 1 byte from stack to Y
-        //pla
-        //tax                         // 1 byte from stack to X
-        //pla							// 1 byte from stack to A
-        //rti                         
+		RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 }
 
 // ---- routines ------
@@ -208,17 +273,22 @@ skip_mark_dirty:
 
 // TODO: move some data to zero_page for speed?
 
-*=* "Variables" virtual
+*=* "Demo Variables" virtual
 
 clear_mem_start:
 
 // application
-paused: .byte 0
 frame_counter: .word 0
+
+// TODO: debug only
 text_string: .fill 40,32 ; .byte 0
+
+*=* "Numbersid variables" virtual
 
 // numbersid
 #import "numbersid_variables.asm"
+
+*=* "Text scroll variables" virtual
 
 // text scroll
 #import "text_scroll_variables.asm"

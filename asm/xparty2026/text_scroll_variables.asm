@@ -1,8 +1,6 @@
 
 // --- vars----
 
-*=* "Text scroll variables" virtual
-
 // 512 chars (for now)
 text_buffer_row1:
 .fill 512, 32		// spaces
