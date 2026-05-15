@@ -106,7 +106,7 @@ loop_init_voices:
 	// run first update of sequences to apply initial parameter values to sid data
 	// TODO: this is a big macro, invoked twice (see irq handler); 
 	// move code to routine and jump, or avoid this update altogether (start frame=-1?)
-	UpdateSequences()
+	jsr update_sequences
 	
 	// start the raster interrupt handler
 	InstallRasterIRQ_WithKernal(raster_irq_handler, 50)
@@ -217,7 +217,7 @@ skip_frame_update:
 skip_mark_dirty:
 
  		// magical computation!
-        UpdateSequences()
+        jsr update_sequences
         
         dec $d020					// DEBUG: previous border color
         

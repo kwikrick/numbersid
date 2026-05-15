@@ -489,3 +489,8 @@ masks0:
 
 	rts
  }
+
+// called at least twice
+ update_sequences:
+	UpdateSequences()
+	rts

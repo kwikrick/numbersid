@@ -29,6 +29,11 @@
 #import "text_scroll_macros.asm"
 
 .const NUMBERSID_RASTER_LINE = 150
+.const NUM_FRAMES = 64		// must be power of 2 and <=256
+.const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
+.const FRAME_SIZE_SHIFT = 5	// must match frame size
+
+.const DEBUG_FRAME_COUNT = false		// TODO doesnt work, charsets mixed
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -46,7 +51,7 @@ main:
 
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	Fill(clear_mem_start, 1427, 0)		// compiler cannot compute, make a guess
+	Fill(clear_mem_start, 8192, 0)		// compiler cannot compute, make a guess
 
 	jsr textscroll_init
 
@@ -94,31 +99,72 @@ loop_init_voices:
 	Apply_Global_Parameter(Global_Param_filter_resonance)
 	Apply_Global_Parameter(Global_Param_volume)
 
-	// init frame counter to 0
-	Word_Store_Value(frame_counter, 0)
+	// init frame counters 
+	// Note: not needed, all data is zeroed already at startup
+	//Word_Store_Value(read_frame_counter, 0)
+	//Word_Store_Value(write_frame_counter, 0)
 	
 	// copy frame counter to variable 'T' 
-	.encoding "ascii"
-	Word_Copy(frame_counter, variable_adress('T'))
+	//.encoding "ascii"
+	//Word_Copy(write_frame_counter, variable_adress('T'))
 
 	// mark all its dependencies dirty
 	// Note this code must be generated! 84 is ascii for T 
 	jsr variable_changed_84	
 
 	// run first update of sequences to apply initial parameter values to sid data
-	// TODO: this is a big macro, invoked twice (see irq handler); 
-	// move code to routine and jump, or avoid this update altogether (start frame=-1?)
-	UpdateSequences()
+	jsr update_sequences
 	
 	// --------------
-	
+
+	.break
+
 	// start the raster interrupt handler
 	InstallRasterIRQ_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
-		
+
 	// main loop, handles keyboard input
 	// and shows some text
-	loop:
-	jmp loop
+	main_loop:
+
+		// if write_frame >= read_frame+NUM_FRAMES, wait
+		Word_Copy(read_frame_counter, ZP_FREE)
+		Word_Add_Value(ZP_FREE, NUM_FRAMES-1, ZP_FREE)			// TODO is -1 needed?
+		Word_Compare_Word(write_frame_counter, ZP_FREE)
+		bcs main_loop
+
+		// copy frame counter to variable 'T'
+        .encoding "ascii"
+        Word_Copy(write_frame_counter, variable_adress('T'))
+
+        // mark all its dependencies dirty
+        // Note this code must be generated! 84 is ascii for T 
+        jsr variable_changed_84	
+
+ 		// magical computation!
+        jsr update_sequences
+
+		// copy sid_data to frame
+		// ZP_FREE/ZP_F is pointer to frame
+		lda write_frame_counter
+		and #(NUM_FRAMES-1)
+		sta ZP_FREE
+		lda #0
+		sta ZP_FREE+1
+		Word_Shift_Left(ZP_FREE, FRAME_SIZE_SHIFT)
+		Word_Add_Value(ZP_FREE, sid_frames, ZP_FREE)
+
+		ldy #FRAME_SIZE
+sid_frame_copy_loop:
+		lda sid_data,y
+		sta (ZP_FREE),y 
+		dey
+		bne sid_frame_copy_loop
+
+		// increase write frame counter
+        Word_Inc(write_frame_counter)
+
+
+	jmp main_loop
 
 
 // ---------------------------
@@ -128,11 +174,15 @@ loop_init_voices:
 raster_irq_handler_startline:
 {
 	RasterIRQBegin_WithKernal()	
-	
+
 	lda scroll_pos
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
-	
+
+	.if (DEBUG_FRAME_COUNT) {
+		ChooseCharacterSet(CHARSET)
+	}
+
 	RasterIRQNext_WithKernal(raster_irq_handler_endline, SCROLL_END_LINE)
 }
 
@@ -141,11 +191,17 @@ raster_irq_handler_endline:
 	RasterIRQBegin_WithKernal()	
 
 	inc $d020					// DEBUG
-	
+
 	// reset VIC hscroll to default
 	lda #4
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
+
+
+	.if (DEBUG_FRAME_COUNT) {
+		ChooseCharacterSet(2)		// default
+	}
+	
 	
 	// udpate scroll position
 	dec scroll_pos
@@ -203,34 +259,59 @@ cont:
 
 }
 
+// choose character set (2 is default, 3 is lowercase) 
+.macro ChooseCharacterSet(charset_number){
+		// choose charset addr using bit 1-3 VIC_ADDR (note bit 0 is always 1)
+		lda VIC_ADDR
+		and #~7   					// clear low bybble
+		ora #charset_number*2+1
+		sta VIC_ADDR
+}
+
 raster_irq_handler_numbersid:
 {
 		RasterIRQBegin_WithKernal()	
 
-        inc $d020					// DEBUG: next border color
+        inc $d020					// DEBUG
 
-        // copy sid_data to the chip
-        .for(var i=0; i<25; i++) {
-        	lda sid_data+i
-        	sta SID_BASE+i
-        }
-        	
-        // increase frame counter
-        Word_Inc(frame_counter)
+		// debug
+		.if (DEBUG_FRAME_COUNT) {
+			SetCursor(6,0)
+			PrintChar('W')
+			WordToHex(write_frame_counter,text_string)
+			PrintString(text_string)
+			PrintChar(13)
+			PrintChar('R')
+			WordToHex(read_frame_counter,text_string)
+			PrintString(text_string)			
+		}
 
-		// copy frame counter to variable 'T'
-        .encoding "ascii"
-        Word_Copy(frame_counter, variable_adress('T'))
-    
-        // mark all its dependencies dirty
-        // Note this code must be generated! 84 is ascii for T 
-        jsr variable_changed_84	
+		// if read_frame >= write_frame, wait 
+		Word_Compare_Word(read_frame_counter, write_frame_counter)
+		bcs skip
 
- 		// magical computation!
-        UpdateSequences()
-        
-        dec $d020					// DEBUG: previous border color
-        
+		// copy frame data to sid
+		// ZP_FREE/ZP_F is pointer to frame
+		lda read_frame_counter
+		and #(NUM_FRAMES-1)
+		sta ZP_FREE
+		lda #0
+		sta ZP_FREE+1
+		Word_Shift_Left(ZP_FREE, FRAME_SIZE_SHIFT)
+		Word_Add_Value(ZP_FREE, sid_frames, ZP_FREE)
+
+		ldy #FRAME_SIZE
+sid_frame_copy_loop:
+		lda (ZP_FREE),y
+		sta SID_BASE,y
+		dey
+		bne sid_frame_copy_loop
+
+		Word_Inc(read_frame_counter)
+
+skip:
+        dec $d020					// DEBUG
+
 		RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 }
 
@@ -273,25 +354,23 @@ raster_irq_handler_numbersid:
 
 // TODO: move some data to zero_page for speed?
 
-*=* "Demo Variables" virtual
-
 clear_mem_start:
-
-// application
-frame_counter: .word 0
-
-// TODO: debug only
-text_string: .fill 40,32 ; .byte 0
-
-*=* "Numbersid variables" virtual
-
-// numbersid
-#import "numbersid_variables.asm"
 
 *=* "Text scroll variables" virtual
 
-// text scroll
 #import "text_scroll_variables.asm"
+
+*=* "Numbersid variables" virtual
+
+#import "numbersid_variables.asm"
+
+*=* "Demo Variables" virtual
+read_frame_counter: .word 0
+write_frame_counter: .word 0
+sid_frames: .fill NUM_FRAMES * FRAME_SIZE, 0
+
+// TODO: debug only
+text_string: .fill 40,32 ; .byte 0
 
 clear_mem_end:
 

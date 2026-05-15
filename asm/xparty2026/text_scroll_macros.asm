@@ -35,3 +35,4 @@
 
 
 .label charset_addr = CHARSET*$0800
+.print "CHARSET ADDR = "+charset_addr 
