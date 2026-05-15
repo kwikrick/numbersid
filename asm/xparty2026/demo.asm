@@ -33,7 +33,7 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = false		// note: will switch character set
+.const DEBUG_FRAME_COUNT = true		// note: will switch character set
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -108,12 +108,14 @@ loop_init_voices:
 	//.encoding "ascii"
 	//Word_Copy(write_frame_counter, variable_adress('T'))
 
+	Word_Store_Value(read_frame_counter, -16)		// generate some frames before starting 		
+
 	// mark all its dependencies dirty
 	// Note this code must be generated! 84 is ascii for T 
-	jsr variable_changed_84	
+	//jsr variable_changed_84	
 
 	// run first update of sequences to apply initial parameter values to sid data
-	jsr update_sequences
+	// jsr update_sequences
 	
 	// --------------
 
@@ -126,9 +128,9 @@ loop_init_voices:
 
 		// if write_frame >= read_frame+NUM_FRAMES, wait
 		Word_Copy(read_frame_counter, ZP_FREE)
-		Word_Add_Value(ZP_FREE, NUM_FRAMES-1, ZP_FREE)			// TODO is -1 needed?
+		Word_Add_Value(ZP_FREE, NUM_FRAMES-1, ZP_FREE)			// Note -1 is needed to prevent writing to currently read frame
 		Word_Compare_Word(write_frame_counter, ZP_FREE)
-		bcs main_loop
+		bpl main_loop
 
 		// copy frame counter to variable 'T'
         .encoding "ascii"
@@ -156,7 +158,7 @@ sid_frame_copy_loop:
 		lda sid_data,y
 		sta (ZP_FREE),y 
 		iny
-		cpy #FRAME_SIZE
+		cpy #25
 		bne sid_frame_copy_loop
 
 		// increase write frame counter
@@ -282,9 +284,14 @@ raster_irq_handler_numbersid:
 			PrintString(text_string)			
 		}
 
+		// if read_frame < 0, do increment counter, but don't sound yet
+		Word_Compare_Value(read_frame_counter,0)
+		.break
+		bmi wait_for_frame_zero
+
 		// if read_frame >= write_frame, wait 
 		Word_Compare_Word(read_frame_counter, write_frame_counter)
-		bcs skip
+		bcs wait_for_new_frame
 
 		// copy frame data to sid
 		// ZP_IRQ/ZP_IRQ+1 is pointer to frame
@@ -301,12 +308,14 @@ sid_frame_copy_loop:
 		lda (ZP_IRQ),y
 		sta SID_BASE,y
 		iny
-		cpy #FRAME_SIZE 
+		cpy #25 
 		bne sid_frame_copy_loop
+
+wait_for_frame_zero:
 
 		Word_Inc(read_frame_counter)
 
-skip:
+wait_for_new_frame:
         dec $d020					// DEBUG
 
 		RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
