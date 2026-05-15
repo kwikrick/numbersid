@@ -33,7 +33,7 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = false		// TODO doesnt work, charsets mixed
+.const DEBUG_FRAME_COUNT = true		// TODO doesnt work, charsets mixed
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -153,11 +153,12 @@ loop_init_voices:
 		Word_Shift_Left(ZP_FREE, FRAME_SIZE_SHIFT)
 		Word_Add_Value(ZP_FREE, sid_frames, ZP_FREE)
 
-		ldy #FRAME_SIZE
+		ldy #0
 sid_frame_copy_loop:
 		lda sid_data,y
 		sta (ZP_FREE),y 
-		dey
+		iny
+		cpy #FRAME_SIZE
 		bne sid_frame_copy_loop
 
 		// increase write frame counter
@@ -174,7 +175,7 @@ sid_frame_copy_loop:
 // Note: don't use ZP_FREE in the IRQ handlers; numbersid wull use those on main thread
 // and numbersid will also use zero page up to $11 (currently)
 
-.const ZP_IRQ = $16
+.const ZP_IRQ = $16		// need 4 bytes for scroll handler
 
 
 raster_irq_handler_startline:
@@ -269,8 +270,8 @@ cont:
 .macro ChooseCharacterSet(charset_number){
 		// choose charset addr using bit 1-3 VIC_ADDR (note bit 0 is always 1)
 		lda VIC_ADDR
-		and #~7   					// clear low bybble
-		ora #charset_number*2+1
+		and #~$F   					// clear low bybble
+		ora #(charset_number*2+1)
 		sta VIC_ADDR
 }
 
@@ -306,11 +307,12 @@ raster_irq_handler_numbersid:
 		Word_Shift_Left(ZP_IRQ, FRAME_SIZE_SHIFT)
 		Word_Add_Value(ZP_IRQ, sid_frames, ZP_IRQ)
 
-		ldy #FRAME_SIZE
+		ldy #0
 sid_frame_copy_loop:
 		lda (ZP_IRQ),y
 		sta SID_BASE,y
-		dey
+		iny
+		cpy #FRAME_SIZE 
 		bne sid_frame_copy_loop
 
 		Word_Inc(read_frame_counter)

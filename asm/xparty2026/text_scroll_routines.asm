@@ -115,12 +115,13 @@ loop_text:
     ClearScreen(screen, 128)		// space 32 x 4
     
     // --- colorize the two lines --
-    ldx #$40
+    ldx #0
     lda #TEXT_COLOR
 color_loop:
     sta color_row1,x
     sta color_row2,x
-	dex
+	inx
+	cpx #40
 	bne color_loop   
 	
 	// --- reset variables
