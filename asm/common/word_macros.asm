@@ -379,9 +379,9 @@ declow:
 // compare a word and a value
 // affects: A, flags and uses $FB on zero page for temp storage (difference of low bytes)
 // Z is set if values are equal
-// C is set if A >= B (or only of A>B???)
-// Use BEQ for ==, BCC for < and BCS for > (>= ???)
-// For signed aritmetic, use BMI for < and BPL for > instead of BCC and BCS.
+// C is set if A >= B 
+// Use BEQ for ==, BCC for < and BCS for >=
+// For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
 
 .macro Word_Compare_Value(addr, value)
 {
@@ -402,9 +402,9 @@ done:
 // compare a word and a word
 // affects: A, flags and uses $FB on zero page for temp storage (difference of low bytes)
 // Z is set if values are equal
-// C is set if A >= B (or only of A>B???)
-// Use BEQ for ==, BCC for < and BCS for > (>= ???)
-// For signed aritmetic, use BMI for < and BPL for > instead of BCC and BCS.
+// C is set if A >= B
+// Use BEQ for ==, BCC for < and BCS for >= 
+// For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
 
 .macro Word_Compare_Word(addrA, addrB)
 {
