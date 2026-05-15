@@ -33,7 +33,7 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = true		// TODO doesnt work, charsets mixed
+.const DEBUG_FRAME_COUNT = false		// note: will switch character set
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -116,8 +116,6 @@ loop_init_voices:
 	jsr update_sequences
 	
 	// --------------
-
-	.break
 
 	// start the raster interrupt handler
 	InstallRasterIRQ_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
@@ -264,15 +262,6 @@ cont:
 	
 	RasterIRQNext_WithKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
 
-}
-
-// choose character set (2 is default, 3 is lowercase) 
-.macro ChooseCharacterSet(charset_number){
-		// choose charset addr using bit 1-3 VIC_ADDR (note bit 0 is always 1)
-		lda VIC_ADDR
-		and #~$F   					// clear low bybble
-		ora #(charset_number*2+1)
-		sta VIC_ADDR
 }
 
 raster_irq_handler_numbersid:

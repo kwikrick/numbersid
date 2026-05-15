@@ -1,5 +1,7 @@
 #importonce 
 
+#import "common/vic_const.asm"
+
 // consts
 
 .const SCROLL_START_ROW = 0
@@ -36,3 +38,13 @@
 
 .label charset_addr = CHARSET*$0800
 .print "CHARSET ADDR = "+charset_addr 
+
+
+// choose character set (2 is default, 3 is lowercase) 
+.macro ChooseCharacterSet(charset_number){
+		// choose charset addr using bit 1-3 VIC_ADDR (note bit 0 is always 1)
+		lda VIC_ADDR
+		and #~$F   					// clear low bybble
+		ora #(charset_number*2+1)
+		sta VIC_ADDR
+}

@@ -106,7 +106,7 @@ loop_text:
     
     // choose charset addr using bit 1-3 VIC_ADDR (note bit 0 is always 1)
     lda VIC_ADDR
-    and #~7   	// clear low bybble
+    and #~$F   	// clear low nybble
     ora #CHARSET*2+1
     sta VIC_ADDR
     
