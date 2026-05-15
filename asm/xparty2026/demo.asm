@@ -33,7 +33,7 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = true		// note: will switch character set
+.const DEBUG_FRAME_COUNT = false		// note: will switch character set
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -126,7 +126,7 @@ loop_init_voices:
 	// and shows some text
 	main_loop:
 
-		// if write_frame >= read_frame+NUM_FRAMES, wait
+		// if write_frame >= read_frame+NUM_FRAMES-1, wait
 		Word_Copy(read_frame_counter, ZP_FREE)
 		Word_Add_Value(ZP_FREE, NUM_FRAMES-1, ZP_FREE)			// Note -1 is needed to prevent writing to currently read frame
 		Word_Compare_Word(write_frame_counter, ZP_FREE)
@@ -285,8 +285,7 @@ raster_irq_handler_numbersid:
 		}
 
 		// if read_frame < 0, do increment counter, but don't sound yet
-		Word_Compare_Value(read_frame_counter,0)
-		.break
+		lda read_frame_counter+1
 		bmi wait_for_frame_zero
 
 		// if read_frame >= write_frame, wait 
