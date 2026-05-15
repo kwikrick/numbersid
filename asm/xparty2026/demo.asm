@@ -171,6 +171,12 @@ sid_frame_copy_loop:
 // -------IRQ handlers -------
 // ---------------------------
 
+// Note: don't use ZP_FREE in the IRQ handlers; numbersid wull use those on main thread
+// and numbersid will also use zero page up to $11 (currently)
+
+.const ZP_IRQ = $16
+
+
 raster_irq_handler_startline:
 {
 	RasterIRQBegin_WithKernal()	
@@ -229,8 +235,8 @@ loop:
 	bne loop
 	
 	// copy text to last column on screen
-	.const ROW1PTR = zp_free
-    .const ROW2PTR = zp_free+2
+	.const ROW1PTR = ZP_IRQ
+    .const ROW2PTR = ZP_IRQ+2
     
     lda #<text_buffer_row1
     sta ROW1PTR
@@ -291,18 +297,18 @@ raster_irq_handler_numbersid:
 		bcs skip
 
 		// copy frame data to sid
-		// ZP_FREE/ZP_F is pointer to frame
+		// ZP_IRQ/ZP_IRQ+1 is pointer to frame
 		lda read_frame_counter
 		and #(NUM_FRAMES-1)
-		sta ZP_FREE
+		sta ZP_IRQ
 		lda #0
-		sta ZP_FREE+1
-		Word_Shift_Left(ZP_FREE, FRAME_SIZE_SHIFT)
-		Word_Add_Value(ZP_FREE, sid_frames, ZP_FREE)
+		sta ZP_IRQ+1
+		Word_Shift_Left(ZP_IRQ, FRAME_SIZE_SHIFT)
+		Word_Add_Value(ZP_IRQ, sid_frames, ZP_IRQ)
 
 		ldy #FRAME_SIZE
 sid_frame_copy_loop:
-		lda (ZP_FREE),y
+		lda (ZP_IRQ),y
 		sta SID_BASE,y
 		dey
 		bne sid_frame_copy_loop
