@@ -1,16 +1,9 @@
 
 // computed: for each 8 sprites, phase x and phase y
 phases:
-.word 00 * 256, 64 * 256
-.word 00 * 256, 64 * 256
-.word 00 * 256, 64 * 256
-.word 00 * 256, 64 * 256
-.word 00 * 256, 64 * 256
-.word 00 * 256, 64 * 256
-.word 00 * 256, 64 * 256
-.word 00 * 256, 64 * 265
+.word 16,0
 
-// computed: sprite positions
+// computed: for each 8 spites, position x and position y
 positions:
 .word 16, 0
 

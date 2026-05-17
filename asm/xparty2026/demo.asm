@@ -57,7 +57,7 @@ main:
 
 	jsr textscroll_init
 
-	jsr sinesprites_init
+	jsr sinesprites_init			// TODO: causes bug!
 
 	// for numbersid play
 
@@ -333,7 +333,9 @@ raster_irq_handler_sinesprites:
 	RasterIRQBegin_WithKernal()
 	
 	inc $D020			// DEBUG
-		
+	
+	/*
+
 	ldy #0
 loop_compute:
 
@@ -435,6 +437,9 @@ loop_move_sprite:
 	bne loop_move_sprite
 
 	dec $D020    // DEBUG
+
+	*/
+	
 	dec $D020
 		
 	RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
@@ -485,8 +490,6 @@ loop_move_sprite:
 
 // note: this is a virtual segment
 // code should reset all to zero (or other default values)
-
-// TODO: move some data to zero_page for speed?
 
 clear_mem_start:
 
