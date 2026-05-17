@@ -28,7 +28,9 @@
 
 #import "text_scroll_macros.asm"
 
-.const NUMBERSID_RASTER_LINE = 150
+.const NUMBERSID_RASTER_LINE = 100
+.const SINESRPITES_RASTER_IRQ_LINE=150
+
 .const NUM_FRAMES = 64		// must be power of 2 and <=256
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
@@ -54,6 +56,8 @@ main:
 	Fill(clear_mem_start, 8192, 0)		// compiler cannot compute, make a guess
 
 	jsr textscroll_init
+
+	jsr sinesprites_init
 
 	// for numbersid play
 
@@ -175,8 +179,12 @@ sid_frame_copy_loop:
 // Note: don't use ZP_FREE in the IRQ handlers; numbersid wull use those on main thread
 // and numbersid will also use zero page up to $11 (currently)
 
-.const ZP_IRQ = $16		// need 4 bytes for scroll handler
-
+.const ZP_IRQ = $16		// need 4 bytes for scroll handler, 5 for sinesprites
+.const ZP_IRQ1 = $16
+.const ZP_IRQ2 = $17
+.const ZP_IRQ3 = $18
+.const ZP_IRQ4 = $19
+.const ZP_IRQ5 = $20
 
 raster_irq_handler_startline:
 {
@@ -317,7 +325,119 @@ wait_for_frame_zero:
 wait_for_new_frame:
         dec $d020					// DEBUG
 
-		RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
+		RasterIRQNext_WithKernal(raster_irq_handler_sinesprites, SINESRPITES_RASTER_IRQ_LINE)
+}
+
+raster_irq_handler_sinesprites:
+{
+	RasterIRQBegin_WithKernal()
+	
+	inc $D020			// DEBUG
+		
+	ldy #0
+loop_compute:
+
+	// load phase
+	lda phases,y	
+	sta ZP_IRQ
+	lda phases+1,y	
+	sta ZP_IRQ+1
+	
+	// load freq
+	lda freqs,y	
+	sta ZP_IRQ+2
+	lda freqs+1,y	
+	sta ZP_IRQ+3
+	
+	// add freq to phase
+	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
+	
+	// store phase
+	lda ZP_IRQ
+	sta phases,y	
+	lda ZP_IRQ+1
+	sta phases+1,y	
+	
+	// get sine value
+	// lda phases+1,y		// note: divides word by 256
+	tax
+	lda sine_256_256,x
+	sta ZP_IRQ
+	
+	// multiply by amplitude
+	lda amplitudes,y			// note: only using low byte of amplitude
+	sta ZP_IRQ+1
+	Word_Mul_LoHi(ZP_IRQ)		// multiply sine * amplitude
+	
+	// divide by 128
+	Unsigned_Shift_Right(ZP_IRQ, 7)
+	
+	// subtract amplitude
+	lda amplitudes,y
+	sta ZP_IRQ+2
+	lda #0
+	sta ZP_IRQ+3
+	Word_Neg(ZP_IRQ+2, ZP_IRQ+2)
+	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
+	
+	// add offset
+	lda offsets,y
+	sta ZP_IRQ+2
+	lda offsets+1,y
+	sta ZP_IRQ+3
+	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
+	
+	// store
+	lda ZP_IRQ
+	sta positions,y
+	lda ZP_IRQ+1
+	sta positions+1,y
+	
+	iny
+	iny
+	cpy #32
+	beq end_loop_compute
+	jmp loop_compute		// need long jump
+
+end_loop_compute:
+
+	inc $D020       // DEBUG
+
+	// update sprite
+	ldy #0
+	lda #0
+	sta ZP_IRQ+4		// ZP_IRQ+4 spritenr
+loop_move_sprite:
+	 
+	// ZP_IRQ(+1) = x
+	lda positions,y
+	sta ZP_IRQ
+	lda positions+1,y
+	sta ZP_IRQ+1
+	// ZP_IRQ+2(+3) = y
+	lda positions+2,y
+	sta ZP_IRQ+2
+	lda positions+3,y
+	sta ZP_IRQ+3
+	
+	tya
+	pha
+	MoveSprite2(ZP_IRQ+4, ZP_IRQ, ZP_IRQ+2)
+	pla
+	tay
+	
+	inc ZP_IRQ+4
+	iny
+	iny
+	iny
+	iny
+	cpy #32
+	bne loop_move_sprite
+
+	dec $D020    // DEBUG
+	dec $D020
+		
+	RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 }
 
 // ---- routines ------
@@ -330,6 +450,11 @@ wait_for_new_frame:
 
 #import "text_scroll_routines.asm"
 
+*=* "Sine sprite routines"
+
+#import "sinesprites_routines.asm"
+
+
 // ----------------------------------------
 // ------------ data section --------------
 // ----------------------------------------
@@ -341,6 +466,10 @@ wait_for_new_frame:
 *=* "Text scroll data"
 
 #import "text_scroll_data.asm"
+
+*=* "Sine sprite data"
+
+#import "sinesprites_data.asm"
 
 // -------------------------------------
 // ----------- generated code -----------
@@ -361,6 +490,26 @@ wait_for_new_frame:
 
 clear_mem_start:
 
+// ---- Charset data --- 
+
+// chatset data, must be in $2000-$4000 range ($1000-$2000 VICII sees ROM charsset)
+// and alligned to $400 bytes 
+
+*=charset_addr "Charset" virtual
+.fill 2048, random()*65536
+
+// ---- Sprite data --- 
+
+// spite data, must be in $2000-$4000 range ($1000-$2000 VICII sees ROM charset)
+// and alligned to 64 bytes
+
+.align 64
+*=* "Sprites" virtual
+sprite_data1:
+.fill 64, random()*65536
+
+// ------
+
 *=* "Text scroll variables" virtual
 
 #import "text_scroll_variables.asm"
@@ -368,6 +517,10 @@ clear_mem_start:
 *=* "Numbersid variables" virtual
 
 #import "numbersid_variables.asm"
+
+*=* "Sine sprites variables" virtual
+
+#import "sinesprites_variables.asm"
 
 *=* "Demo Variables" virtual
 read_frame_counter: .word 0

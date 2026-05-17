@@ -15,7 +15,4 @@ text_offset:
 scroll_pos:
 .byte 0			// todo, if 8 is needed, move to code?
 
-*=charset_addr "Charset" virtual
-.fill 2048, random()*65536
-
 
