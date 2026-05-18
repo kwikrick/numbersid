@@ -103,6 +103,7 @@ done:
 // Multiply low byte with high byte at address
 // and store result at same adress (as a two byte word in high-low order) 
 // Note: much faster if the word in in zero page!
+// Affects A,X, flags
 
 .macro Word_Mul_LoHi(addr)
 {
