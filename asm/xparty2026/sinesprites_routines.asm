@@ -10,6 +10,18 @@
     // TEMP: generate sprite data
     Fill(sprite_data1, 64, $FF) 
 
+	// set inital phases for y axis (quarter cycle over x)
+	lda #64
+	ldy #0
+loop_init_phases:
+	sta phases+3,y		// y high
+	iny
+	iny
+	iny
+	iny
+	cpy #32
+	bne loop_init_phases
+
 	// --- setup sprites
 	ldy #0					// Y is sprite nr
     loop_setup_sprites:	
