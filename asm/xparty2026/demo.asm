@@ -35,7 +35,7 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = false		// note: will switch character set
+.const DEBUG_FRAME_COUNT = true		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -50,14 +50,14 @@ BasicUpstart2(main)
 *=* "Main"
 
 main:
-
+	
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
 	Fill(clear_mem_start, 8192, 0)		// compiler cannot compute, make a guess
 
 	jsr textscroll_init
 
-	// jsr sinesprites_init
+	jsr sinesprites_init
 
 	// for numbersid play
 
@@ -122,9 +122,6 @@ loop_init_voices:
 	// jsr update_sequences
 	
 	// --------------
-
-.break
-
 
 	// start the raster interrupt handler
 	InstallRasterIRQ_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)
@@ -192,7 +189,6 @@ sid_frame_copy_loop:
 raster_irq_handler_startline:
 {
 	RasterIRQBegin_NoKernal()	
-
 	lda scroll_pos
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
@@ -209,7 +205,6 @@ raster_irq_handler_endline:
 	RasterIRQBegin_NoKernal()	
 
 	inc $d020					// DEBUG
-
 	// reset VIC hscroll to default
 	lda #4
 	and #VIC_MODE2_HSCROLL
@@ -282,9 +277,22 @@ raster_irq_handler_numbersid:
 		RasterIRQBegin_NoKernal()	
 
         inc $d020					// DEBUG
-
 		// debug
 		.if (DEBUG_FRAME_COUNT) {
+
+			.encoding "screencode_upper"
+			lda #'W'
+			sta text_string
+			WordToHex_Screen(write_frame_counter,text_string+1)
+			StringToScreen(text_string, screen, 4,0)
+			
+			lda #'R'
+			sta text_string
+			WordToHex_Screen(read_frame_counter,text_string+1)
+			StringToScreen(text_string, screen, 5,0)
+			
+			
+			/*
 			SetCursor(6,0)
 			PrintChar('W')
 			WordToHex(write_frame_counter,text_string)
@@ -292,7 +300,8 @@ raster_irq_handler_numbersid:
 			PrintChar(13)
 			PrintChar('R')
 			WordToHex(read_frame_counter,text_string)
-			PrintString(text_string)			
+			PrintString(text_string)	
+			*/		
 		}
 
 		// if read_frame < 0, do increment counter, but don't sound yet
@@ -336,8 +345,6 @@ raster_irq_handler_sinesprites:
 	RasterIRQBegin_NoKernal()
 	
 	inc $D020			// DEBUG
-	
-	/*
 
 	ldy #0
 loop_compute:
@@ -372,6 +379,7 @@ loop_compute:
 	// multiply by amplitude
 	lda amplitudes,y			// note: only using low byte of amplitude
 	sta ZP_IRQ+1
+
 	Word_Mul_LoHi(ZP_IRQ)		// multiply sine * amplitude
 	
 	// divide by 128
@@ -440,8 +448,6 @@ loop_move_sprite:
 	bne loop_move_sprite
 
 	dec $D020    // DEBUG
-
-	*/
 	
 	dec $D020
 		
