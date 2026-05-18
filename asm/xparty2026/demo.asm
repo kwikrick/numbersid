@@ -133,7 +133,7 @@ loop_init_voices:
 		// if write_frame >= read_frame+NUM_FRAMES-1, wait
 		Word_Copy(read_frame_counter, ZP_FREE)
 		Word_Add_Value(ZP_FREE, NUM_FRAMES-1, ZP_FREE)			// Note -1 is needed to prevent writing to currently read frame
-		Word_Compare_Word(write_frame_counter, ZP_FREE)
+		Word_Compare_Word_X(write_frame_counter, ZP_FREE)
 		bpl main_loop
 
 		// copy frame counter to variable 'T'
@@ -188,6 +188,7 @@ sid_frame_copy_loop:
 
 raster_irq_handler_startline:
 {
+.break
 	RasterIRQBegin_NoKernal()	
 	lda scroll_pos
 	and #VIC_MODE2_HSCROLL
@@ -197,13 +198,14 @@ raster_irq_handler_startline:
 		ChooseCharacterSet(CHARSET)
 	}
 
+.break
 	RasterIRQNext_NoKernal(raster_irq_handler_endline, SCROLL_END_LINE)
 }
 
 raster_irq_handler_endline:
 {
 	RasterIRQBegin_NoKernal()	
-
+.break
 	inc $d020					// DEBUG
 	// reset VIC hscroll to default
 	lda #4
@@ -225,7 +227,7 @@ raster_irq_handler_endline:
 	lda #7
 	sta scroll_pos
 	Word_Inc(text_offset)
-	Word_Compare_Value(text_offset,512)
+	Word_Compare_Value_X(text_offset,512)
 	bne lt512
 	Word_Store_Value(text_offset,0)
 lt512:
@@ -266,8 +268,8 @@ loop:
 	
 cont:
 
+.break
 	dec $d020					// DEBUG
-	
 	RasterIRQNext_NoKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
 
 }
@@ -275,7 +277,7 @@ cont:
 raster_irq_handler_numbersid:
 {
 		RasterIRQBegin_NoKernal()	
-
+.break
         inc $d020					// DEBUG
 		// debug
 		.if (DEBUG_FRAME_COUNT) {
@@ -309,7 +311,7 @@ raster_irq_handler_numbersid:
 		bmi wait_for_frame_zero
 
 		// if read_frame >= write_frame, wait 
-		Word_Compare_Word(read_frame_counter, write_frame_counter)
+		Word_Compare_Word_X(read_frame_counter, write_frame_counter)
 		bcs wait_for_new_frame
 
 		// copy frame data to sid
@@ -335,6 +337,8 @@ wait_for_frame_zero:
 		Word_Inc(read_frame_counter)
 
 wait_for_new_frame:
+
+.break
         dec $d020					// DEBUG
 
 		RasterIRQNext_NoKernal(raster_irq_handler_sinesprites, SINESRPITES_RASTER_IRQ_LINE)
@@ -343,7 +347,7 @@ wait_for_new_frame:
 raster_irq_handler_sinesprites:
 {
 	RasterIRQBegin_NoKernal()
-	
+.break
 	inc $D020			// DEBUG
 
 	ldy #0
@@ -448,7 +452,7 @@ loop_move_sprite:
 	bne loop_move_sprite
 
 	dec $D020    // DEBUG
-	
+.break
 	dec $D020
 		
 	RasterIRQNext_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)

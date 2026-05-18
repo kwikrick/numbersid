@@ -127,6 +127,7 @@ label2:
 // target_adrr is also a word. Overflow is lost. 
 // Note: target_addr must not overlap  src1 or src2!
 // Note: uses zero page adresses (ZP_FREE, ZP_FREE+1 = $FB,$FC)
+// Affects, A,X,flags, $FB, $FC
 .macro Word_Mul_Word(src1, src2, target_addr)
 {
 	.const zp_low = ZP_FREE
@@ -176,6 +177,7 @@ label2:
 // target_adrr is also a word. Overflow is lost. 
 // TODO: what happens if target is src1 ???
 // Note: uses zero page adresses (ZP_FREE, ZP_FREE+1 = $FB,$FC)
+// Affects, A,X,flags, $FB, $FC
 
 .macro Word_Mul_Value(src1, value, target_addr)
 {
@@ -229,6 +231,7 @@ label2:
 // Note: This routine only works if the result fits in a single byte, i.e. result is <= $FF !!!
 // Note: significantly faster when using zero-page adresses!
 // ? What happens if we divide by zero? It seems it does nothing, result is equal to initial value. 
+// Affects A,X, flags
 
 .macro Word_Div_Byte(word_addr, byte_addr)
 {
@@ -256,6 +259,7 @@ label3:
 //dividend	 : adress of word value
 //remainder  : adress of word value
 //result = dividend ;save memory by reusing divident to store the result
+// Affects A,X,Y, flags
 
 .macro Word_Div_Word(dividend, divisor, remainder)
 {
@@ -378,11 +382,12 @@ declow:
 }
 
 // compare a word and a value
-// affects: A, flags and uses $FB on zero page for temp storage (difference of low bytes)
+// Note: uses $FB in zero page
 // Z is set if values are equal
 // C is set if A >= B 
 // Use BEQ for ==, BCC for < and BCS for >=
 // For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
+// affects: A,X, flags, $FB 
 
 .macro Word_Compare_Value(addr, value)
 {
@@ -401,11 +406,12 @@ done:
 
 
 // compare a word and a word
-// affects: A, flags and uses $FB on zero page for temp storage (difference of low bytes)
+// Note: uses $FB in zero page
 // Z is set if values are equal
 // C is set if A >= B
 // Use BEQ for ==, BCC for < and BCS for >= 
 // For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
+// affects: A,flags, $FB
 
 .macro Word_Compare_Word(addrA, addrB)
 {
@@ -421,6 +427,55 @@ done:
 	lda #$01			// clear N flag, clear Z flag
 done:
 }
+
+
+// compare a word and a value
+// Note: does not affect zero page but X register
+// Z is set if values are equal
+// C is set if A >= B 
+// Use BEQ for ==, BCC for < and BCS for >=
+// For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
+// affects: A,X,flags
+
+.macro Word_Compare_Value_X(addr, value)
+{
+	sec
+	lda addr
+	sbc #<value
+	tax
+	lda addr+1
+	sbc #>value
+	bne done
+	txa
+	beq done
+	lda #$01			// clear N flag, clear Z flag
+done:
+}
+
+
+// compare a word and a word
+// Note: does not affect zero page but X register
+// Z is set if values are equal
+// C is set if A >= B
+// Use BEQ for ==, BCC for < and BCS for >= 
+// For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
+// affects: A, X, flags
+
+.macro Word_Compare_Word_X(addrA, addrB)
+{
+	sec
+	lda addrA
+	sbc addrB
+	tax
+	lda addrA+1
+	sbc addrB+1
+	bne done
+	txa
+	beq done
+	lda #$01			// clear N flag, clear Z flag
+done:
+}
+
 
 // dereference a pointer to a byte
 // pointer_word_addr: adress of a word (of which value is also an adress, i.e. apointer)
