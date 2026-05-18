@@ -74,7 +74,7 @@ exit:
     jmp first
 letter:
     // nybble is A-F
-    adc #54     // ASCII "0" + 6 to skip to "A"
+    adc #54     // ASCII "A" - 10
 first:
     sta hex_string+1        // store second digit in string
     
@@ -91,7 +91,7 @@ first:
     jmp second
 letter2:
     // nybble is A-F
-    adc #54     // ASCII "0" + 6 to skip to "A"
+    adc #54     // ASCII "A" - 10
 second:
     sta hex_string        // store second digit in string
     
@@ -99,34 +99,6 @@ second:
     sta hex_string+2
  
 }
-
-
-// Old version: awkward placement of data
-
-//.macro ByteToHex(byte_addr, hex_string)
-//{
-    //lda byte_addr
-    //and #$0F
-    //tax                     // X is low nybble of byte_add
-    //lda hex_digits,x        // load byte x from hex_digits
-    //sta hex_string+1        // store second digit in string
-    
-    //lda byte_addr
-    ////and $F0                 // not needed
-    //lsr
-    //lsr
-    //lsr
-    //lsr
-    //tax                     // X is high nybble of byte_add
-    //lda hex_digits,x        // load byte x from hex_digits
-    //sta hex_string          // store first digit in string
-    
-    //jmp after_data
-//hex_digits:
-//.text "0123456789ABCDEF"
-//after_data:
-//}
-
 
 // Like ByteToHex but for a two byte word. Needs a 5 byte hex string.  
 // The word is the usual C64 low byte, high byte order
@@ -136,6 +108,75 @@ second:
     ByteToHex(word_addr+1, hex_string)          // high byte
     ByteToHex(word_addr, hex_string+2)          // low byte
     
+}
+
+
+// Convert byte valye to two hexidecimal digits (SCREEN code bytes) in hex_string 
+// Note: hex_string should have space for 3 bytes
+// for two hex digits and a third zero byte to terminate the string
+
+.macro ByteToHex_Screen(byte_addr, hex_string)
+{
+    clc                 // needed for ADC later
+    lda byte_addr
+    and #$0F             // low nybble
+    cmp #$0A            
+    bpl letter
+    // nybble is 0-9
+    adc #48         // Screencode for "0"
+    jmp first
+letter:
+    // nybble is A-F
+    adc #-9         // A=1, 10->A
+first:
+    sta hex_string+1        // store second digit in string
+    
+    clc
+    lda byte_addr
+    lsr              // high nybble
+    lsr
+    lsr
+    lsr
+    cmp #$0A            
+    bpl letter2
+    // nybble is 0-9
+    adc #48     // ASCII "0"
+    jmp second
+letter2:
+    // nybble is A-F
+    adc #-9                 // "A"=1, 10->"A"
+second:
+    sta hex_string        // store second digit in string
+    
+    lda #0                // string terminator 
+    sta hex_string+2
+ 
+}
+
+
+// Like ByteToHex_Screen but for a two byte word. Needs a 5 byte hex string.  
+// The word is the usual C64 low byte, high byte order
+// The hex string is high-to-low order.   
+.macro WordToHex_Screen(word_addr, hex_string)
+{
+    ByteToHex_Screen(word_addr+1, hex_string)          // high byte
+    ByteToHex_Screen(word_addr, hex_string+2)          // low byte
+    
+}
+
+// write string directly to screen buffer
+// stops when string is zero terminated or >255 bytes
+// does not stop when wring outside of screen buffer
+.macro StringToScreen(string, screen, row, col)
+{
+    ldx #0
+loop:
+    lda string,x
+    beq finish
+    sta screen+row*40+col,x
+    inx
+    bne loop
+finish:
 }
 
 // Push and Pop regeisters A,X,Y
