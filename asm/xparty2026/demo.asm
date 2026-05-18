@@ -57,7 +57,7 @@ main:
 
 	jsr textscroll_init
 
-	jsr sinesprites_init			// TODO: causes bug!
+	// jsr sinesprites_init
 
 	// for numbersid play
 
@@ -123,8 +123,11 @@ loop_init_voices:
 	
 	// --------------
 
+.break
+
+
 	// start the raster interrupt handler
-	InstallRasterIRQ_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
+	InstallRasterIRQ_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 
 	// main loop, handles keyboard input
 	// and shows some text
@@ -188,7 +191,7 @@ sid_frame_copy_loop:
 
 raster_irq_handler_startline:
 {
-	RasterIRQBegin_WithKernal()	
+	RasterIRQBegin_NoKernal()	
 
 	lda scroll_pos
 	and #VIC_MODE2_HSCROLL
@@ -198,12 +201,12 @@ raster_irq_handler_startline:
 		ChooseCharacterSet(CHARSET)
 	}
 
-	RasterIRQNext_WithKernal(raster_irq_handler_endline, SCROLL_END_LINE)
+	RasterIRQNext_NoKernal(raster_irq_handler_endline, SCROLL_END_LINE)
 }
 
 raster_irq_handler_endline:
 {
-	RasterIRQBegin_WithKernal()	
+	RasterIRQBegin_NoKernal()	
 
 	inc $d020					// DEBUG
 
@@ -270,13 +273,13 @@ cont:
 
 	dec $d020					// DEBUG
 	
-	RasterIRQNext_WithKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
+	RasterIRQNext_NoKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
 
 }
 
 raster_irq_handler_numbersid:
 {
-		RasterIRQBegin_WithKernal()	
+		RasterIRQBegin_NoKernal()	
 
         inc $d020					// DEBUG
 
@@ -325,12 +328,12 @@ wait_for_frame_zero:
 wait_for_new_frame:
         dec $d020					// DEBUG
 
-		RasterIRQNext_WithKernal(raster_irq_handler_sinesprites, SINESRPITES_RASTER_IRQ_LINE)
+		RasterIRQNext_NoKernal(raster_irq_handler_sinesprites, SINESRPITES_RASTER_IRQ_LINE)
 }
 
 raster_irq_handler_sinesprites:
 {
-	RasterIRQBegin_WithKernal()
+	RasterIRQBegin_NoKernal()
 	
 	inc $D020			// DEBUG
 	
@@ -442,7 +445,7 @@ loop_move_sprite:
 	
 	dec $D020
 		
-	RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
+	RasterIRQNext_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 }
 
 // ---- routines ------

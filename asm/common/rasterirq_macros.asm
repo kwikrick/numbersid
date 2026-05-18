@@ -124,7 +124,6 @@
 		
 		// go
 		cli
-		rts  
 }
 
 .macro RasterIRQBegin_NoKernal()
