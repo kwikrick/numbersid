@@ -27,11 +27,13 @@
 	lda #>adress
 	sta ZP_FREE+1
 
+	// A = value to write
+	lda #value
+
 	// fill size/256 blocks of 256 bytes 
 	ldx #>size
 	beq skip				// skip if zero blocks
 loopX:
-	lda #value
 	ldy #0
 loopY:
 	sta (ZP_FREE),y
@@ -41,13 +43,12 @@ loopY:
 	dex
 	bne loopX
 skip:
-	lda #value
 	// fill remaining size%256 bytes
 	ldy #<size
 	beq skip2
 loopY2:
-	sta (ZP_FREE),y
 	dey
+	sta (ZP_FREE),y
 	bne loopY2
 skip2:
 }
