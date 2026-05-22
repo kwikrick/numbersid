@@ -391,6 +391,9 @@ declow:
 
 .macro Word_Compare_Value(addr, value)
 {
+    .if (addr == $FB) {
+        .error "Word_Compare_Value should not be used on $FB (because it will change it)"
+    }
 	sec
 	lda addr
 	sbc #<value
@@ -415,6 +418,13 @@ done:
 
 .macro Word_Compare_Word(addrA, addrB)
 {
+    .if (addrA == $FB) {
+        .error "Word_Compare_Word should not be used on $FB (because it will change it)"
+    }
+    //.if (addrB == $FB) {
+    //    .error "Word_Compare_Word should not be used on $FB (because it will change it)"
+    //}
+
 	sec
 	lda addrA
 	sbc addrB

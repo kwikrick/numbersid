@@ -38,9 +38,9 @@ textscroll_init:
     sta zp_src+1
     
     // TGT=charset_addr
-    lda #<charset_addr
+    lda #<scroll_charset_addr
     sta zp_tgt
-    lda #>charset_addr
+    lda #>scroll_charset_addr
     sta zp_tgt+1
     
     // scale 64 chars
@@ -107,7 +107,7 @@ loop_text:
     // choose charset addr using bit 1-3 VIC_ADDR (note bit 0 is always 1)
     lda VIC_ADDR
     and #~$F   	// clear low nybble
-    ora #CHARSET*2+1
+    ora #SCROLL_CHARSET*2+1
     sta VIC_ADDR
     
     // --- clear two rows of screen

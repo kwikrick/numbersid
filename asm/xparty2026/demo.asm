@@ -28,6 +28,8 @@
 
 #import "text_scroll_macros.asm"
 
+#import "bob_macros.asm"
+
 .const NUMBERSID_RASTER_LINE = 100
 .const SINESRPITES_RASTER_IRQ_LINE=150
 
@@ -35,7 +37,8 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = true		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
+.const DEBUG_FRAME_COUNT = false		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
+
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -55,7 +58,7 @@ main:
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
 	Fill(clear_mem_start, 8192, 0)		// compiler cannot compute, make a guess
 
-	ClearScreen(screen,32)
+	ClearScreen(screen,0)
 	lda #0
 	sta $d020			// fg color
 	lda #0
@@ -64,6 +67,8 @@ main:
 	jsr textscroll_init
 
 	// jsr sinesprites_init
+
+	BOB_COPY_CHARSET(character_data1)
 
 	// for numbersid play
 
@@ -185,12 +190,14 @@ sid_frame_copy_loop:
 // Note: don't use ZP_FREE in the IRQ handlers; numbersid wull use those on main thread
 // and numbersid will also use zero page up to $11 (currently)
 
-.const ZP_IRQ = $16		// need 4 bytes for scroll handler, 5 for sinesprites
+.const ZP_IRQ = $16		// need 4 bytes for scroll handler, 6 for sinesprites
 .const ZP_IRQ1 = $16
 .const ZP_IRQ2 = $17
 .const ZP_IRQ3 = $18
 .const ZP_IRQ4 = $19
 .const ZP_IRQ5 = $20
+.const ZP_IRQ6 = $21
+
 
 raster_irq_handler_startline:
 {
@@ -199,9 +206,9 @@ raster_irq_handler_startline:
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
 
-	.if (DEBUG_FRAME_COUNT) {
-		ChooseCharacterSet(CHARSET)
-	}
+	//.if (DEBUG_FRAME_COUNT) {
+		ChooseCharacterSet(SCROLL_CHARSET)
+	//}
 
 	RasterIRQNext_NoKernal(raster_irq_handler_endline, SCROLL_END_LINE)
 }
@@ -219,6 +226,10 @@ raster_irq_handler_endline:
 
 	.if (DEBUG_FRAME_COUNT) {
 		ChooseCharacterSet(2)		// default
+	}
+	.if (!DEBUG_FRAME_COUNT)
+	{
+		ChooseCharacterSet(BOB_CHARSET)		// default
 	}
 	
 	
@@ -429,10 +440,13 @@ end_loop_compute:
 	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
 	.const ZP_TEMP_H = ZP_IRQ+3
 	.const ZP_COLOR = ZP_IRQ+4		// byte
+	//.const ZP_CHAR = ZP_IRQ+6
 
 	ldx #0					// X is index in positions
 	lda #1
 	sta ZP_COLOR			// IRQ_FREE+4 = color
+	//lda #0
+	//sta ZP_CHAR
 
 loop_move_sprite:
 	
@@ -467,8 +481,10 @@ loop_move_sprite:
 
 	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
 	
-	lda #81						// load character
-	ldy #0
+	lda read_frame_counter				// determine character from frame
+	and #63
+	adc #1
+	ldy #0						// must be zero
 	sta (ZP_CELL),y				// store in screen ram
 
 	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
@@ -480,6 +496,8 @@ loop_move_sprite:
 skip:
 
 	inc ZP_COLOR
+	//inc ZP_CHAR
+
 	inx
 	inx
 	inx
@@ -507,8 +525,12 @@ end_loop_move_sprite:
 
 #import "text_scroll_routines.asm"
 
+*=* "Bob routines"
+#import "bob_routines.asm"
+
 //*=* "Sine sprite routines"
 //#import "sinesprites_routines.asm"
+
 
 // ----------------------------------------
 // ------------ data section --------------
@@ -525,6 +547,10 @@ end_loop_move_sprite:
 *=* "Sine sprite data"
 
 #import "sinesprites_data.asm"
+
+*=* "Bob Charset data"
+
+#import "character_data.asm"
 
 // -------------------------------------
 // ----------- generated code -----------
@@ -548,8 +574,12 @@ clear_mem_start:
 // chatset data, must be in $2000-$4000 range ($1000-$2000 VICII sees ROM charsset)
 // and alligned to $400 bytes 
 
-*=charset_addr "Charset" virtual
+*=scroll_charset_addr "Charset Scroll" virtual
 .fill 2048, random()*65536
+
+*=bob_charset_addr "Charset Bob" virtual
+.fill 2048, random()*65536
+
 
 // ---- Sprite data --- 
 

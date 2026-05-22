@@ -11,7 +11,7 @@
 
 // .const SCROLL_COMPUTE_LINE = 200
 
-.const CHARSET = 4		// 0-7; 2 = default, upper; 3=lower		 
+.const SCROLL_CHARSET = 4		// 0-7; 2 = default, upper; 3=lower		 
 
 .const TEXT_COLOR = 1
 
@@ -36,8 +36,8 @@
 .label color_row2 = screen_colors + (SCROLL_START_ROW+1)*40
 
 
-.label charset_addr = CHARSET*$0800
-.print "CHARSET ADDR = "+charset_addr 
+.label scroll_charset_addr = SCROLL_CHARSET*$0800
+.print "SCROLL CHARSET ADDR = "+scroll_charset_addr 
 
 
 // choose character set (2 is default, 3 is lowercase) 
