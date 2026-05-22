@@ -69,6 +69,7 @@ main:
 	// jsr sinesprites_init
 
 	BOB_COPY_CHARSET(character_data1)
+	BOB_INIT_PHASES()
 
 	// for numbersid play
 

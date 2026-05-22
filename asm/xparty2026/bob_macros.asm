@@ -8,6 +8,22 @@
 .label zp_char_tgt=zp_free+2       // word
 
 
+.macro BOB_INIT_PHASES()
+{
+    // set inital phases for y axis (quarter cycle over x)
+	lda #64
+	ldy #0
+loop_init_phases:
+	sta phases+3,y		// y high
+	iny
+	iny
+	iny
+	iny
+	cpy #32
+	bne loop_init_phases
+}
+
+
 .macro BOB_COPY_CHARSET(bob_charset_src)
 {
     Fill(bob_charset_addr, 2048, 0)     // clear charset        // TODO: use same fill routine at demo start
