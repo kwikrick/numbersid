@@ -477,6 +477,53 @@ done:
 }
 
 
+// compare a word and a value
+// Note: does not affect zero page but Y register
+// Z is set if values are equal
+// C is set if A >= B 
+// Use BEQ for ==, BCC for < and BCS for >=
+// For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
+// affects: A,Y,flags
+
+.macro Word_Compare_Value_Y(addr, value)
+{
+	sec
+	lda addr
+	sbc #<value
+	tay
+	lda addr+1
+	sbc #>value
+	bne done
+	tya
+	beq done
+	lda #$01			// clear N flag, clear Z flag
+done:
+}
+
+
+// compare a word and a word
+// Note: does not affect zero page but Y register
+// Z is set if values are equal
+// C is set if A >= B
+// Use BEQ for ==, BCC for < and BCS for >= 
+// For signed aritmetic, use BMI for < and BPL for >= instead of BCC and BCS.
+// affects: A, Y, flags
+
+.macro Word_Compare_Word_Y(addrA, addrB)
+{
+	sec
+	lda addrA
+	sbc addrB
+	tay
+	lda addrA+1
+	sbc addrB+1
+	bne done
+	tya
+	beq done
+	lda #$01			// clear N flag, clear Z flag
+done:
+}
+
 // dereference a pointer to a byte
 // pointer_word_addr: adress of a word (of which value is also an adress, i.e. apointer)
 // value_byte_addr: adress of byte to write value to 
@@ -506,4 +553,23 @@ done:
 
 // TODO: use pseudo-opps so we don't need seperate version for immediate values and absolute adresses? Possible working for indirect as well?
 
+// multily word in tgt,tgt+1 times 40 and store word in tgt,tgt+1
+// also needs temp space in tgt+2, tgt+3
+// affects A,X, tgt+(1,2,3,4)
+.macro Word_Mul_40(tgt)
+{
+    Word_Copy(tgt,tgt+2)
+    Word_Shift_Left(tgt,5)          // times 32
+    Word_Shift_Left(tgt+2,3)        // times 8
+    Word_Add_Word(tgt, tgt+2, tgt)  // tgt = 32A+8A=40A
+}
 
+.macro Word_Add_A(addr)
+{
+    clc
+    adc addr
+    sta addr
+    lda addr+1
+    adc #0
+    sta addr+1
+}

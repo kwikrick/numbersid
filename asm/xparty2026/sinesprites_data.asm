@@ -6,35 +6,35 @@ sine_256_256:
 
 // paramters: for each 8 sprites, freq x and freq y
 freqs:
-.word 256 + 16 , 256 + 16
-.word 256 + 32 , 256 + 32
-.word 256 + 64 , 256 + 64
-.word 256 + 128 , 256 + 128
-.word 256 + 16 , 256 + 16
-.word 256 + 32, 256 + 32
-.word 256 + 64 , 256 + 64
-.word 256 + 128, 256 + 128
+.word 01 * 256 + 000 , 01 * 256 + 000
+.word 02 * 256 + 000 , 01 * 256 + 000
+.word 01 * 256 + 000 , 02 * 256 + 000
+.word 03 * 256 + 000 , 01 * 256 + 000
+.word 01 * 256 + 000 , 03 * 256 + 000
+.word 02 * 256 + 000 , 03 * 256 + 000
+.word 03 * 256 + 000 , 02 * 256 + 000
+.word 05 * 256 + 000 , 05 * 256 + 000
 
 // paramters: for each 8 sprites, offset x and offset y
 offsets:
-.word 170,140
-.word 170,140
-.word 170,140
-.word 170,140
-.word 170,140
-.word 170,140
-.word 170,140
-.word 170,140
+.word 20,12
+.word 20,12
+.word 20,12
+.word 20,12
+.word 20,12
+.word 20,12
+.word 20,12
+.word 20,12
 
 // paramters: for each 8 sprites: scale x and scale y
 // Note: we store word values to make indexing simpler (all others are words)
 // But we only use low byte, value <=256
 amplitudes:
+.word 4,2
+.word 8,4
+.word 12,6
+.word 16,8
 .word 20,10
-.word 40,20
-.word 60,30
-.word 80,40
-.word 100,50
-.word 120,60
-.word 140,70
-.word 160,80
+.word 24,12
+.word 28,14
+.word 32,18

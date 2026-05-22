@@ -110,9 +110,14 @@ loop_text:
     ora #CHARSET*2+1
     sta VIC_ADDR
     
-    // --- 
+    // --- clear two rows of screen
     
-    ClearScreen(screen, 128)		// space 32 x 4
+	ldx #80
+	lda #(32*4)			// char 32 (space) * 4
+loop_clear:
+	sta screen,x
+	dex
+	bne loop_clear
     
     // --- colorize the two lines --
     ldx #0

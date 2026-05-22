@@ -55,9 +55,15 @@ main:
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
 	Fill(clear_mem_start, 8192, 0)		// compiler cannot compute, make a guess
 
+	ClearScreen(screen,32)
+	lda #0
+	sta $d020			// fg color
+	lda #0
+	sta $d021			// border color
+
 	jsr textscroll_init
 
-	jsr sinesprites_init
+	// jsr sinesprites_init
 
 	// for numbersid play
 
@@ -188,7 +194,6 @@ sid_frame_copy_loop:
 
 raster_irq_handler_startline:
 {
-.break
 	RasterIRQBegin_NoKernal()	
 	lda scroll_pos
 	and #VIC_MODE2_HSCROLL
@@ -198,17 +203,16 @@ raster_irq_handler_startline:
 		ChooseCharacterSet(CHARSET)
 	}
 
-.break
 	RasterIRQNext_NoKernal(raster_irq_handler_endline, SCROLL_END_LINE)
 }
 
 raster_irq_handler_endline:
 {
 	RasterIRQBegin_NoKernal()	
-.break
+
 	inc $d020					// DEBUG
 	// reset VIC hscroll to default
-	lda #4
+	lda #7
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
 
@@ -268,7 +272,6 @@ loop:
 	
 cont:
 
-.break
 	dec $d020					// DEBUG
 	RasterIRQNext_NoKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
 
@@ -277,7 +280,7 @@ cont:
 raster_irq_handler_numbersid:
 {
 		RasterIRQBegin_NoKernal()	
-.break
+
         inc $d020					// DEBUG
 		// debug
 		.if (DEBUG_FRAME_COUNT) {
@@ -338,7 +341,6 @@ wait_for_frame_zero:
 
 wait_for_new_frame:
 
-.break
         dec $d020					// DEBUG
 
 		RasterIRQNext_NoKernal(raster_irq_handler_sinesprites, SINESRPITES_RASTER_IRQ_LINE)
@@ -347,7 +349,7 @@ wait_for_new_frame:
 raster_irq_handler_sinesprites:
 {
 	RasterIRQBegin_NoKernal()
-.break
+
 	inc $D020			// DEBUG
 
 	ldy #0
@@ -420,39 +422,76 @@ end_loop_compute:
 
 	inc $D020       // DEBUG
 
-	// update sprite
-	ldy #0
-	lda #0
-	sta ZP_IRQ+4		// ZP_IRQ+4 spritenr
+	// ----- draw bobs on screen
+	
+	.const ZP_CELL = ZP_IRQ   		// word
+	.const ZP_CELL_H = ZP_IRQ+1   		// word
+	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
+	.const ZP_TEMP_H = ZP_IRQ+3
+	.const ZP_COLOR = ZP_IRQ+4		// byte
+
+	ldx #0					// X is index in positions
+	lda #1
+	sta ZP_COLOR			// IRQ_FREE+4 = color
+
 loop_move_sprite:
-	 
-	// ZP_IRQ(+1) = x
-	lda positions,y
-	sta ZP_IRQ
-	lda positions+1,y
-	sta ZP_IRQ+1
-	// ZP_IRQ+2(+3) = y
-	lda positions+2,y
-	sta ZP_IRQ+2
-	lda positions+3,y
-	sta ZP_IRQ+3
 	
-	tya
-	pha
-	MoveSprite2(ZP_IRQ+4, ZP_IRQ, ZP_IRQ+2)
-	pla
-	tay
+	lda positions+2,x		    
+	sta ZP_CELL
+	lda positions+3,x	
+	sta ZP_CELL+1				// ZP_CELL(word) = y position
+	// TODO: modulo 25 easy to compute?
+	Word_Compare_Value_Y(ZP_CELL, 2)
+	bmi skip1
+	Word_Compare_Value_Y(ZP_CELL, 25)
+	bpl skip1
+	bmi cont1
+
+	skip1:
+	jmp skip
+	cont1:
 	
-	inc ZP_IRQ+4
-	iny
-	iny
-	iny
-	iny
-	cpy #32
-	bne loop_move_sprite
+	Word_Mul_40(ZP_CELL)		// ZP_CELL(word) = 40*y		// NOTE: uses ZP_CELL+2,ZP_CELL+3
+	
+	lda positions,x		    
+	sta ZP_TEMP
+	lda positions+1,x	
+	sta ZP_TEMP+1				// ZP_TEMP(word) = x position
+	// TODO: modulo 40 easy to compute?
+	Word_Compare_Value_Y(ZP_TEMP, 0)
+	bmi skip
+	Word_Compare_Value_Y(ZP_TEMP, 40)
+	bpl skip
+
+	Word_Add_Word(ZP_CELL, ZP_TEMP, ZP_CELL)		// ZP_CELL is cell offset 
+
+	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
+	
+	lda #81						// load character
+	ldy #0
+	sta (ZP_CELL),y				// store in screen ram
+
+	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
+
+	lda ZP_COLOR				// load color
+	//ldy #0
+	sta (ZP_CELL),y				// store in color ram
+
+skip:
+
+	inc ZP_COLOR
+	inx
+	inx
+	inx
+	inx
+	cpx #32
+	beq end_loop_move_sprite
+	jmp loop_move_sprite
+
+end_loop_move_sprite:
 
 	dec $D020    // DEBUG
-.break
+
 	dec $D020
 		
 	RasterIRQNext_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)
@@ -468,10 +507,8 @@ loop_move_sprite:
 
 #import "text_scroll_routines.asm"
 
-*=* "Sine sprite routines"
-
-#import "sinesprites_routines.asm"
-
+//*=* "Sine sprite routines"
+//#import "sinesprites_routines.asm"
 
 // ----------------------------------------
 // ------------ data section --------------
@@ -519,10 +556,12 @@ clear_mem_start:
 // spite data, must be in $2000-$4000 range ($1000-$2000 VICII sees ROM charset)
 // and alligned to 64 bytes
 
+/*
 .align 64
 *=* "Sprites" virtual
 sprite_data1:
 .fill 64, random()*65536
+*/
 
 // ------
 
