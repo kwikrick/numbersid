@@ -43,6 +43,7 @@ variable_changed_83:
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 1, Voice_Param_gate)
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
+   Apply_Variable_To_Global_Parameter(65, Global_Param_bob_color)
    rts
 variable_changed_66:
    Apply_Variable_To_Sine_Parameter(66, 1, Sine_Param_amplitude)

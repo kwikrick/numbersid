@@ -227,7 +227,7 @@ class NumberSidData:
         self.arrays = []
         self.scales = []
         self.variable_to_usage = {}
-        self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume"]
+        self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume","bob_color"]
         self.sines = []
         self.bob_color_varomum = None
         self.bob_speed_varomum = None
@@ -255,7 +255,7 @@ class NumberSidData:
                     self.variable_to_usage[param_varonum.variable].voice_parameters.add((voicenr, param_name))
 
         for param_name in self.global_parameter_names:
-            self.map_filter_volume_usage(param_name)
+            self.map_global_parameter_usage(param_name)
 
         for sinenr, sine in enumerate(self.sines):
             for param_name in sine.parameters:
@@ -265,7 +265,7 @@ class NumberSidData:
                         self.variable_to_usage[param_varonum.variable] = VariableUsage(param_varonum.variable)
                     self.variable_to_usage[param_varonum.variable].sine_parameters.add((sinenr, param_name))
         
-    def map_filter_volume_usage(self, parameter_name):
+    def map_global_parameter_usage(self, parameter_name):
         varonum = getattr(self,parameter_name)
         if varonum != None and varonum.type() == "Variable":
             variable = varonum.variable
@@ -347,11 +347,12 @@ class NumberSidData:
             scale = int(read_line_stripped(input_file))
             data.scales.append(scale)
         # sines parameters
-        print("DEBUG read sine")
         num_sines = int(read_line_stripped(input_file))
         for i in range(num_sines):
             sine = Sine.read_from(input_file)
             data.sines.append(sine)
+         # bob parameters
+        data.bob_color = Varonum.parse(read_line_stripped(input_file))
         # ----
         return data
     
@@ -439,7 +440,7 @@ def generate(data: NumberSidData) -> str:
         for voice_param in usage.voice_parameters:
             s+= f"   Apply_Variable_To_Voice_Parameter({variable}, {voice_param[0]}, Voice_Param_{voice_param[1]})\n"
         for global_param in usage.global_parameters:
-            s+= f"   Apply_Variable_To_Global_Parameter({variable}, {global_param})\n"
+            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_{global_param})\n"
         for sine_param in usage.sine_parameters:
             s+= f"   Apply_Variable_To_Sine_Parameter({variable}, {sine_param[0]}, Sine_Param_{sine_param[1]})\n"
         s += f"   rts\n"

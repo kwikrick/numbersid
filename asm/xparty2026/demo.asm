@@ -458,12 +458,12 @@ loop_add_sines:
 	.const ZP_CELL_H = ZP_IRQ+1   		// word
 	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
 	.const ZP_TEMP_H = ZP_IRQ+3
-	.const ZP_COLOR = ZP_IRQ+4		// byte
+	//.const ZP_COLOR = ZP_IRQ+4		// byte
 	//.const ZP_CHAR = ZP_IRQ+6
 
 	ldx #0					// X is index in positions
-	lda #1					// TODO: get color from a parameter
-	sta ZP_COLOR			
+	//lda #1					// TODO: get color from a parameter
+	//sta ZP_COLOR			
 	//lda #0
 	//sta ZP_CHAR			// TODO: increment char by some amount given by pamameter
 
@@ -500,7 +500,7 @@ loop_add_sines:
 
 	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
 
-	lda ZP_COLOR				// load color
+	lda bob_color_parameter_value
 	//ldy #0
 	sta (ZP_CELL),y				// store in color ram
 

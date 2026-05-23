@@ -82,6 +82,7 @@ zero:
 .const Global_Param_filter_cutoff = 1
 .const Global_Param_filter_resonance = 2
 .const Global_Param_volume = 3
+.var global_param_count = 4				// for next header that want to add global params
 
 .encoding "ascii"
 .function variable_adress(variable) {
@@ -255,10 +256,11 @@ zero:
 	.if (parameter==Global_Param_volume) {
 		jsr apply_volume
 	}
+	// Note: for bob parameters, no extra work is needed
 }
 
 .macro Apply_Variable_To_Voice_Parameter(variable, voice, parameter) {
-	lda #voice
+	lda #voice        // TODO: can skip if already done, keep state in Assembler variable
 	jsr set_voice
 	
 	.if (false) {
@@ -284,9 +286,8 @@ zero:
 
 }
 
-
 .macro Apply_Variable_To_Global_Parameter(variable, parameter) {
-	jsr set_global
+	jsr set_global			// TODO: can skip if already done, keep state in Assemlber variable
 	ldx #variable-'A'
 	ldy #parameter
 	

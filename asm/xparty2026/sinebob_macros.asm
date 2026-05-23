@@ -36,6 +36,8 @@ loop_init_phases:
 .const Sine_Param_freq = 0
 .const Sine_Param_amplitude = 1
 
+.const Global_Param_bob_color = global_param_count++
+
 .macro Apply_Variable_To_Sine_Parameter(variable, sine, parameter) {
 	.print "Apply_Variable_To_Sine_Parameter(" + variable + " " + sine + " " + parameter +")"
 

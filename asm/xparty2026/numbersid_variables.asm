@@ -22,3 +22,7 @@ filter_mode_parameter_value: .word 0
 filter_cutoff_parameter_value: .word 0
 filter_resonance_parameter_value: .word 0
 volume_parameter_value: .word 0
+
+// TODO: i'd like to move this to sinebob_variables.asm, 
+// but needs to be adjacent to other global parameters. For now...
+bob_color_parameter_value: .word 0
