@@ -32,7 +32,7 @@
 #import "sinebob_macros.asm"
 
 .const NUMBERSID_RASTER_LINE = 100
-.const SINESRPITES_RASTER_IRQ_LINE=150
+.const SINEBOB_RASTER_IRQ_LINE=150
 
 .const NUM_FRAMES = 64		// must be power of 2 and <=256
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
@@ -69,7 +69,8 @@ main:
 
 	// jsr sinebob_init
 
-	BOB_COPY_CHARSET(character_data1)
+	jsr sinebob_init_charset
+
 	BOB_INIT_PHASES()
 
 	// for numbersid play
@@ -344,7 +345,7 @@ wait_for_new_frame:
 
         dec $d020					// DEBUG
 
-		RasterIRQNext_NoKernal(raster_irq_handler_sinebob, SINESRPITES_RASTER_IRQ_LINE)
+		RasterIRQNext_NoKernal(raster_irq_handler_sinebob, SINEBOB_RASTER_IRQ_LINE)
 }
 
 raster_irq_handler_sinebob:
@@ -380,7 +381,7 @@ loop_compute:
 	sta phases+1,y	
 	
 	// get sine value
-	// lda phases+1,y		// note: divides word by 256
+	// lda phases+1,y		// note: use high byte, divides word by 256
 	tax
 	lda sine_256_256,x
 	sta ZP_IRQ
@@ -417,7 +418,7 @@ loop_compute:
 	
 	iny
 	iny
-	cpy #32
+	cpy #BOB_NUM_SINES*4
 	beq end_loop_compute
 	jmp loop_compute		// need long jump
 
@@ -473,9 +474,9 @@ loop_move_sprite:
 
 	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
 	
-	lda read_frame_counter				// determine character from frame
+	lda read_frame_counter		// determine character from frame (TODO: make a parameter per bob)
 	and #63
-	adc #1
+	adc #1						// skip char 0 
 	ldy #0						// must be zero
 	sta (ZP_CELL),y				// store in screen ram
 
@@ -494,11 +495,13 @@ skip:
 	inx
 	inx
 	inx
-	cpx #32
+	cpx #BOB_NUM_SINES*4
 	beq end_loop_move_sprite
 	jmp loop_move_sprite
 
 end_loop_move_sprite:
+
+	inc $D020    // DEBUG
 
 	// ----- update charset
 
@@ -506,9 +509,9 @@ end_loop_move_sprite:
 
 	// -----
 
-
-	dec $D020    // DEBUG
-
+    // DEBUG
+	dec $D020
+	dec $D020
 	dec $D020
 		
 	RasterIRQNext_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)

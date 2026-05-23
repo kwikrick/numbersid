@@ -1,3 +1,4 @@
+#import "sinebob_macros.asm"
 
 // TODO: phase needs to be controllable as a parameter too?
 // idea 1 (simplest, same as original)
@@ -9,13 +10,13 @@
 //  - add a reset parameter (one for all)
 //  - when rest parameter is triggered, rest all phases, 0 or 128 for x an y 
 
-// computed: for each 8 sprites, phase x and phase y
+// computed: for each 8 bob, phase x and phase y
 phases:
-.fillword 16,0
+.fillword BOB_NUM_SINES*2,0
 
-// computed: for each 8 spites, position x and position y
+// computed: for each 8 bob, position x and position y
 positions:
-.fillword 16, 0
+.fillword BOB_NUM_SINES*2, 0
 
 // offset in the charset where transitions are to be update0
 // note: offset in bytes, so 8 bytes per char, increase insteps of 8 
