@@ -29,3 +29,29 @@ loop_init_phases:
 	bne loop_init_phases
 }
 
+
+
+// ------ to be used by generated code ------
+
+.const Sine_Param_freq = 0
+.const Sine_Param_amplitude = 1
+
+.macro Apply_Variable_To_Sine_Parameter(variable, sine, parameter) {
+	.print "Apply_Variable_To_Sine_Parameter(" + variable + " " + sine + " " + parameter +")"
+.break
+    ldx #((variable-'A')*2)
+    .if (parameter == Sine_Param_freq) {
+        lda variable_values,x
+        sta freqs,x
+        lda variable_values+1,x
+        sta freqs+1,x
+    }
+    .if (parameter == Sine_Param_amplitude)
+    {
+        lda variable_values,x
+        sta amplitudes,x
+        lda variable_values+1,x
+        sta amplitudes+1,x
+    }
+}
+

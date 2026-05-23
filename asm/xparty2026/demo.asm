@@ -96,7 +96,8 @@ main:
 	// note: generated functions
 	jsr init_voice_parameter_values
 	jsr init_global_parameter_values
-
+	jsr init_sine_parameter_values
+	
 	// apply all initial parameter values
 	// TODO do for all voices; loop should not be hardcoded
 	//.for (var voice=0;voice<3;voice++) {   

@@ -294,6 +294,7 @@ zero:
 	
 	Apply_Global_Parameter(parameter)
 }
+
 // --------- sequence ------
 
 // update all sequences

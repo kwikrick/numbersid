@@ -126,9 +126,9 @@ class Sequence:
         seq = Sequence()
         var_or_zero = read_line_stripped(input_file)
         if not var_or_zero.isalpha():
-            print(f"Waning: invalid sequence output variable: {var_or_zero}")
-            return None
-        seq.variable = ord(var_or_zero[0])
+            print(f"Warning: invalid sequence output variable: {var_or_zero}")
+        else:
+            seq.variable = ord(var_or_zero[0])
         seq.count = Varonum.parse(read_line_stripped(input_file))
         seq.add1 = Varonum.parse(read_line_stripped(input_file))
         seq.div1 = Varonum.parse(read_line_stripped(input_file))
@@ -140,6 +140,8 @@ class Sequence:
         seq.div2 = Varonum.parse(read_line_stripped(input_file))
         seq.add2 = Varonum.parse(read_line_stripped(input_file))
         seq.array = Varonum.parse(read_line_stripped(input_file))
+        if seq.variable==None:
+            return None
         return seq
 
     def __str__(self):
@@ -186,10 +188,31 @@ class VariableUsage:
         self.variable = variable
         self.sequence_indices = set()         # indices of sequences that use this variable
         self.voice_parameters = set()         # use of this variable in a voice parameter (voicenr, param_name)
+        self.sine_parameters = set()          # use of this variable in a sine parameter (freq, amp, etc)        
         self.filter_mode = False          # use of this variable as cutoff
         self.filter_cutoff = False       # use of this variable as frequency
         self.filter_resonance = False          # use of this variable as volume
         self.volume = False
+
+class Sine:
+    def __init__(self):
+        self.freq  = None
+        self.amplitude  = None
+        self.parameters = ["freq", "amplitude"]
+
+    @staticmethod
+    def read_from(input_file):
+        sine = Sine()
+        sine.freq = Varonum.parse(read_line_stripped(input_file))
+        sine.amplitude = Varonum.parse(read_line_stripped(input_file))
+        return sine
+
+    def __str__(self):
+        s = "Sine\n"
+        s += f"  freq = {self.freq}\n"
+        s += f"  amplitude = {self.amplitude}\n"
+        return s
+
 
 class NumberSidData:
     def __init__(self):
@@ -204,6 +227,9 @@ class NumberSidData:
         self.scales = []
         self.variable_to_usage = {}
         self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume"]
+        self.sines = []
+        self.bob_color_varomum = None
+        self.bob_speed_varomum = None
 
     def map_variable_usage(self):
         for i, seq in enumerate(self.sequences):
@@ -229,6 +255,14 @@ class NumberSidData:
 
         for param_name in self.global_parameter_names:
             self.map_filter_volume_usage(param_name)
+
+        for sinenr, sine in enumerate(self.sines):
+            for param_name in sine.parameters:
+                param_varonum = getattr(sine, param_name)
+                if param_varonum.type() == "Variable":
+                    if param_varonum.variable not in self.variable_to_usage:
+                        self.variable_to_usage[param_varonum.variable] = VariableUsage(param_varonum.variable)
+                    self.variable_to_usage[param_varonum.variable].sine_parameters.add((sinenr, param_name))
         
     def map_filter_volume_usage(self, parameter_name):
         varonum = getattr(self,parameter_name)
@@ -262,6 +296,12 @@ class NumberSidData:
         s += f"{len(self.arrays)} arrays\n"
         for i, arr in enumerate(self.arrays):
             s += f"array {i}: {arr}\n"
+        s += f"{len(self.scales)} scales\n"
+        for i, scale in enumerate(self.scales):
+            s += f"scale {i}: {scale}\n"
+        s += f"{len(self.sines)} sines\n"
+        for i, sine in enumerate(self.sines):
+            s += f"sine {i}: {sine}\n"
         for variable, usage in self.variable_to_usage.items():
             s += f"variable {chr(variable)} used in:"
             s += f"  sequences {usage.sequence_indices}"
@@ -270,6 +310,8 @@ class NumberSidData:
             s += f"  filter_cutoff {usage.filter_cutoff}\n"
             s += f"  filter_resonance {usage.filter_resonance}\n"
             s += f"  volume {usage.volume}\n"
+            s += f"  sine parameters {usage.sine_parameters}\n"
+            
         return s
 
     @staticmethod
@@ -305,6 +347,13 @@ class NumberSidData:
         for i in range(num_scales):
             scale = int(read_line_stripped(input_file))
             data.scales.append(scale)
+        # sines parameters
+        print("DEBUG read sine")
+        num_sines = int(read_line_stripped(input_file))
+        for i in range(num_sines):
+            sine = Sine.read_from(input_file)
+            data.sines.append(sine)
+        # ----
         return data
     
 # ------------- code generation -------------
@@ -318,6 +367,8 @@ def generate_header(data: NumberSidData) -> str:
     s+=f".const NUM_SCALES = {len(data.scales)}\n"
     s+=f".const SCALE_SIZE = {scale_size}\n"
     s+=f".const SCALE_MIDDLE_INDEX = {scale_middle_index}\n"
+    s+=f".const NUM_SINES = {len(data.sines)}\n"
+    
     return s
 
 def decode_scale(scale):
@@ -396,6 +447,8 @@ def generate(data: NumberSidData) -> str:
             s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_filter_resonance)\n"
         if usage.volume == True:
             s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_volume)\n"
+        for sine_param in usage.sine_parameters:
+            s+= f"   Apply_Variable_To_Sine_Parameter({variable}, {sine_param[0]}, Sine_Param_{sine_param[1]})\n"
         s += f"   rts\n"
 
     # generatate code for init_voice-parameter_values:
@@ -428,6 +481,24 @@ def generate(data: NumberSidData) -> str:
                 if (value > 255):
                     s += f"   lda #>{value}\n"
                     s += f"   sta {param_name}_parameter_value+1\n"          
+    s+= "   rts\n"
+
+    # generatate code for init_sine-parameter_values:
+    s += "init_sine_parameter_values:\n"
+    for sinenr, sine in enumerate(data.sines):
+        for paramnr, param_name in enumerate(sine.parameters):
+             param_varonum = getattr(sine, param_name)
+             if param_varonum.type() == "Number":
+                value = param_varonum.number
+                label = f"{param_name}s"
+                offset = sinenr * 2
+                if value != 0:
+                    s += f"   // sine {sinenr} {param_name}\n"
+                    s += f"   lda #<{value}\n"
+                    s += f"   sta {label}+{offset}\n"
+                    if (value > 255):
+                        s += f"   lda #>{value}\n"
+                        s += f"   sta {label}+1+{offset}\n"
     s+= "   rts\n"
 
     # generate data and space for scales
