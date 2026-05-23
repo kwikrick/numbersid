@@ -76,12 +76,12 @@ S // count
 B // variable
 S // count
 0 // add1
-8 // div1
+0 // div1
 0 // mul1
 0 // mod1
 0 // base
-2 // mod2
-256 // mul2
+12 // mod2
+0 // mul2
 0 // div2
 0 // add2
 0 // array
@@ -113,5 +113,7 @@ S // count
 2 // num_sines
 256  // sine 1 freq
 18   // sine 2 amp
-B  // sine 2 freq
-11   // sine 2 amp
+2560  // sine 2 freq
+B   // sine 2 amp
+A   // bob color
+1   // bob speed

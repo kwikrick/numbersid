@@ -38,7 +38,7 @@ loop_init_phases:
 
 .macro Apply_Variable_To_Sine_Parameter(variable, sine, parameter) {
 	.print "Apply_Variable_To_Sine_Parameter(" + variable + " " + sine + " " + parameter +")"
-.break
+
     ldx #((variable-'A')*2)
     .if (parameter == Sine_Param_freq) {
         lda variable_values,x

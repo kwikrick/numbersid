@@ -19,9 +19,7 @@ eval_seq_1_finish:
    rts
 eval_seq_2:
    Load_Accumulator(Variable,83)
-   Eval_Div(Number,8)
-   Eval_Mod(Number,2)
-   Eval_Mul(Number,256)
+   Eval_Mod(Number,12)
    Compare_Accumulator(66)
    beq eval_seq_2_finish
    Store_Accumulator(66)
@@ -43,11 +41,11 @@ variable_changed_83:
    Apply_Variable_To_Voice_Parameter(83, 0, Voice_Param_gate)
    rts
 variable_changed_65:
-   Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    Apply_Variable_To_Voice_Parameter(65, 1, Voice_Param_gate)
+   Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    rts
 variable_changed_66:
-   Apply_Variable_To_Sine_Parameter(66, 1, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(66, 1, Sine_Param_amplitude)
    rts
 init_voice_parameter_values:
    // voice 0 waveform
@@ -83,9 +81,11 @@ init_sine_parameter_values:
    // sine 0 amplitude
    lda #<18
    sta amplitudes+0
-   // sine 1 amplitude
-   lda #<11
-   sta amplitudes+2
+   // sine 1 freq
+   lda #<2560
+   sta freqs+2
+   lda #>2560
+   sta freqs+1+2
    rts
 scales_decoded:
    // scale #0 = 2741

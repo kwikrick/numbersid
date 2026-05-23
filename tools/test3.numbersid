@@ -45,8 +45,8 @@ S // gate
 2 // channel[1] voice
 3 // channel[2] voice
 1 // filter_mode
-400 // cutoff
-0 // resonance
+1000 // cutoff
+A // resonance
 15 // volume
 3 // num_sequences
 S // variable

@@ -188,11 +188,12 @@ class VariableUsage:
         self.variable = variable
         self.sequence_indices = set()         # indices of sequences that use this variable
         self.voice_parameters = set()         # use of this variable in a voice parameter (voicenr, param_name)
-        self.sine_parameters = set()          # use of this variable in a sine parameter (freq, amp, etc)        
-        self.filter_mode = False          # use of this variable as cutoff
-        self.filter_cutoff = False       # use of this variable as frequency
-        self.filter_resonance = False          # use of this variable as volume
-        self.volume = False
+        self.sine_parameters = set()          # use of this variable in a sine parameter (sinenr, param_name)
+        self.global_parameters = set()        # use of this variable in a global parameter (param_name)     
+        #self.filter_mode = False          # use of this variable as cutoff
+        #self.filter_cutoff = False       # use of this variable as frequency
+        #self.filter_resonance = False          # use of this variable as volume
+        #self.volume = False
 
 class Sine:
     def __init__(self):
@@ -270,7 +271,8 @@ class NumberSidData:
             variable = varonum.variable
             if variable not in self.variable_to_usage:
                 self.variable_to_usage[variable] = VariableUsage(variable)
-            setattr(self.variable_to_usage[variable], parameter_name, True)        
+            self.variable_to_usage[variable].global_parameters.add(parameter_name)
+            #setattr(self.variable_to_usage[variable], parameter_name, True)        
            
     def map_sequence_varonum_to_useage(self, varonum, seq_index):
         if varonum.variable != 0:
@@ -306,11 +308,8 @@ class NumberSidData:
             s += f"variable {chr(variable)} used in:"
             s += f"  sequences {usage.sequence_indices}"
             s += f"  voice parameters {usage.voice_parameters}\n"
-            s += f"  filter_mode {usage.filter_mode}\n"
-            s += f"  filter_cutoff {usage.filter_cutoff}\n"
-            s += f"  filter_resonance {usage.filter_resonance}\n"
-            s += f"  volume {usage.volume}\n"
             s += f"  sine parameters {usage.sine_parameters}\n"
+            s += f"  global parameters {usage.global_parameters}\n"
             
         return s
 
@@ -439,14 +438,8 @@ def generate(data: NumberSidData) -> str:
             s+= f"   Mark_Sequence_Dirty({seq_index})\n"
         for voice_param in usage.voice_parameters:
             s+= f"   Apply_Variable_To_Voice_Parameter({variable}, {voice_param[0]}, Voice_Param_{voice_param[1]})\n"
-        if usage.filter_mode == True:
-            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_filter_mode)\n"
-        if usage.filter_cutoff == True:
-            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_filter_cutoff)\n"
-        if usage.filter_resonance == True:
-            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_filter_resonance)\n"
-        if usage.volume == True:
-            s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_volume)\n"
+        for global_param in usage.global_parameters:
+            s+= f"   Apply_Variable_To_Global_Parameter({variable}, {global_param})\n"
         for sine_param in usage.sine_parameters:
             s+= f"   Apply_Variable_To_Sine_Parameter({variable}, {sine_param[0]}, Sine_Param_{sine_param[1]})\n"
         s += f"   rts\n"
