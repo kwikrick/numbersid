@@ -112,11 +112,12 @@ loop_text:
     
     // --- clear two rows of screen
     
-	ldx #80
+	ldx #0
 	lda #(32*4)			// char 32 (space) * 4
 loop_clear:
 	sta screen,x
-	dex
+	inx
+	cpx #80
 	bne loop_clear
     
     // --- colorize the two lines --

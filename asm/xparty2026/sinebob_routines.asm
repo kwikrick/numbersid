@@ -11,7 +11,6 @@
 
 sinebob_init_charset:
 {
-    .break
     // just calls sinebob_update_transitions 8 times
     ldx #8
 loop_update:
@@ -86,7 +85,7 @@ sinebob_copy_transitions:
 
         // compute ZP_IRQ_TGT from ZP_IRQ_OFF
         Word_AND_Value(ZP_IRQ_OFF, (8*64)-1, ZP_IRQ_OFF)
-        Word_Add_Value(ZP_IRQ_OFF, bob_charset_addr+8, ZP_IRQ_TGT)  // note skip char 0
+        Word_Add_Value(ZP_IRQ_OFF, bob_charset_addr+BOB_CHAR_START*8, ZP_IRQ_TGT)  // note skip char 0
 
         ldy #0
     loop_row:

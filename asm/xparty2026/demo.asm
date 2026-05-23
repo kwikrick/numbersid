@@ -38,7 +38,7 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = false		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
+.const DEBUG_FRAME_COUNT = true		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
 
 
 // -----------------------------------------
@@ -59,7 +59,7 @@ main:
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
 	Fill(clear_mem_start, 8192, 0)		// compiler cannot compute, make a guess
 
-	ClearScreen(screen,0)
+	ClearScreen(screen, 32)
 	lda #0
 	sta $d020			// fg color
 	lda #0
@@ -72,6 +72,21 @@ main:
 	jsr sinebob_init_charset
 
 	BOB_INIT_PHASES()
+
+	.if (DEBUG_FRAME_COUNT) {
+		// switch CHAREN bit to 0
+		lda IO_DATA
+		and #~4
+		sta IO_DATA
+
+		Copy($D000, bob_charset_addr, 2048)
+
+		// switch CHAREN bit back to 1
+		lda IO_DATA
+		ora #4
+		sta IO_DATA
+
+	}
 
 	// for numbersid play
 
@@ -197,9 +212,7 @@ raster_irq_handler_startline:
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
 
-	//.if (DEBUG_FRAME_COUNT) {
-		ChooseCharacterSet(SCROLL_CHARSET)
-	//}
+	ChooseCharacterSet(SCROLL_CHARSET)
 
 	RasterIRQNext_NoKernal(raster_irq_handler_endline, SCROLL_END_LINE)
 }
@@ -214,15 +227,7 @@ raster_irq_handler_endline:
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
 
-
-	.if (DEBUG_FRAME_COUNT) {
-		ChooseCharacterSet(2)		// default
-	}
-	.if (!DEBUG_FRAME_COUNT)
-	{
-		ChooseCharacterSet(BOB_CHARSET)		// default
-	}
-	
+	ChooseCharacterSet(BOB_CHARSET)		// default
 	
 	// udpate scroll position
 	dec scroll_pos
@@ -297,18 +302,6 @@ raster_irq_handler_numbersid:
 			sta text_string
 			WordToHex_Screen(read_frame_counter,text_string+1)
 			StringToScreen(text_string, screen, 5,0)
-			
-			
-			/*
-			SetCursor(6,0)
-			PrintChar('W')
-			WordToHex(write_frame_counter,text_string)
-			PrintString(text_string)
-			PrintChar(13)
-			PrintChar('R')
-			WordToHex(read_frame_counter,text_string)
-			PrintString(text_string)	
-			*/		
 		}
 
 		// if read_frame < 0, do increment counter, but don't sound yet
@@ -476,7 +469,7 @@ loop_move_sprite:
 	
 	lda read_frame_counter		// determine character from frame (TODO: make a parameter per bob)
 	and #63
-	adc #1						// skip char 0 
+	adc #BOB_CHAR_START 
 	ldy #0						// must be zero
 	sta (ZP_CELL),y				// store in screen ram
 

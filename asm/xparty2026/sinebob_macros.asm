@@ -12,6 +12,8 @@
 
 .const BOB_NUM_SINES = 4
 
+.const BOB_CHAR_START = 64          // first char in charset used for bobs
+
 .macro BOB_INIT_PHASES()
 {
     // set inital phases for y axis (quarter cycle over x)
