@@ -1,6 +1,6 @@
 #importonce 
 
-#import "bob_macros.asm"
+#import "sinebob_macros.asm"
 #import "common/word_macros.asm"
 
 

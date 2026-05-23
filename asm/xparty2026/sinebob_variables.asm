@@ -17,4 +17,7 @@ phases:
 positions:
 .fillword 16, 0
 
+// offset in the charset where transitions are
+chaset_transition_offset:
+.byte 0
 

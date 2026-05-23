@@ -28,7 +28,7 @@
 
 #import "text_scroll_macros.asm"
 
-#import "bob_macros.asm"
+#import "sinebob_macros.asm"
 
 .const NUMBERSID_RASTER_LINE = 100
 .const SINESRPITES_RASTER_IRQ_LINE=150
@@ -66,7 +66,7 @@ main:
 
 	jsr textscroll_init
 
-	// jsr sinesprites_init
+	// jsr sinebob_init
 
 	BOB_COPY_CHARSET(character_data1)
 	BOB_INIT_PHASES()
@@ -191,13 +191,12 @@ sid_frame_copy_loop:
 // Note: don't use ZP_FREE in the IRQ handlers; numbersid wull use those on main thread
 // and numbersid will also use zero page up to $11 (currently)
 
-.const ZP_IRQ = $16		// need 4 bytes for scroll handler, 6 for sinesprites
+.const ZP_IRQ = $16		// need 4 bytes for scroll handler, 5 for sinebob
 .const ZP_IRQ1 = $16
 .const ZP_IRQ2 = $17
 .const ZP_IRQ3 = $18
 .const ZP_IRQ4 = $19
 .const ZP_IRQ5 = $20
-.const ZP_IRQ6 = $21
 
 
 raster_irq_handler_startline:
@@ -355,14 +354,16 @@ wait_for_new_frame:
 
         dec $d020					// DEBUG
 
-		RasterIRQNext_NoKernal(raster_irq_handler_sinesprites, SINESRPITES_RASTER_IRQ_LINE)
+		RasterIRQNext_NoKernal(raster_irq_handler_sinebob, SINESRPITES_RASTER_IRQ_LINE)
 }
 
-raster_irq_handler_sinesprites:
+raster_irq_handler_sinebob:
 {
 	RasterIRQBegin_NoKernal()
 
 	inc $D020			// DEBUG
+
+	// --- compute
 
 	ldy #0
 loop_compute:
@@ -509,6 +510,16 @@ skip:
 
 end_loop_move_sprite:
 
+	// ----- update charset
+
+	// move 2 chars at a time, representing a transition between distics chars
+	// at 8 places in the charset. 
+	// keep track of the place of the transition, i.e. move offset each frame
+
+
+	// -----
+
+
 	dec $D020    // DEBUG
 
 	dec $D020
@@ -526,12 +537,8 @@ end_loop_move_sprite:
 
 #import "text_scroll_routines.asm"
 
-*=* "Bob routines"
-#import "bob_routines.asm"
-
-//*=* "Sine sprite routines"
-//#import "sinesprites_routines.asm"
-
+*=* "Sinebob routines"
+#import "sinebob_routines.asm"
 
 // ----------------------------------------
 // ------------ data section --------------
@@ -547,7 +554,7 @@ end_loop_move_sprite:
 
 *=* "Sine sprite data"
 
-#import "sinesprites_data.asm"
+#import "sinebob_data.asm"
 
 *=* "Bob Charset data"
 
@@ -578,7 +585,7 @@ clear_mem_start:
 *=scroll_charset_addr "Charset Scroll" virtual
 .fill 2048, random()*65536
 
-*=bob_charset_addr "Charset Bob" virtual
+*=bob_charset_addr "Charset Sinebob" virtual
 .fill 2048, random()*65536
 
 
@@ -606,7 +613,7 @@ sprite_data1:
 
 *=* "Sine sprites variables" virtual
 
-#import "sinesprites_variables.asm"
+#import "sinebob_variables.asm"
 
 *=* "Demo Variables" virtual
 read_frame_counter: .word 0
