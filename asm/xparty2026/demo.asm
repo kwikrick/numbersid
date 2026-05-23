@@ -38,7 +38,7 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = true		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
+.const DEBUG_FRAME_COUNT = false		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
 
 
 // -----------------------------------------
@@ -347,7 +347,7 @@ raster_irq_handler_sinebob:
 
 	inc $D020			// DEBUG
 
-	// --- compute
+	// --- compute sines
 
 	ldy #0
 loop_compute:
@@ -396,12 +396,12 @@ loop_compute:
 	Word_Neg(ZP_IRQ+2, ZP_IRQ+2)
 	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
 	
-	// add offset
-	lda offsets,y
-	sta ZP_IRQ+2
-	lda offsets+1,y
-	sta ZP_IRQ+3
-	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
+	// // add offset
+	// lda offsets,y
+	// sta ZP_IRQ+2
+	// lda offsets+1,y
+	// sta ZP_IRQ+3
+	// Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
 	
 	// store
 	lda ZP_IRQ
@@ -411,13 +411,45 @@ loop_compute:
 	
 	iny
 	iny
-	cpy #BOB_NUM_SINES*4
+	cpy #BOB_NUM_SINES*2       // two bytes per sine
 	beq end_loop_compute
 	jmp loop_compute		// need long jump
 
 end_loop_compute:
 
+	//-----  add sines to compute X,Y for one bob ------ 
+	.const ZP_X = ZP_IRQ+5		// word
+	.const ZP_Y = ZP_IRQ+7		// word		
+
+	Word_Store_Value(ZP_X,20)		// TODO: needs to be configarable
+	Word_Store_Value(ZP_Y,13)
+
+	ldx #0
+
+loop_add_sines:
+
+	lda positions+0,x		    
+	sta ZP_IRQ
+	lda positions+1,x	
+	sta ZP_IRQ+1
+
+	Word_Add_Word(ZP_X,ZP_IRQ,ZP_X)
+
+	lda positions+2,x		    
+	sta ZP_IRQ
+	lda positions+3,x	
+	sta ZP_IRQ+1
+
+	Word_Add_Word(ZP_Y,ZP_IRQ,ZP_Y)
+	inx
+	inx
+	inx
+	inx
+	cpx #BOB_NUM_SINES*2		// two bytes per sine
+	bne loop_add_sines
+
 	inc $D020       // DEBUG
+
 
 	// ----- draw bobs on screen
 	
@@ -429,47 +461,39 @@ end_loop_compute:
 	//.const ZP_CHAR = ZP_IRQ+6
 
 	ldx #0					// X is index in positions
-	lda #1
-	sta ZP_COLOR			// IRQ_FREE+4 = color
+	lda #1					// TODO: get color from a parameter
+	sta ZP_COLOR			
 	//lda #0
-	//sta ZP_CHAR
+	//sta ZP_CHAR			// TODO: increment char by some amount given by pamameter
 
-loop_move_sprite:
-	
-	lda positions+2,x		    
-	sta ZP_CELL
-	lda positions+3,x	
-	sta ZP_CELL+1				// ZP_CELL(word) = y position
 	// TODO: modulo 25 easy to compute?
-	Word_Compare_Value_Y(ZP_CELL, 2)
+	Word_Compare_Value_Y(ZP_Y, 2)
 	bmi skip1
-	Word_Compare_Value_Y(ZP_CELL, 25)
+	Word_Compare_Value_Y(ZP_Y, 25)
 	bpl skip1
 	bmi cont1
+
+	// TODO: modulo 40 easy to compute?
+	Word_Compare_Value_Y(ZP_X, 0)
+	bmi skip1
+	Word_Compare_Value_Y(ZP_X, 40)
+	bpl skip1
 
 	skip1:
 	jmp skip
 	cont1:
-	
-	Word_Mul_40(ZP_CELL)		// ZP_CELL(word) = 40*y		// NOTE: uses ZP_CELL+2,ZP_CELL+3
-	
-	lda positions,x		    
-	sta ZP_TEMP
-	lda positions+1,x	
-	sta ZP_TEMP+1				// ZP_TEMP(word) = x position
-	// TODO: modulo 40 easy to compute?
-	Word_Compare_Value_Y(ZP_TEMP, 0)
-	bmi skip
-	Word_Compare_Value_Y(ZP_TEMP, 40)
-	bpl skip
 
-	Word_Add_Word(ZP_CELL, ZP_TEMP, ZP_CELL)		// ZP_CELL is cell offset 
+	// compute cell offset (relative to screen or color ram)
+	Word_Copy(ZP_Y,ZP_CELL)
+	Word_Mul_40(ZP_CELL)						// ZP_CELL(word) = 40*y		// NOTE: Mul_40 uses ZP_CELL+2,ZP_CELL+3
+	Word_Add_Word(ZP_CELL, ZP_X, ZP_CELL)		// ZP_CELL = 40*y+x  
 
 	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
 	
 	lda read_frame_counter		// determine character from frame (TODO: make a parameter per bob)
 	and #63
 	adc #BOB_CHAR_START 
+
 	ldy #0						// must be zero
 	sta (ZP_CELL),y				// store in screen ram
 
@@ -480,19 +504,6 @@ loop_move_sprite:
 	sta (ZP_CELL),y				// store in color ram
 
 skip:
-
-	inc ZP_COLOR
-	//inc ZP_CHAR
-
-	inx
-	inx
-	inx
-	inx
-	cpx #BOB_NUM_SINES*4
-	beq end_loop_move_sprite
-	jmp loop_move_sprite
-
-end_loop_move_sprite:
 
 	inc $D020    // DEBUG
 

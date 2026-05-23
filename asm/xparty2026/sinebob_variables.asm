@@ -10,11 +10,11 @@
 //  - add a reset parameter (one for all)
 //  - when rest parameter is triggered, rest all phases, 0 or 128 for x an y 
 
-// computed: for each 8 bob, phase x and phase y
+// computed: for each bob, phase x and phase y
 phases:
 .fillword BOB_NUM_SINES*2,0
 
-// computed: for each 8 bob, position x and position y
+// computed: for each bob, position x and position y
 positions:
 .fillword BOB_NUM_SINES*2, 0
 
