@@ -16,7 +16,7 @@
 
 // Add value to word at addr
 // Affects: A, flags
-// Note: tgt can be src1 or src2, overwriting is no problem. (but tgt cannot be src1+1 or src2+1!)  
+// Note: tgt can be addr, overwriting is no problem. (but tgt cannot be addr+1)  
 .macro Word_Add_Value(addr, value, tgt) 
 {
     clc
@@ -25,6 +25,20 @@
     sta tgt
     lda addr+1           // high byte
     adc #>value
+    sta tgt+1
+}
+
+// AND a value with word at addr
+// Affects: A, flags
+// Note: tgt can be addr, overwriting is no problem. (but tgt cannot be addr+1)  
+.macro Word_AND_Value(addr, value, tgt) 
+{
+    clc
+    lda addr             // low byte
+    and #<value
+    sta tgt
+    lda addr+1           // high byte
+    and #>value
     sta tgt+1
 }
 

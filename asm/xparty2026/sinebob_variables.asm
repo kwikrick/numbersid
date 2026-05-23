@@ -17,7 +17,8 @@ phases:
 positions:
 .fillword 16, 0
 
-// offset in the charset where transitions are
-chaset_transition_offset:
-.byte 0
+// offset in the charset where transitions are to be update0
+// note: offset in bytes, so 8 bytes per char, increase insteps of 8 
+sinebob_transition_offset:
+.word 0
 

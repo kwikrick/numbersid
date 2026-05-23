@@ -13,6 +13,7 @@
 #import "common/misc_macros.asm"
 #import "common/vic_const.asm"
 
+#import "demo_zeropage.asm"
 
 // -----------------------
 // import generated header
@@ -187,17 +188,6 @@ sid_frame_copy_loop:
 // ---------------------------
 // -------IRQ handlers -------
 // ---------------------------
-
-// Note: don't use ZP_FREE in the IRQ handlers; numbersid wull use those on main thread
-// and numbersid will also use zero page up to $11 (currently)
-
-.const ZP_IRQ = $16		// need 4 bytes for scroll handler, 5 for sinebob
-.const ZP_IRQ1 = $16
-.const ZP_IRQ2 = $17
-.const ZP_IRQ3 = $18
-.const ZP_IRQ4 = $19
-.const ZP_IRQ5 = $20
-
 
 raster_irq_handler_startline:
 {
@@ -512,10 +502,7 @@ end_loop_move_sprite:
 
 	// ----- update charset
 
-	// move 2 chars at a time, representing a transition between distics chars
-	// at 8 places in the charset. 
-	// keep track of the place of the transition, i.e. move offset each frame
-
+	jsr sinebob_update_transitions
 
 	// -----
 
