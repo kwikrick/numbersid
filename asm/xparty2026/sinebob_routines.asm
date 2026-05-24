@@ -119,7 +119,7 @@ sinebob_init_history:
     Word_Store_Value(ZP_CLEAR_PIXEL_PTR, clear_pixel_history)
 
     // init history with safe values
-    Fill(clear_pixel_history,CLEAR_HISTORY_SIZE*2,$0C)        // $0C0C is pretty far in memory, and not used by me or anyone    
+    Fill(clear_pixel_history,CLEAR_HISTORY_SIZE*2,$C0)        // $C0C0 is pretty far in memory, and not used by me or anyone    
 
     rts
 }

@@ -41,8 +41,8 @@ variable_changed_83:
    Apply_Variable_To_Voice_Parameter(83, 0, Voice_Param_gate)
    rts
 variable_changed_65:
-   Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    Apply_Variable_To_Voice_Parameter(65, 1, Voice_Param_gate)
+   Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    rts
 variable_changed_66:
    Apply_Variable_To_Global_Parameter(66, Global_Param_bob_color)
@@ -79,7 +79,7 @@ init_sine_parameter_values:
    lda #>256
    sta freqs+1+0
    // sine 0 amplitude
-   lda #<9
+   lda #<20
    sta amplitudes+0
    // sine 1 freq
    lda #<256
@@ -87,7 +87,7 @@ init_sine_parameter_values:
    lda #>256
    sta freqs+1+2
    // sine 1 amplitude
-   lda #<9
+   lda #<12
    sta amplitudes+2
    // sine 1 phase
    lda #<64

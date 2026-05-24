@@ -112,10 +112,10 @@ S // count
 2741 // scale 1
 4 // num_sines
 256  // sine 1(x) freq
-9   // sine 1(x) amp
+20   // sine 1(x) amp
 0    // phase 
 256  // sine 2(y) freq
-9   // sine 2(y) amp
+12  // sine 2(y) amp
 64    // phase 
 2560  // sine 3(x) freq
 4   // sine 3(x) amp
