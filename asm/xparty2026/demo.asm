@@ -67,11 +67,7 @@ main:
 
 	jsr textscroll_init
 
-	// jsr sinebob_init
-
-	jsr sinebob_init_charset
-	jsr sinebob_init_history
-
+	// for debug print, copy orginal charset to bob_charset
 	.if (DEBUG_FRAME_COUNT) {
 		// switch CHAREN bit to 0
 		lda IO_DATA
@@ -86,6 +82,12 @@ main:
 		sta IO_DATA
 
 	}
+	
+	// init sinebobs
+	jsr sinebob_init_charset
+	jsr sinebob_init_history
+
+	
 
 	// for numbersid play
 
@@ -285,6 +287,7 @@ cont:
 	.if (DEBUG_RASTER_IRQ_TIMES) {
 		dec $d020				
 	}
+	
 	RasterIRQNext_NoKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
 
 }
@@ -467,12 +470,13 @@ loop_add_sines:
 	cpx #NUM_SINES*2		// two bytes per sine
 	bne loop_add_sines
 
-	.if (DEBUG_RASTER_IRQ_TIMES) {
-		inc $D020
-	}
 
 	// ----- drawing section
 
+	.if (DEBUG_RASTER_IRQ_TIMES) {
+		inc $D020
+	}
+	
 	// TODO: should be a separate IRQ handler, run after line 200
 	// note: compute time for sines is now unknown, determined by generated code)
 	
@@ -480,10 +484,29 @@ loop_add_sines:
 	.const ZP_CELL_H = ZP_IRQ+1   		// word
 	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
 	.const ZP_TEMP_H = ZP_IRQ+3
-	//.const ZP_COLOR = ZP_IRQ+4		// byte
-	//.const ZP_CHAR = ZP_IRQ+6
+
+	// ------- check screen bounds -------
+
+	// TODO: modulo 25 easy to compute?
+	Word_Compare_Value_Y(ZP_Y, 2)
+	bmi skip1
+	Word_Compare_Value_Y(ZP_Y, 25)
+	bpl skip1
+
+	// TODO: modulo 40 easy to compute?
+	Word_Compare_Value_Y(ZP_X, 0)
+	bmi skip1
+	Word_Compare_Value_Y(ZP_X, 40)
+	bpl skip1
+	
+	clc
+	bcc cont1
+	skip1:
+	jmp skip
+	cont1:
 
 	// ---- clear pixels from history
+
 	ldy #0
 	lda (ZP_CLEAR_PIXEL_PTR),y
 	sta ZP_CELL
@@ -495,30 +518,7 @@ loop_add_sines:
 	ldy #0
 	sta (ZP_CELL),y			// write to screen (assuming ZP_CELL is in screen ram, hopefully!)
 
-	// ----- draw bobs on screen
-
-	ldx #0					// X is index in positions
-	//lda #1					// TODO: get color from a parameter
-	//sta ZP_COLOR			
-	//lda #0
-	//sta ZP_CHAR			// TODO: increment char by some amount given by pamameter
-
-	// TODO: modulo 25 easy to compute?
-	Word_Compare_Value_Y(ZP_Y, 2)
-	bmi skip1
-	Word_Compare_Value_Y(ZP_Y, 25)
-	bpl skip1
-	bmi cont1
-
-	// TODO: modulo 40 easy to compute?
-	Word_Compare_Value_Y(ZP_X, 0)
-	bmi skip1
-	Word_Compare_Value_Y(ZP_X, 40)
-	bpl skip1
-
-	skip1:
-	jmp skip
-	cont1:
+	// -------- draw to screen ---- 
 
 	// compute cell offset (relative to screen or color ram)
 	Word_Copy(ZP_Y,ZP_CELL)
@@ -547,15 +547,10 @@ loop_add_sines:
 	Word_Compare_Value_X(ZP_CLEAR_PIXEL_PTR, clear_pixel_history+CLEAR_HISTORY_SIZE*2)
 	bmi history_ptr_in_bounds
 	Word_Store_Value(ZP_CLEAR_PIXEL_PTR, clear_pixel_history)
-	
-
 history_ptr_in_bounds:
 
-
-	// to color ram
-
+	// write color to color ram
 	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
-
 	lda bob_color_parameter_value
 	//ldy #0
 	sta (ZP_CELL),y				// store in color ram
