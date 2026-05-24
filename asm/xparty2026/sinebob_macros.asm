@@ -42,26 +42,27 @@
 	.print "Apply_Variable_To_Sine_Parameter(" + variable + " " + sine + " " + parameter +")"
 
 
-    // TODO: this is 14 bytes, but pretty fast; compare with  Apply_Variable_To_Voice_Parameter, is 12 bytes, but slower
+    // TODO: this is 16 bytes, but pretty fast; compare with  Apply_Variable_To_Voice_Parameter, is 12 bytes, but slower
 
     ldx #((variable-'A')*2)
+    ldy #sine*2
     .if (parameter == Sine_Param_freq) {
         lda variable_values,x
-        sta freqs,x
+        sta freqs,y
         lda variable_values+1,x
-        sta freqs+1,x
+        sta freqs+1,y
     }
     .if (parameter == Sine_Param_amplitude)
     {
         lda variable_values,x               // Note: only 1 byte needed
-        sta amplitudes,x
+        sta amplitudes,y
         //lda variable_values+1,x
         //sta amplitudes+1,x
     }
     .if (parameter == Sine_Param_phase)
     {
         lda variable_values,x              // Note: only 1 byte needed
-        sta phases,x
+        sta phases,y
         //lda variable_values+1,x
         //sta phases+1,x
     }

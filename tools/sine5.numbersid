@@ -148,17 +148,23 @@ R // count
 0 // num_arrays
 1 // num_scales
 1354 // scale
-04 // num_sines
-256  // sine 1(x) freq
-12   // sine 1(x) amp
-0    // phase 
-256  // sine 2(y) freq
-7   // sine 2(y) amp
-64    // phase 
-2560  // sine 3(x) freq
-4   // sine 3(x) amp
-0    // phase 
-2560  // sine 4(y) freq
-4   // sine 4(y) amp
-64    // phase 
-B   // bob color
+6 // num_sines
+K // freq
+18 // amplitude
+0 // phase
+K // freq
+12 // amplitude
+64 // phase
+L // freq
+9 // amplitude
+0 // phase
+L // freq
+6 // amplitude
+64 // phase
+M // freq
+3 // amplitude
+0 // phase
+M // freq
+3 // amplitude
+64 // phase
+R // bob color

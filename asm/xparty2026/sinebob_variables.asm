@@ -36,7 +36,7 @@ counters:
 // why keep them? Unless we want to recombine seleted sines
 // into differnt bobs?
 positions:
-.fillword NUM_SINES*2, 0
+.fillword NUM_SINES, 0
 
 // offset in the charset where transitions are to be updated
 // note: offset in bytes, so 8 bytes per char, increase insteps of 8 
