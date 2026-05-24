@@ -11,7 +11,7 @@
 
 // .const SCROLL_COMPUTE_LINE = 200
 
-.const SCROLL_CHARSET = 4		// 0-7; 2 = default, upper; 3=lower		 
+.const SCROLL_CHARSET = 6		// 0-7; 2 = default, upper; 3=lower		 
 
 .const TEXT_COLOR = 1
 

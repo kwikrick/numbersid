@@ -2,7 +2,7 @@
 
 #import "demo_zeropage.asm"
 
-.const BOB_CHARSET = 5
+.const BOB_CHARSET = 7
 .label bob_charset_addr = BOB_CHARSET*$0800
 .print "BOB CHARSET ADDR = "+bob_charset_addr
 
