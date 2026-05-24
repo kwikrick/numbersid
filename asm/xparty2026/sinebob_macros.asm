@@ -12,6 +12,8 @@
 
 .const BOB_CHAR_START = 64          // first char in charset used for bobs
 
+.const CLEAR_HISTORY_SIZE = 256    // 2 bytes per history entry
+
 // .macro BOB_INIT_PHASES()
 // {
 //     // set inital phases for y axis (quarter cycle over x)

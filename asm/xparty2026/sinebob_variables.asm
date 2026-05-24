@@ -43,3 +43,10 @@ positions:
 sinebob_transition_offset:
 .word 0
 
+// a history of screen adresses to clear
+clear_pixel_history:
+.fillword 1024,CLEAR_HISTORY_SIZE
+
+// pointer to current place in history
+//clear_pixel_ptr: 
+//.word 0 

@@ -70,6 +70,7 @@ main:
 	// jsr sinebob_init
 
 	jsr sinebob_init_charset
+	jsr sinebob_init_history
 
 	.if (DEBUG_FRAME_COUNT) {
 		// switch CHAREN bit to 0
@@ -470,7 +471,7 @@ loop_add_sines:
 		inc $D020
 	}
 
-	// ----- draw bobs on screen
+	// ----- drawing section
 
 	// TODO: should be a separate IRQ handler, run after line 200
 	// note: compute time for sines is now unknown, determined by generated code)
@@ -481,6 +482,20 @@ loop_add_sines:
 	.const ZP_TEMP_H = ZP_IRQ+3
 	//.const ZP_COLOR = ZP_IRQ+4		// byte
 	//.const ZP_CHAR = ZP_IRQ+6
+
+	// ---- clear pixels from history
+	ldy #0
+	lda (ZP_CLEAR_PIXEL_PTR),y
+	sta ZP_CELL
+	iny
+	lda (ZP_CLEAR_PIXEL_PTR),y
+	sta ZP_CELL+1
+
+	lda #0					// clear pixel value
+	ldy #0
+	sta (ZP_CELL),y			// write to screen (assuming ZP_CELL is in screen ram, hopefully!)
+
+	// ----- draw bobs on screen
 
 	ldx #0					// X is index in positions
 	//lda #1					// TODO: get color from a parameter
@@ -519,12 +534,32 @@ loop_add_sines:
 	ldy #0						// must be zero
 	sta (ZP_CELL),y				// store in screen ram
 
+	// store pixel adress in history
+	//ldy #0
+	lda ZP_CELL
+	sta (ZP_CLEAR_PIXEL_PTR),y
+	lda ZP_CELL+1
+	iny
+	sta (ZP_CLEAR_PIXEL_PTR),y
+
+	// increase pointer
+	Word_Add_Value(ZP_CLEAR_PIXEL_PTR, 2, ZP_CLEAR_PIXEL_PTR) 
+	Word_Compare_Value_X(ZP_CLEAR_PIXEL_PTR, clear_pixel_history+CLEAR_HISTORY_SIZE*2)
+	bmi history_ptr_in_bounds
+	Word_Store_Value(ZP_CLEAR_PIXEL_PTR, clear_pixel_history)
+	
+
+history_ptr_in_bounds:
+
+
+	// to color ram
+
 	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
 
 	lda bob_color_parameter_value
 	//ldy #0
 	sta (ZP_CELL),y				// store in color ram
-
+	
 skip:
 
 	.if (DEBUG_RASTER_IRQ_TIMES) {

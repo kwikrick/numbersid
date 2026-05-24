@@ -113,30 +113,27 @@ variable_changed_82:
    rts
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
+   Apply_Variable_To_Sine_Parameter(65, 2, Sine_Param_amplitude)
    rts
 variable_changed_75:
    Apply_Variable_To_Voice_Parameter(75, 0, Voice_Param_pulsewidth)
    Apply_Variable_To_Voice_Parameter(75, 1, Voice_Param_filter)
-   Apply_Variable_To_Sine_Parameter(75, 0, Sine_Param_freq)
-   Apply_Variable_To_Sine_Parameter(75, 1, Sine_Param_freq)
    rts
 variable_changed_77:
-   Apply_Variable_To_Voice_Parameter(77, 2, Voice_Param_pulsewidth)
    Apply_Variable_To_Voice_Parameter(77, 0, Voice_Param_filter)
-   Apply_Variable_To_Sine_Parameter(77, 4, Sine_Param_freq)
-   Apply_Variable_To_Sine_Parameter(77, 5, Sine_Param_freq)
+   Apply_Variable_To_Voice_Parameter(77, 2, Voice_Param_pulsewidth)
    rts
 variable_changed_66:
    Apply_Variable_To_Voice_Parameter(66, 1, Voice_Param_note)
+   Apply_Variable_To_Sine_Parameter(66, 3, Sine_Param_amplitude)
    rts
 variable_changed_76:
-   Apply_Variable_To_Voice_Parameter(76, 2, Voice_Param_filter)
    Apply_Variable_To_Voice_Parameter(76, 1, Voice_Param_pulsewidth)
-   Apply_Variable_To_Sine_Parameter(76, 2, Sine_Param_freq)
-   Apply_Variable_To_Sine_Parameter(76, 3, Sine_Param_freq)
+   Apply_Variable_To_Voice_Parameter(76, 2, Voice_Param_filter)
    rts
 variable_changed_67:
    Apply_Variable_To_Voice_Parameter(67, 2, Voice_Param_note)
+   Apply_Variable_To_Sine_Parameter(67, 5, Sine_Param_phase)
    rts
 init_voice_parameter_values:
    // voice 0 gate
@@ -200,33 +197,50 @@ init_global_parameter_values:
    sta volume_parameter_value
    rts
 init_sine_parameter_values:
+   // sine 0 freq
+   lda #<256
+   sta freqs+0
+   lda #>256
+   sta freqs+1+0
    // sine 0 amplitude
-   lda #<18
+   lda #<9
    sta amplitudes+0
+   // sine 1 freq
+   lda #<256
+   sta freqs+2
+   lda #>256
+   sta freqs+1+2
    // sine 1 amplitude
-   lda #<12
+   lda #<5
    sta amplitudes+2
    // sine 1 phase
    lda #<64
    sta phases+2
-   // sine 2 amplitude
-   lda #<9
-   sta amplitudes+4
-   // sine 3 amplitude
-   lda #<6
-   sta amplitudes+6
+   // sine 2 freq
+   lda #<512
+   sta freqs+4
+   lda #>512
+   sta freqs+1+4
+   // sine 3 freq
+   lda #<512
+   sta freqs+6
+   lda #>512
+   sta freqs+1+6
    // sine 3 phase
    lda #<64
    sta phases+6
+   // sine 4 freq
+   lda #<32
+   sta freqs+8
    // sine 4 amplitude
-   lda #<3
+   lda #<9
    sta amplitudes+8
+   // sine 5 freq
+   lda #<32
+   sta freqs+10
    // sine 5 amplitude
-   lda #<3
+   lda #<5
    sta amplitudes+10
-   // sine 5 phase
-   lda #<64
-   sta phases+10
    rts
 scales_decoded:
    // scale #0 = 1354

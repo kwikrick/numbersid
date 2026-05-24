@@ -13,4 +13,8 @@
 .const ZP_IRQ5 = $20
 .const ZP_IRQ6 = $21
 
+.const ZP_CLEAR_PIXEL_PTR    = $24
+.const ZP_CLEAR_PIXEL_PTR_h  = $25
+
+
 
