@@ -12,7 +12,7 @@ K // pulsewidth
 0 // decay
 15 // sustain
 0 // release
-1 // filter
+0 // filter
 1 // gate
 B // note
 1 // scale
@@ -26,7 +26,7 @@ L // pulsewidth
 0 // decay
 15 // sustain
 0 // release
-1 // filter
+0 // filter
 1 // gate
 C // note
 1 // scale
@@ -40,13 +40,13 @@ M // pulsewidth
 0 // decay
 15 // sustain
 0 // release
-1 // filter
+0 // filter
 1 // channel[0] voice
 2 // channel[1] voice
 3 // channel[2] voice
 1 // filter_mode
-500 // cutoff
-8 // resonance
+1000 // cutoff
+10 // resonance
 15 // volume
 11 // num_sequences
 S // variable
@@ -163,8 +163,8 @@ Q // count
 0 // div1
 0 // mul1
 0 // mod1
-2 // base
-0 // mod2
+0 // base
+3 // mod2
 256 // mul2
 0 // div2
 256 // add2
@@ -173,10 +173,10 @@ I // variable
 Q // count
 0 // add1
 0 // div1
-2 // mul1
+0 // mul1
 0 // mod1
-2 // base
-0 // mod2
+0 // base
+5 // mod2
 256 // mul2
 0 // div2
 256 // add2
