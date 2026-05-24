@@ -552,7 +552,7 @@ history_ptr_in_bounds:
 	// write color to color ram
 	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
 	lda bob_color_parameter_value
-	//ldy #0
+	ldy #0
 	sta (ZP_CELL),y				// store in color ram
 	
 skip:
