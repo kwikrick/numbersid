@@ -33,6 +33,8 @@
 
 .const Sine_Param_freq = 0
 .const Sine_Param_amplitude = 1
+.const Sine_Param_phase = 2
+
 
 .const Global_Param_bob_color = global_param_count++
 
@@ -51,10 +53,17 @@
     }
     .if (parameter == Sine_Param_amplitude)
     {
-        lda variable_values,x               // TODO: only 1 byte needed? Could be shorter and faster
+        lda variable_values,x               // Note: only 1 byte needed
         sta amplitudes,x
-        lda variable_values+1,x
-        sta amplitudes+1,x
+        //lda variable_values+1,x
+        //sta amplitudes+1,x
+    }
+    .if (parameter == Sine_Param_phase)
+    {
+        lda variable_values,x              // Note: only 1 byte needed
+        sta phases,x
+        //lda variable_values+1,x
+        //sta phases+1,x
     }
 }
 

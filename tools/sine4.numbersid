@@ -73,11 +73,11 @@ S // count
 0 // div2
 0 // add2
 0 // array
-0 // variable
-0 // count
+B // variable
+S // count
 0 // add1
-0 // div1
-0 // mul1
+8 // div1
+32 // mul1
 0 // mod1
 0 // base
 0 // mod2
@@ -115,5 +115,5 @@ S // count
 0 // phase
 256 // freq
 11 // amplitude
-A // phase
+B // phase
 1 // bob color

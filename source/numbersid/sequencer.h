@@ -858,7 +858,7 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         }
     }
 
-     if(!import_uint8(&sequencer->num_scales, buffer, &pos)) return false;
+    if(!import_uint8(&sequencer->num_scales, buffer, &pos)) return false;
     if (sequencer->num_scales > MAX_SCALES) sequencer->num_scales = MAX_SCALES;
     for (int s=0; s<sequencer->num_scales; s++) {
         uint16_t encoded;
@@ -866,6 +866,9 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         decode_scale(encoded,sequencer->scales[s]); 
     }
 
+
+    if(!import_uint8(&sequencer->num_sines, buffer, &pos)) return false;
+    if (sequencer->num_sines > MAX_SINES) sequencer->num_sines = MAX_SINES;
     for (int v=0; v<sequencer->num_sines; v++) {
         sine_t* sine = &sequencer->sines[v];
         if(!varonum_import(&sine->freq, buffer, &pos)) return false;

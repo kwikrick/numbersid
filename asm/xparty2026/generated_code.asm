@@ -17,20 +17,34 @@ eval_seq_1:
    jsr variable_changed_65
 eval_seq_1_finish:
    rts
+eval_seq_2:
+   Load_Accumulator(Variable,83)
+   Eval_Div(Number,8)
+   Eval_Mul(Number,32)
+   Compare_Accumulator(66)
+   beq eval_seq_2_finish
+   Store_Accumulator(66)
+   jsr variable_changed_66
+eval_seq_2_finish:
+   rts
 sequence_eval_count:
-  .byte 2
+  .byte 3
 sequence_eval_table:
   .word eval_seq_0-1
   .word eval_seq_1-1
+  .word eval_seq_2-1
 variable_changed_84:
    Mark_Sequence_Dirty(0)
    rts
 variable_changed_83:
    Mark_Sequence_Dirty(1)
+   Mark_Sequence_Dirty(2)
    rts
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
-   Apply_Variable_To_Sine_Parameter(65, 1, Sine_Param_phase)
+   rts
+variable_changed_66:
+   Apply_Variable_To_Sine_Parameter(66, 1, Sine_Param_phase)
    rts
 init_voice_parameter_values:
    // voice 0 gate
