@@ -21,6 +21,7 @@
 #include "sequencer.h"
 #include "ui_timecontrol.h"
 #include "ui_parameters.h"
+#include "ui_sines.h"
 #include "ui_variables.h"
 #include "ui_arrays.h"
 #include "ui_scales.h"

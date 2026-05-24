@@ -29,6 +29,7 @@
     - ui_display.h
     - ui_timecontrol.h
     - ui_parameters.h
+    - ui_sines.h
     - ui_variables.h
     - ui_preview.h
     - ui_data.h
@@ -83,6 +84,7 @@ typedef struct {
     ui_audio_t ui_audio;
     ui_timecontrol_t ui_timecontrol;
     ui_parameters_t ui_parameters;
+    ui_sines_t ui_sines;
     ui_variables_t ui_variables;
     ui_arrays_t ui_arrays;
     ui_scales_t ui_scales;
@@ -108,7 +110,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
 } /* extern "C" */
 #endif
 
-// reused functions for ui_parameters.h and ui_variables.h
+// reused functions for ui_parameters.h and ui_variables.h and ui_sines.h
 void ui_varonum_to_string(var_or_number_t* varonum, char* str, int maxlen);
 void ui_string_to_varonum(char* str, var_or_number_t* varonum);
 
@@ -140,6 +142,7 @@ static void _ui_numbersid_draw_menu(ui_numbersid_t* ui) {
         if (ImGui::BeginMenu("Sequencer")) {
             ImGui::MenuItem("Time Control", 0, &ui->ui_timecontrol.open);
             ImGui::MenuItem("Parameters", 0, &ui->ui_parameters.open);
+            ImGui::MenuItem("Sines", 0, &ui->ui_sines.open);
             ImGui::MenuItem("Variables", 0, &ui->ui_variables.open);
             ImGui::MenuItem("Arrays", 0, &ui->ui_arrays.open);
             ImGui::MenuItem("Scales", 0, &ui->ui_scales.open);
@@ -235,6 +238,16 @@ void ui_numbersid_init(ui_numbersid_t* ui, const ui_numbersid_desc_t* ui_desc) {
         desc.open = true;
         ui_parameters_init(&ui->ui_parameters, &desc);
     }
+     x += dx; y += dy;
+    {
+        ui_sines_desc_t desc = {0};
+        desc.title = "sines";
+        desc.sequencer = ui_desc->sequencer;
+        desc.x = x;
+        desc.y = y;
+        desc.open = true;
+        ui_sines_init(&ui->ui_sines, &desc);
+    }
     x += dx; y += dy;
     {
         ui_variables_desc_t desc = {0};
@@ -299,6 +312,7 @@ void ui_numbersid_discard(ui_numbersid_t* ui) {
     ui_m6581_discard(&ui->ui_sid);
     ui_timecontrol_discard(&ui->ui_timecontrol);
     ui_parameters_discard(&ui->ui_parameters);
+    ui_sines_discard(&ui->ui_sines);
     ui_variables_discard(&ui->ui_variables);
     ui_arrays_discard(&ui->ui_arrays);
     ui_scales_discard(&ui->ui_scales);
@@ -319,6 +333,7 @@ void ui_numbersid_draw(ui_numbersid_t* ui, const ui_display_frame_t* frame) {
     ui_m6581_draw(&ui->ui_sid);
     ui_timecontrol_draw(&ui->ui_timecontrol);
     ui_parameters_draw(&ui->ui_parameters);
+    ui_sines_draw(&ui->ui_sines);
     ui_variables_draw(&ui->ui_variables);
     ui_arrays_draw(&ui->ui_arrays);
     ui_scales_draw(&ui->ui_scales);
@@ -338,6 +353,7 @@ void ui_numbersid_save_settings(ui_numbersid_t* ui, ui_settings_t* settings) {
     ui_m6581_save_settings(&ui->ui_sid, settings);
     ui_timecontrol_save_settings(&ui->ui_timecontrol, settings);
     ui_parameters_save_settings(&ui->ui_parameters, settings);
+    ui_sines_save_settings(&ui->ui_sines, settings);
     ui_variables_save_settings(&ui->ui_variables, settings);
     ui_arrays_save_settings(&ui->ui_arrays, settings);
     ui_scales_save_settings(&ui->ui_scales, settings);
@@ -353,6 +369,7 @@ void ui_numbersid_load_settings(ui_numbersid_t* ui, const ui_settings_t* setting
     ui_m6581_load_settings(&ui->ui_sid, settings);
     ui_timecontrol_load_settings(&ui->ui_timecontrol, settings);
     ui_parameters_load_settings(&ui->ui_parameters, settings);
+    ui_sines_load_settings(&ui->ui_sines, settings);
     ui_variables_load_settings(&ui->ui_variables, settings);
     ui_arrays_load_settings(&ui->ui_arrays, settings);
     ui_preview_load_settings(&ui->ui_preview, settings);

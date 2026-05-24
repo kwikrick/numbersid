@@ -45,6 +45,7 @@
 
 #include "ui_timecontrol.h"     // TODO: need all of these here?
 #include "ui_parameters.h"
+#include "ui_sines.h"
 #include "ui_variables.h"
 #include "ui_arrays.h"
 #include "ui_scales.h"

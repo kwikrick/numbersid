@@ -64,77 +64,23 @@ typedef struct {
 
 
 typedef struct {
-    var_or_number_t visible;
-    var_or_number_t x;
-    var_or_number_t y;
+    var_or_number_t freq;
+    var_or_number_t amplitude;
+    var_or_number_t phase;
+} sine_t;
+
+
+typedef struct {
+    var_or_number_t sines;
     var_or_number_t color;
-    var_or_number_t multicolor_mode;
-    var_or_number_t expand_horizontal;
-    var_or_number_t expand_vertical;
-    var_or_number_t data_block_nr;
-} sprite_t;
+    var_or_number_t step;
+} bob_t;
 
-typedef struct {
-    var_or_number_t border_color;
-    var_or_number_t background_color0;
-    var_or_number_t background_color1;
-    var_or_number_t background_color2;
-    var_or_number_t background_color3;
-    var_or_number_t sprite_multicolor_0;
-    var_or_number_t sprite_multicolor_1;   
-} color_t;
-
-typedef uint16_t bit_mode_t;
-typedef uint16_t draw_mode_t;
-
-typedef struct {
-    draw_mode_t draw_mode;
-                // before start of demo
-                // when draw variable is true
-                // continuously (fast chaging variable)
-                // when x or y variables change
-                // when pixel variable change
-                // when all variables changed
-                // 
-                
-    bit_mode_t bit_mode;              // how to map 16 integer bits to sprite bits
-                // 1 bit monochrome
-                // 2 bit multicolor
-                // 16 monochrome pixels horizontal
-                // 16 monochrome pixels vertical
-                // 4x4 bits monochrome
-                // 8x2 bits monochrome
-                // 2x8 bits monochrome
-                // 8 multicolor pixels horizontal
-                // 8 multicolor pixels vertical
-                // 2x4 multicolor pixels
-                // 4x2 multicolor pixels
-                // repeated over x (without changing vaiable x)
-                // repeated over y (without changing vaiable x)
-
-                
-    var_or_number_t draw;         // draw only when 1 
-    var_or_number_t x;            // range [0-24]
-    var_or_number_t y;            // range [0-21]
-    var_or_number_t pixel;        // pixel bits
-    
-} sprite_block_t;
-
-
-#define MAX_SPRITES          7
-#define MAX_SPRITE_BLOCKS   16
-
-typedef struct {
-    color_t colors;
-    sprite_t sprites[MAX_SPRITES];
-    sprite_block_t sprite_blocks[MAX_SPRITE_BLOCKS];
-    // TODO: screen data, charset data, screen color data
-} video_t;
-
-
-#define NUM_PREVIEW_ROWS 50
-#define MAX_PREVIEW_COLS 32
-#define MAX_HIGHLIGHTERS 8
+#define MAX_SINES          8
+#define MAX_BOBS           8
+#define NUM_PREVIEW_ROWS    50
+#define MAX_PREVIEW_COLS    32
+#define MAX_HIGHLIGHTERS    8
 
 typedef struct {
     int value;
@@ -182,7 +128,7 @@ typedef struct {
     // arrays
     var_or_number_t arrays[MAX_ARRAYS][MAX_ARRAY_SIZE];
     uint8_t array_sizes[MAX_ARRAYS];
-    uint8_t num_arrays;       
+    uint8_t num_arrays;
     preview_t preview;
     // scales
     bool scales[MAX_SCALES][SCALE_SIZE];
@@ -191,6 +137,10 @@ typedef struct {
     int16_t values[MAX_VARIABLES];
     // gate states
     bool gate_states[NUM_CHANNELS];
+    //
+    uint8_t num_sines;
+    sine_t sines[MAX_SINES];
+    bob_t bob;
 } sequencer_t;
 
 #define SEQUENCER_SNAPSHOT_VERSION (2)
@@ -732,7 +682,17 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
         u_int16_t encoded = encode_scale(sequencer->scales[a]);
         pos += export_uint16(encoded, "scale", &buffer[pos],size-pos);   
     }
+
+    pos += export_uint8(sequencer->num_sines, "num_sines", &buffer[pos],size-pos);
+    for (int v=0; v<sequencer->num_sines; v++) {
+        sine_t* sine = &sequencer->sines[v];
+        pos += varonum_export(&sine->freq, "freq", &buffer[pos],size-pos);
+        pos += varonum_export(&sine->amplitude, "amplitude", &buffer[pos],size-pos);
+        pos += varonum_export(&sine->phase, "phase", &buffer[pos],size-pos);
+    }
     
+    pos += varonum_export(&sequencer->bob.color, "bob color", &buffer[pos],size-pos);
+
     // terminate string
     assert(pos<size);
     buffer[pos] = 0;
@@ -905,6 +865,16 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         if(!import_uint16(&encoded, buffer, &pos)) return false;
         decode_scale(encoded,sequencer->scales[s]); 
     }
+
+    for (int v=0; v<sequencer->num_sines; v++) {
+        sine_t* sine = &sequencer->sines[v];
+        if(!varonum_import(&sine->freq, buffer, &pos)) return false;
+        if(!varonum_import(&sine->amplitude, buffer, &pos)) return false;
+        if(!varonum_import(&sine->phase, buffer, &pos)) return false;
+    }
+
+    if(!varonum_import(&sequencer->bob.color, buffer, &pos)) return false;
+
     return true;
 }
 
