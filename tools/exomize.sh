@@ -1,0 +1,1 @@
+~/c64/exomizer/src/exomizer sfx sys ../build/demo.prg -o demo_ex.prg
