@@ -199,19 +199,22 @@ class Sine:
     def __init__(self):
         self.freq  = None
         self.amplitude  = None
-        self.parameters = ["freq", "amplitude"]
+        self.phase = None
+        self.parameters = ["freq", "amplitude", "phase"]
 
     @staticmethod
     def read_from(input_file):
         sine = Sine()
         sine.freq = Varonum.parse(read_line_stripped(input_file))
         sine.amplitude = Varonum.parse(read_line_stripped(input_file))
+        sine.phase = Varonum.parse(read_line_stripped(input_file))
         return sine
 
     def __str__(self):
         s = "Sine\n"
         s += f"  freq = {self.freq}\n"
         s += f"  amplitude = {self.amplitude}\n"
+        s += f"  phase = {self.amplitude}\n"
         return s
 
 

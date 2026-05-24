@@ -110,8 +110,10 @@ S // count
 0 // element
 0 // num_scales
 2 // num_sines
-1024 // freq
+256 // freq
 18 // amplitude
-1024 // freq
+0 // phase
+256 // freq
 11 // amplitude
+A // phase
 1 // bob color

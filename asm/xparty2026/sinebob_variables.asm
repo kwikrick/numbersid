@@ -10,36 +10,35 @@
 //  - add a reset parameter (one for all)
 //  - when rest parameter is triggered, rest all phases, 0 or 128 for x an y 
 
-// paramters: for each 8 sprites, freq x and freq y
+// paramters: for each sine, a frequency, scaled by 256. Added to counter each frame.
+// range 0-65536; 256 means one cycle every 256 frames
 freqs:
-.word 5 * 256 + 032 , 5 * 256 + 032
-.word 50 * 256 + 000 , 50 * 256 + 000
-.word 01 * 256 + 000 , 01 * 256 + 000
-.word 01 * 256 + 000 , 01 * 256 + 000
+.fillword NUM_SINES,0
 
-// paramters: for each 8 sprites: scale x and scale y
+// paramters: for each sine, an amplitude
 // Note: we store word values to make indexing simpler (all others are words)
 // But we only use low byte, value <=256
 amplitudes:
- .word 14,7
- .word 4,4
- .word 0,0
- .word 0,0
+.fillword NUM_SINES,0
 
-
-// computed: for each bob, phase x and phase y
+// parameter: for each bob, the phase; added to counter before lookup in sine table
+// Note: we store word values to make indexing simpler (all others are words)
+// But we only use low byte, value <=256
 phases:
-.fillword NUM_SINES*2,0
+.fillword NUM_SINES,0
 
-// computed: for each bob, position x and position y
+// computed: for each bob
+counters:
+.fillword NUM_SINES,0
 
+// computed: for each sine, the position/value of sine.
 // TODO: are these still needed, we add all the sines...
 // why keep them? Unless we want to recombine seleted sines
 // into differnt bobs?
 positions:
 .fillword NUM_SINES*2, 0
 
-// offset in the charset where transitions are to be update0
+// offset in the charset where transitions are to be updated
 // note: offset in bytes, so 8 bytes per char, increase insteps of 8 
 sinebob_transition_offset:
 .word 0

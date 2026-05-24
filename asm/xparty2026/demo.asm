@@ -71,8 +71,6 @@ main:
 
 	jsr sinebob_init_charset
 
-	BOB_INIT_PHASES()
-
 	.if (DEBUG_FRAME_COUNT) {
 		// switch CHAREN bit to 0
 		lda IO_DATA
@@ -369,10 +367,10 @@ raster_irq_handler_sinebob:
 	ldy #0
 loop_compute:
 
-	// load phase
-	lda phases,y	
+	// load counter
+	lda counters,y	
 	sta ZP_IRQ
-	lda phases+1,y	
+	lda counters+1,y	
 	sta ZP_IRQ+1
 	
 	// load freq
@@ -381,17 +379,20 @@ loop_compute:
 	lda freqs+1,y	
 	sta ZP_IRQ+3
 	
-	// add freq to phase
+	// add freq to counter
 	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
 	
-	// store phase
+	// store counter
 	lda ZP_IRQ
-	sta phases,y	
+	sta counters,y	
 	lda ZP_IRQ+1
-	sta phases+1,y	
-	
+	sta counters+1,y
+
+	// get counter high byte and add phase
+	lda counters+1,y		// get counter high byte, divides by 256
+	adc phases,y			// add phase (low byte only)
+
 	// get sine value
-	// lda phases+1,y		// note: use high byte, divides word by 256
 	tax
 	lda sine_256_256,x
 	sta ZP_IRQ

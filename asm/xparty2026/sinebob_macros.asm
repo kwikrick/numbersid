@@ -12,20 +12,20 @@
 
 .const BOB_CHAR_START = 64          // first char in charset used for bobs
 
-.macro BOB_INIT_PHASES()
-{
-    // set inital phases for y axis (quarter cycle over x)
-	lda #64
-	ldy #0
-loop_init_phases:
-	sta phases+3,y		// y high
-	iny
-	iny
-	iny
-	iny
-	cpy #NUM_SINES*2       // two bytes per sine; note: constant from generated_header.ash
-	bne loop_init_phases
-}
+// .macro BOB_INIT_PHASES()
+// {
+//     // set inital phases for y axis (quarter cycle over x)
+// 	lda #64
+// 	ldy #0
+// loop_init_phases:
+// 	sta phases+3,y		// y high
+// 	iny
+// 	iny
+// 	iny
+// 	iny
+// 	cpy #NUM_SINES*2       // two bytes per sine; note: constant from generated_header.ash
+// 	bne loop_init_phases
+// }
 
 
 
