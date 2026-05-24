@@ -53,6 +53,8 @@ eval_seq_5:
    Load_Accumulator(Variable,82)
    Eval_Mul(Number,7)
    Eval_Base(Number,2)
+   Eval_Mod(Number,4)
+   Eval_Mul(Number,256)
    Compare_Accumulator(75)
    beq eval_seq_5_finish
    Store_Accumulator(75)
@@ -63,6 +65,8 @@ eval_seq_6:
    Load_Accumulator(Variable,82)
    Eval_Mul(Number,15)
    Eval_Base(Number,2)
+   Eval_Mod(Number,4)
+   Eval_Mul(Number,256)
    Compare_Accumulator(76)
    beq eval_seq_6_finish
    Store_Accumulator(76)
@@ -73,6 +77,8 @@ eval_seq_7:
    Load_Accumulator(Variable,82)
    Eval_Mul(Number,31)
    Eval_Base(Number,2)
+   Eval_Mod(Number,4)
+   Eval_Mul(Number,256)
    Compare_Accumulator(77)
    beq eval_seq_7_finish
    Store_Accumulator(77)
@@ -104,48 +110,69 @@ variable_changed_82:
    Mark_Sequence_Dirty(6)
    Mark_Sequence_Dirty(7)
    rts
-variable_changed_75:
-   Apply_Variable_To_Voice_Parameter(75, 0, Voice_Param_gate)
-   rts
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    rts
-variable_changed_76:
-   Apply_Variable_To_Voice_Parameter(76, 1, Voice_Param_gate)
+variable_changed_75:
+   Apply_Variable_To_Voice_Parameter(75, 1, Voice_Param_filter)
+   Apply_Variable_To_Voice_Parameter(75, 0, Voice_Param_pulsewidth)
+   rts
+variable_changed_77:
+   Apply_Variable_To_Voice_Parameter(77, 0, Voice_Param_filter)
+   Apply_Variable_To_Voice_Parameter(77, 2, Voice_Param_pulsewidth)
    rts
 variable_changed_66:
    Apply_Variable_To_Voice_Parameter(66, 1, Voice_Param_note)
    rts
-variable_changed_77:
-   Apply_Variable_To_Voice_Parameter(77, 2, Voice_Param_gate)
+variable_changed_76:
+   Apply_Variable_To_Voice_Parameter(76, 1, Voice_Param_pulsewidth)
+   Apply_Variable_To_Voice_Parameter(76, 2, Voice_Param_filter)
    rts
 variable_changed_67:
    Apply_Variable_To_Voice_Parameter(67, 2, Voice_Param_note)
    rts
 init_voice_parameter_values:
+   // voice 0 gate
+   lda #<1
+   sta voice_parameter_values+0
    // voice 0 scale
    lda #<1
    sta voice_parameter_values+4
+   // voice 0 transpose
+   lda #<-24
+   sta voice_parameter_values+6
    // voice 0 waveform
-   lda #<1
+   lda #<4
    sta voice_parameter_values+10
    // voice 0 sustain
    lda #<15
    sta voice_parameter_values+22
+   // voice 1 gate
+   lda #<1
+   sta voice_parameter_values+32
    // voice 1 scale
    lda #<1
    sta voice_parameter_values+36
+   // voice 1 transpose
+   lda #<-24
+   sta voice_parameter_values+38
    // voice 1 waveform
-   lda #<1
+   lda #<4
    sta voice_parameter_values+42
    // voice 1 sustain
    lda #<15
    sta voice_parameter_values+54
+   // voice 2 gate
+   lda #<1
+   sta voice_parameter_values+64
    // voice 2 scale
    lda #<1
    sta voice_parameter_values+68
+   // voice 2 transpose
+   lda #<-24
+   sta voice_parameter_values+70
    // voice 2 waveform
-   lda #<1
+   lda #<4
    sta voice_parameter_values+74
    // voice 2 sustain
    lda #<15
@@ -156,48 +183,16 @@ init_global_parameter_values:
    lda #<1
    sta filter_mode_parameter_value
    // filter_cutoff
-   lda #<200
+   lda #<100
    sta filter_cutoff_parameter_value
+   // filter_resonance
+   lda #<8
+   sta filter_resonance_parameter_value
    // volume
    lda #<15
    sta volume_parameter_value
-   // bob_color
-   lda #<1
-   sta bob_color_parameter_value
    rts
 init_sine_parameter_values:
-   // sine 0 freq
-   lda #<256
-   sta freqs+0
-   lda #>256
-   sta freqs+1+0
-   // sine 0 amplitude
-   lda #<12
-   sta amplitudes+0
-   // sine 1 freq
-   lda #<256
-   sta freqs+2
-   lda #>256
-   sta freqs+1+2
-   // sine 1 amplitude
-   lda #<7
-   sta amplitudes+2
-   // sine 2 freq
-   lda #<2560
-   sta freqs+4
-   lda #>2560
-   sta freqs+1+4
-   // sine 2 amplitude
-   lda #<4
-   sta amplitudes+4
-   // sine 3 freq
-   lda #<2560
-   sta freqs+6
-   lda #>2560
-   sta freqs+1+6
-   // sine 3 amplitude
-   lda #<4
-   sta amplitudes+6
    rts
 scales_decoded:
    // scale #0 = 1354

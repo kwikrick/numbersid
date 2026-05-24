@@ -38,8 +38,8 @@
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
-.const DEBUG_FRAME_COUNT = false		// note: will switch character set; TODO: doesn't work when not using kernal int handler?
-
+.const DEBUG_FRAME_COUNT = false
+.const DEBUG_RASTER_IRQ_TIMES = false
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -222,7 +222,10 @@ raster_irq_handler_endline:
 {
 	RasterIRQBegin_NoKernal()	
 
-	inc $d020					// DEBUG
+	.if (DEBUG_RASTER_IRQ_TIMES) {
+		inc $d020
+	}
+
 	// reset VIC hscroll to default
 	lda #7
 	and #VIC_MODE2_HSCROLL
@@ -280,7 +283,9 @@ loop:
 	
 cont:
 
-	dec $d020					// DEBUG
+	.if (DEBUG_RASTER_IRQ_TIMES) {
+		dec $d020				
+	}
 	RasterIRQNext_NoKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
 
 }
@@ -289,8 +294,10 @@ raster_irq_handler_numbersid:
 {
 		RasterIRQBegin_NoKernal()	
 
-        inc $d020					// DEBUG
-		// debug
+		.if (DEBUG_RASTER_IRQ_TIMES) {
+        	inc $d020
+		}
+		
 		.if (DEBUG_FRAME_COUNT) {
 
 			.encoding "screencode_upper"
@@ -337,7 +344,9 @@ wait_for_frame_zero:
 
 wait_for_new_frame:
 
-        dec $d020					// DEBUG
+		.if (DEBUG_RASTER_IRQ_TIMES) {
+        	dec $d020
+		}
 
 		RasterIRQNext_NoKernal(raster_irq_handler_sinebob, SINEBOB_RASTER_IRQ_LINE)
 }
@@ -346,7 +355,14 @@ raster_irq_handler_sinebob:
 {
 	RasterIRQBegin_NoKernal()
 
-	inc $D020			// DEBUG
+	// ---- compile time fix for NUM_SINES==0
+	.if (NUM_SINES==0) {
+		RasterIRQNext_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)
+	}
+
+	.if (DEBUG_RASTER_IRQ_TIMES) {
+		inc $D020
+	}
 
 	// --- compute sines
 
@@ -449,8 +465,9 @@ loop_add_sines:
 	cpx #NUM_SINES*2		// two bytes per sine
 	bne loop_add_sines
 
-	inc $D020       // DEBUG
-
+	.if (DEBUG_RASTER_IRQ_TIMES) {
+		inc $D020
+	}
 
 	// ----- draw bobs on screen
 
@@ -509,18 +526,20 @@ loop_add_sines:
 
 skip:
 
-	inc $D020    // DEBUG
-
+	.if (DEBUG_RASTER_IRQ_TIMES) {
+		inc $D020
+	}
 	// ----- update charset
 
 	jsr sinebob_update_transitions
 
 	// -----
 
-    // DEBUG
-	dec $D020
-	dec $D020
-	dec $D020
+    .if (DEBUG_RASTER_IRQ_TIMES) {
+		dec $D020
+		dec $D020
+		dec $D020
+	}
 		
 	RasterIRQNext_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 }
