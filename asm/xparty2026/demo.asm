@@ -412,7 +412,7 @@ loop_compute:
 	
 	iny
 	iny
-	cpy #BOB_NUM_SINES*2       // two bytes per sine
+	cpy #NUM_SINES*2       // two bytes per sine
 	beq end_loop_compute
 	jmp loop_compute		// need long jump
 
@@ -446,13 +446,16 @@ loop_add_sines:
 	inx
 	inx
 	inx
-	cpx #BOB_NUM_SINES*2		// two bytes per sine
+	cpx #NUM_SINES*2		// two bytes per sine
 	bne loop_add_sines
 
 	inc $D020       // DEBUG
 
 
 	// ----- draw bobs on screen
+
+	// TODO: should be a separate IRQ handler, run after line 200
+	// note: compute time for sines is now unknown, determined by generated code)
 	
 	.const ZP_CELL = ZP_IRQ   		// word
 	.const ZP_CELL_H = ZP_IRQ+1   		// word

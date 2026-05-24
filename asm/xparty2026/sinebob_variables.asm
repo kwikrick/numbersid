@@ -29,7 +29,7 @@ amplitudes:
 
 // computed: for each bob, phase x and phase y
 phases:
-.fillword BOB_NUM_SINES*2,0             // TODO: use generated parameter value (generated_header.asm)?
+.fillword NUM_SINES*2,0
 
 // computed: for each bob, position x and position y
 
@@ -37,7 +37,7 @@ phases:
 // why keep them? Unless we want to recombine seleted sines
 // into differnt bobs?
 positions:
-.fillword BOB_NUM_SINES*2, 0
+.fillword NUM_SINES*2, 0
 
 // offset in the charset where transitions are to be update0
 // note: offset in bytes, so 8 bytes per char, increase insteps of 8 

@@ -10,8 +10,6 @@
 .const ZP_IRQ_TGT = ZP_IRQ+2		//word
 .const ZP_IRQ_OFF = ZP_IRQ+4        // word
 
-.const BOB_NUM_SINES = 8            // must be a multiple of 2 (X and Y)
-
 .const BOB_CHAR_START = 64          // first char in charset used for bobs
 
 .macro BOB_INIT_PHASES()
@@ -25,7 +23,7 @@ loop_init_phases:
 	iny
 	iny
 	iny
-	cpy #BOB_NUM_SINES*2       // two bytes per sine
+	cpy #NUM_SINES*2       // two bytes per sine; note: constant from generated_header.ash
 	bne loop_init_phases
 }
 
@@ -41,6 +39,9 @@ loop_init_phases:
 .macro Apply_Variable_To_Sine_Parameter(variable, sine, parameter) {
 	.print "Apply_Variable_To_Sine_Parameter(" + variable + " " + sine + " " + parameter +")"
 
+
+    // TODO: this is 14 bytes, but pretty fast; compare with  Apply_Variable_To_Voice_Parameter, is 12 bytes, but slower
+
     ldx #((variable-'A')*2)
     .if (parameter == Sine_Param_freq) {
         lda variable_values,x
@@ -50,7 +51,7 @@ loop_init_phases:
     }
     .if (parameter == Sine_Param_amplitude)
     {
-        lda variable_values,x
+        lda variable_values,x               // TODO: only 1 byte needed? Could be shorter and faster
         sta amplitudes,x
         lda variable_values+1,x
         sta amplitudes+1,x
