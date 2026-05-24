@@ -57,7 +57,7 @@ main:
 	
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	Fill(clear_mem_start, 8192, 0)		// compiler cannot compute, make a guess
+	Fill(clear_mem_start, 16384, 0)		// compiler cannot compute, make a guess
 
 	ClearScreen(screen, 32)
 	lda #0
