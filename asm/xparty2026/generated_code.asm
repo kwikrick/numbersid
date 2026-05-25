@@ -52,10 +52,8 @@ init_global_parameter_values:
    lda #<2
    sta bob_color_parameter_value
    // bob_step
-   lda #<-1
+   lda #<3
    sta bob_step_parameter_value
-   lda #>-1
-   sta bob_step_parameter_value+1
    rts
 init_sine_parameter_values:
    // sine 0 freq

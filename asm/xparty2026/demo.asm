@@ -470,9 +470,10 @@ loop_add_sines:
 	cpx #NUM_SINES*2		// two bytes per sine
 	bne loop_add_sines
 
+
+	// todo: check for negative step value (high byte of word!); fixed character selection
 	// increment bob step counter
 	lda bob_step_parameter_value
-	// TODO: check if negative, then set fixed step
 	clc
 	adc sinebob_step_counter
 	//and #BOB_CHARSET_LENTGH-1		// just loop at 256

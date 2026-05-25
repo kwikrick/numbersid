@@ -326,10 +326,23 @@ void fillrect(int x, int y, int w, int h, int color, uint8_t* framebuffer, chips
 
 void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info) 
 {
-    // clear screen
+    
     int w = info.frame.dim.width;
     int h = info.frame.dim.height;
-    fillrect(0,0,w,h,0,framebuffer,info);
+
+    int border_color = 15;
+    int bg_color = 0;
+
+    int screen_w = (40*8);
+    int screen_h = (25*8);
+    int offset_x = (w - screen_w)/2;
+    int offset_y = (h - screen_h)/2;
+
+    // clear display width border color
+    fillrect(0,0,w,h,border_color,framebuffer,info);
+    // clear visible screen with bg color
+    fillrect(offset_x,offset_y,screen_w,screen_h,bg_color,framebuffer,info);
+
 
     // copy sequencer
     sequencer_t sequencer = state.sequencer;  
@@ -360,16 +373,16 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
         }
 
         // draw sine bob
-        static int sizes[8] = {1,2,3,4,4,3,2,1};
+        static int sizes[8] = {1,3,5,7,5,3,2,1};
         int step = varonum_eval(&sequencer.bob.step,&sequencer);
         // if step < 0, use fixed size, else one of the 256 rotating sizes (mapped to 128 chars on C64 by dividing step by 2) 
         int size = step < 0 ? sizes[floor_mod(step,8)] : sizes[floor_mod(t*step+sequencer.frame,256) / 32];
         int x = (dx + 20) * 8;          // centering offset hardcoded in c64 demo
         int y = (dy + 12) * 8;
-        if (x<0 || x>40*8 || y <0 || y>25*8) continue;         // srceen bound
-        fillrect(x,y,8,8,0,framebuffer,info);
+        if (x<0 || x>=40*8 || y <0 || y>=25*8) continue;         // TODO smaller bounds for extra border for scroll?
+        fillrect(offset_x+x,offset_y+y,8,8,bg_color,framebuffer,info);
         int color = floor_mod(varonum_eval(&sequencer.bob.color,&sequencer),16);                           // clear cell
-        fillrect(x+4-size,y+4-size,size*2,size*2,color,framebuffer,info);     // draw bob
+        fillrect(offset_x+x+4-size/2,offset_y+y+4-size/2,size,size,color,framebuffer,info);     // draw bob
     }
 }
 
