@@ -34,7 +34,7 @@ loop_update:
 sinebob_update_transitions:
 {
     // increment sinebob_transition_offset; copy to ZP_IRQ_OFF
-	Word_Add_Value(sinebob_transition_offset, 8, sinebob_transition_offset)		
+	Word_Add_Value(sinebob_transition_offset, BOB_CHARSET_STEP, sinebob_transition_offset)		
     Word_Copy(sinebob_transition_offset, ZP_IRQ_OFF)
     
     // ZP_IRQ_SRC = start of charset
@@ -71,7 +71,8 @@ loop_block2:
     rts
 }
 
-// copy source character twice, to target position and target position + 7 character definitons (7*8 bytes)
+// copy source character twice, to target position and target position + BOB_CHARSET_STEP-1 (*8 bytes)
+// and increments target position by BOB_CHARSET_STEP (*8 bytes)
 // input; 
 // ZP_IRQ_SRC (IRQ safe temp var)
 // ZP_IRQ_OFF (IRQ safe temp var)
@@ -84,8 +85,8 @@ sinebob_copy_transitions:
     loop_char:
 
         // compute ZP_IRQ_TGT from ZP_IRQ_OFF
-        Word_AND_Value(ZP_IRQ_OFF, (8*64)-1, ZP_IRQ_OFF)
-        Word_Add_Value(ZP_IRQ_OFF, bob_charset_addr+BOB_CHAR_START*8, ZP_IRQ_TGT)  // note skip char 0
+        Word_AND_Value(ZP_IRQ_OFF, (8*BOB_CHARSET_LENTGH)-1, ZP_IRQ_OFF)
+        Word_Add_Value(ZP_IRQ_OFF, bob_charset_addr+BOB_CHARSET_START*8, ZP_IRQ_TGT)
 
         ldy #0
     loop_row:
@@ -99,8 +100,8 @@ sinebob_copy_transitions:
         cpx #2
         beq done
 
-        // target adress += 7 chars
-        Word_Add_Value(ZP_IRQ_OFF, 7*8, ZP_IRQ_OFF)
+        // target adress += BOB_CHARSET_STEP-1 chars
+        Word_Add_Value(ZP_IRQ_OFF, (BOB_CHARSET_STEP-1)*8, ZP_IRQ_OFF)
           
         clc
         bcc loop_char

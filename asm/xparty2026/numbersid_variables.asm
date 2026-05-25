@@ -17,6 +17,7 @@ sequence_dirty:
 voice_parameter_values:
 .fill MAX_VOICES * 16 * 2, 0			// reserve 16 words per voice; faster to compute by 4xlshift
 
+// Note: the labels of global parameters must end with "_parameter_value" to work with code gen
 global_parameter_values:
 filter_mode_parameter_value: .word 0
 filter_cutoff_parameter_value: .word 0
@@ -26,3 +27,5 @@ volume_parameter_value: .word 0
 // TODO: i'd like to move this to sinebob_variables.asm, 
 // but needs to be adjacent to other global parameters. For now...
 bob_color_parameter_value: .word 0
+bob_step_parameter_value: .word 0
+

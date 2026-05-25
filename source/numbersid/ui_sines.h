@@ -215,6 +215,12 @@ static void _ui_sines_draw_state(ui_sines_t* win) {
         ImGui::TableNextColumn();
         draw_varonum(&sequencer->bob.color, "##bobcolor");
         ImGui::TableNextColumn();
+
+        ImGui::Text("STEP");
+        ImGui::SetItemTooltip("Step: 0-255 for animated character step; negative for fixed character (-1..-8)");
+        ImGui::TableNextColumn();
+        draw_varonum(&sequencer->bob.step, "##bobsetp");
+        ImGui::TableNextColumn();
         
         ImGui::EndTable();
     }

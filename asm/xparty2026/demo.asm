@@ -470,6 +470,13 @@ loop_add_sines:
 	cpx #NUM_SINES*2		// two bytes per sine
 	bne loop_add_sines
 
+	// increment bob step counter
+	lda bob_step_parameter_value
+	// TODO: check if negative, then set fixed step
+	clc
+	adc sinebob_step_counter
+	//and #BOB_CHARSET_LENTGH-1		// just loop at 256
+	sta sinebob_step_counter
 
 	// ----- drawing section
 
@@ -527,10 +534,11 @@ loop_add_sines:
 
 	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
 	
-	lda read_frame_counter		// determine character from frame (TODO: make a parameter per bob)
-	and #63
-	adc #BOB_CHAR_START 
-
+	// write character to screen ram
+	lda sinebob_step_counter
+	lsr							// div by 2 so we compress 256 steps to 128 chars 
+	clc
+	adc #BOB_CHARSET_START 
 	ldy #0						// must be zero
 	sta (ZP_CELL),y				// store in screen ram
 

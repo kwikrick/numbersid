@@ -230,10 +230,10 @@ class NumberSidData:
         self.arrays = []
         self.scales = []
         self.variable_to_usage = {}
-        self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume","bob_color"]
+        self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume","bob_color","bob_step"]
         self.sines = []
         self.bob_color_varomum = None
-        self.bob_speed_varomum = None
+        self.bob_step_varomum = None
 
     def map_variable_usage(self):
         for i, seq in enumerate(self.sequences):
@@ -356,6 +356,7 @@ class NumberSidData:
             data.sines.append(sine)
          # bob parameters
         data.bob_color = Varonum.parse(read_line_stripped(input_file))
+        data.bob_step = Varonum.parse(read_line_stripped(input_file))
         # ----
         return data
     
@@ -460,7 +461,7 @@ def generate(data: NumberSidData) -> str:
                     s += f"   // voice {voicenr} {param_name}\n"
                     s += f"   lda #<{value}\n"
                     s += f"   sta voice_parameter_values+{offset}\n"
-                    if (value > 255):
+                    if (value > 255 or value <0):
                         s += f"   lda #>{value}\n"
                         s += f"   sta voice_parameter_values+1+{offset}\n"
     s+= "   rts\n"
@@ -475,7 +476,7 @@ def generate(data: NumberSidData) -> str:
                 s += f"   // {param_name}\n"
                 s += f"   lda #<{value}\n"
                 s += f"   sta {param_name}_parameter_value\n"
-                if (value > 255):
+                if (value > 255 or value <0):
                     s += f"   lda #>{value}\n"
                     s += f"   sta {param_name}_parameter_value+1\n"          
     s+= "   rts\n"

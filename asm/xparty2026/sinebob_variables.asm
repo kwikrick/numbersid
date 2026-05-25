@@ -43,6 +43,12 @@ positions:
 sinebob_transition_offset:
 .word 0
 
+// current chacater animation step used for sinebob
+// (add #BOB_CHAR_START) to get character 
+// range 0-63 (TODO make 127 by increasing character span)
+sinebob_step_counter:
+.byte 0
+
 // a history of screen adresses to clear
 clear_pixel_history:
 .fillword 1024,CLEAR_HISTORY_SIZE

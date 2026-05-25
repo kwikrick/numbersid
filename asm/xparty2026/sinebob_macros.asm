@@ -10,7 +10,9 @@
 .const ZP_IRQ_TGT = ZP_IRQ+2		//word
 .const ZP_IRQ_OFF = ZP_IRQ+4        // word
 
-.const BOB_CHAR_START = 64          // first char in charset used for bobs
+.const BOB_CHARSET_START = 128          // first char in charset used for bobs
+.const BOB_CHARSET_LENTGH = 128
+.const BOB_CHARSET_STEP = BOB_CHARSET_LENTGH / 8 
 
 .const CLEAR_HISTORY_SIZE = 256    // 2 bytes per history entry
 
@@ -33,12 +35,12 @@
 
 // ------ to be used by generated code ------
 
+.const Global_Param_bob_color = global_param_count++
+.const Global_Param_bob_step = global_param_count++
+
 .const Sine_Param_freq = 0
 .const Sine_Param_amplitude = 1
 .const Sine_Param_phase = 2
-
-
-.const Global_Param_bob_color = global_param_count++
 
 .macro Apply_Variable_To_Sine_Parameter(variable, sine, parameter) {
 	.print "Apply_Variable_To_Sine_Parameter(" + variable + " " + sine + " " + parameter +")"

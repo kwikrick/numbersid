@@ -31,6 +31,7 @@
 #define CHIPS_IMPL
 #include "chips/chips_common.h"
 #include "chips/m6581.h"
+#include "chips/m6569.h"
 #include "chips/clk.h"
 
 #include "common.h"
@@ -118,7 +119,7 @@ static void push_audio(const float* samples, int num_samples, void* user_data) {
 
 #define RGBA8(r,g,b) (0xFF000000|(b<<16)|(g<<8)|(r))
 
-chips_range_t palette(void) {
+chips_range_t fft_palette(void) {
     static uint32_t palette_[256];
     for (int i=0;i<256;++i) {
         int r = (i & 255);
@@ -144,7 +145,7 @@ chips_display_info_t numbersid_display_info() {
                 .size = FRAMEBUFFER_SIZE_BYTES,
             }
         },
-        .palette = palette()
+        .palette =  m6569_palette()
     };
    res.screen = (chips_rect_t){
             .x = 0,
@@ -341,8 +342,8 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
         //update_variables(sequencer, frame);
         update_variables(&sequencer, t);
 
-        double dx=0;
-        double dy=0;
+        int dx=0;
+        int dy=0;
         for (int sinenr = 0;sinenr < sequencer.num_sines; sinenr++) {
             sine_t* sine = &sequencer.sines[sinenr];
             int freq = varonum_eval(&sine->freq, &sequencer);
@@ -360,12 +361,15 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
 
         // draw sine bob
         static int sizes[8] = {1,2,3,4,4,3,2,1};
-        int size = sizes[floor_mod(t+sequencer.frame,64) / 8];
-        int ix = (int)(dx + 20) * 8;          // centering offset hardcoded in c64 demo
-        int iy = (int)(dy + 12) * 8;
-        // TODO: 40 x 25 screen bounds
-        fillrect(ix,iy,8,8,0,framebuffer,info);                               // clear cell
-        fillrect(ix+4-size,iy+4-size,size*2,size*2,255,framebuffer,info);     // draw bob
+        int step = varonum_eval(&sequencer.bob.step,&sequencer);
+        // if step < 0, use fixed size, else one of the 256 rotating sizes (mapped to 128 chars on C64 by dividing step by 2) 
+        int size = step < 0 ? sizes[floor_mod(step,8)] : sizes[floor_mod(t*step+sequencer.frame,256) / 32];
+        int x = (dx + 20) * 8;          // centering offset hardcoded in c64 demo
+        int y = (dy + 12) * 8;
+        if (x<0 || x>40*8 || y <0 || y>25*8) continue;         // srceen bound
+        fillrect(x,y,8,8,0,framebuffer,info);
+        int color = floor_mod(varonum_eval(&sequencer.bob.color,&sequencer),16);                           // clear cell
+        fillrect(x+4-size,y+4-size,size*2,size*2,color,framebuffer,info);     // draw bob
     }
 }
 
@@ -450,7 +454,7 @@ static void ui_update_snapshot_screenshot(size_t slot) {
                 .size = FRAMEBUFFER_SIZE_BYTES,
             }
         },
-        .palette = palette(),
+        .palette =  m6569_palette(),
         .screen = (chips_rect_t){
             .x = 0,
             .y = 0,

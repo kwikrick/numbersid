@@ -692,6 +692,8 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
     }
     
     pos += varonum_export(&sequencer->bob.color, "bob color", &buffer[pos],size-pos);
+    pos += varonum_export(&sequencer->bob.step, "bob step", &buffer[pos],size-pos);
+    
 
     // terminate string
     assert(pos<size);
@@ -877,6 +879,7 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
     }
 
     if(!varonum_import(&sequencer->bob.color, buffer, &pos)) return false;
+    if(!varonum_import(&sequencer->bob.step, buffer, &pos)) return false;
 
     return true;
 }
