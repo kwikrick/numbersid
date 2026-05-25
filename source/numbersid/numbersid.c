@@ -294,6 +294,81 @@ void update_fft_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
     }
 }
 
+#define max(a,b)             \
+({                           \
+    __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b;       \
+})
+
+#define min(a,b)             \
+({                           \
+    __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a < _b ? _a : _b;       \
+})
+
+
+void fillrect(int x, int y, int w, int h, int color, uint8_t* framebuffer, chips_display_info_t info) {
+    int x1 = max(x,0);
+    int y1 = max(y,0);
+    int x2 = min(x + w, info.frame.dim.width);
+    int y2 = min(y + h, info.frame.dim.height);
+    
+    for (int y=y1;y<y2;y++) {
+        for (int x=x1;x<x2;x++) {
+            int index = y*info.frame.dim.width+x;
+            framebuffer[index] = color;
+       }
+    }
+}
+
+void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info) 
+{
+    // clear screen
+    int w = info.frame.dim.width;
+    int h = info.frame.dim.height;
+    fillrect(0,0,w,h,0,framebuffer,info);
+
+    // copy sequencer
+    sequencer_t sequencer = state.sequencer;  
+
+    // compute sines
+    for (int t=sequencer.frame-255;t<=sequencer.frame;t++)
+    {
+        //sequencer.frame
+        // TODO: need to update sequencer 
+        //update_variables(sequencer, frame);
+        update_variables(&sequencer, t);
+
+        double dx=0;
+        double dy=0;
+        for (int sinenr = 0;sinenr < sequencer.num_sines; sinenr++) {
+            sine_t* sine = &sequencer.sines[sinenr];
+            int freq = varonum_eval(&sine->freq, &sequencer);
+            int amp = varonum_eval(&sine->amplitude, &sequencer);
+            int phase = varonum_eval(&sine->phase, &sequencer);
+            double phi = M_PI * 2 * (double)(freq * t + phase*256) / 65536.0;     // todo rounding like sine lut
+            int v = (int)floor(sin(phi)*amp); // range -amp , amp
+            if (sinenr % 2 == 0) {
+                dx+=v;
+            }
+            else {
+                dy+=v;
+            }
+        }
+
+        // draw sine bob
+        static int sizes[8] = {1,2,3,4,4,3,2,1};
+        int size = sizes[floor_mod(t+sequencer.frame,64) / 8];
+        int ix = (int)(dx + 20) * 8;          // centering offset hardcoded in c64 demo
+        int iy = (int)(dy + 12) * 8;
+        // TODO: 40 x 25 screen bounds
+        fillrect(ix,iy,8,8,0,framebuffer,info);                               // clear cell
+        fillrect(ix+4-size,iy+4-size,size*2,size*2,255,framebuffer,info);     // draw bob
+    }
+}
+
 void app_frame(void) {
     
     state.frame_time_us = clock_frame_time();
@@ -307,7 +382,9 @@ void app_frame(void) {
 
     state.ticks = numbersid_exec(state.frame_time_us);
 
-    update_fft_framebuffer(state.framebuffer, numbersid_display_info());
+    //update_fft_framebuffer(state.framebuffer, numbersid_display_info());
+
+    update_sinebob_framebuffer(state.framebuffer, numbersid_display_info());
     
     state.emu_time_ms = stm_ms(stm_since(emu_start_time));
 

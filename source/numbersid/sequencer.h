@@ -3,7 +3,7 @@
 
     Do this:
     ~~~C
-    #define CHIPS_UI_IMPL
+    #define CHIPS_IMPL
     ~~~
     before you include this file in *one* C++ file to create the
     implementation.
