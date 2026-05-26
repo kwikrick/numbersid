@@ -122,12 +122,17 @@ loop_clear:
     
     // --- colorize the two lines --
     ldx #0
-    lda #TEXT_COLOR
-color_loop:
-    sta color_row1,x
-    sta color_row2,x
+	ldy #0
+    color_loop:
+    lda text_gradient,x
+	sta color_row1,y
+	sta color_row2,y
+	iny
+    sta color_row1,y
+	sta color_row2,y
+	iny
 	inx
-	cpx #40
+	cpx #20
 	bne color_loop   
 	
 	// --- reset variables
