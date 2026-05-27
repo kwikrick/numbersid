@@ -11,10 +11,8 @@ text_buffer_row1:
 text_buffer_row2:
 .fill text_length*2, 32		// spaces
 
-text_offset: 
-.word 0
-
+// hardwarde scroll value (0-7) for VICII xscroll register  
 scroll_pos:
-.byte 0			// todo, if 8 is needed, move to code?
+.byte 0
 
 

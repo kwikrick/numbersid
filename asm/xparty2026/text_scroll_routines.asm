@@ -61,13 +61,10 @@ loop_character:
     // restore timer IRQ? No need since i'm using raster
     
     //---  scale message  -----
-    .const ROW1PTR = zp_free
-    .const ROW2PTR = zp_free+2
-	.const DATAPTR = zp_in
-
+    .const DATAPTR = zp_free
 	Word_Store_Value(DATAPTR, text_data)
-	Word_Store_Value(ROW1PTR, text_buffer_row1)
-	Word_Store_Value(ROW2PTR, text_buffer_row2)
+	Word_Store_Value(ZP_SCROLL_ROW1PTR, text_buffer_row1)
+	Word_Store_Value(ZP_SCROLL_ROW2PTR, text_buffer_row2)
     
 loop_text:
 	ldy #0
@@ -75,18 +72,18 @@ loop_text:
 	asl
 	asl			// a=a*4
 	ldy #0
-	sta (ROW1PTR),y
+	sta (ZP_SCROLL_ROW1PTR),y
 	adc #1
 	iny
-	sta (ROW1PTR),y
+	sta (ZP_SCROLL_ROW1PTR),y
 	adc #1
 	ldy #0
-	sta (ROW2PTR),y
+	sta (ZP_SCROLL_ROW2PTR),y
 	adc #1
 	iny
-	sta (ROW2PTR),y
-	Word_Add_Value(ROW1PTR,2,ROW1PTR)
-	Word_Add_Value(ROW2PTR,2,ROW2PTR)
+	sta (ZP_SCROLL_ROW2PTR),y
+	Word_Add_Value(ZP_SCROLL_ROW1PTR,2,ZP_SCROLL_ROW1PTR)
+	Word_Add_Value(ZP_SCROLL_ROW2PTR,2,ZP_SCROLL_ROW2PTR)
 	Word_Inc(DATAPTR)
 	Word_Compare_Value_X(DATAPTR, text_data_end)
     bne loop_text
@@ -132,8 +129,10 @@ loop_clear:
 	
 	// --- reset variables
 	
-	Word_Store_Value(text_offset,-1)		// ensures that on first update will be offset 0
-	
+	// ensures that on first update will be offset 0
+	Word_Store_Value(ZP_SCROLL_ROW1PTR, text_buffer_row1-1)
+	Word_Store_Value(ZP_SCROLL_ROW2PTR, text_buffer_row2-1)
+
 	lda #0
 	sta scroll_pos
     
@@ -151,11 +150,13 @@ textscroll_update:
 	.const text_buffer_size = (text_data_end - text_data)*2
 	lda #7
 	sta scroll_pos
-	Word_Inc(text_offset)
-	Word_Compare_Value_X(text_offset,text_buffer_size)
-	bne lt_text_length
-	Word_Store_Value(text_offset,0)
-lt_text_length:
+	Word_Inc(ZP_SCROLL_ROW1PTR)
+	Word_Inc(ZP_SCROLL_ROW2PTR)
+	Word_Compare_Value_X(ZP_SCROLL_ROW2PTR, text_buffer_row2+text_buffer_size)
+	bmi skip_reset
+	Word_Store_Value(ZP_SCROLL_ROW1PTR, text_buffer_row1)
+	Word_Store_Value(ZP_SCROLL_ROW2PTR, text_buffer_row2)
+skip_reset:
 	
 	// scroll screen buffer
 	ldx #0
@@ -167,29 +168,11 @@ loop:
 	inx
 	cpx #39						// 39 columns
 	bne loop
-	
-	// copy text to last column on screen
-	// TODO: keep ROWPTRs in zero page, not to be used by routines?
-	.const ROW1PTR = ZP_IRQ
-    .const ROW2PTR = ZP_IRQ+2
-    
-    lda #<text_buffer_row1
-    sta ROW1PTR
-    lda #>text_buffer_row1
-    sta ROW1PTR+1
-    
-    lda #<text_buffer_row2
-    sta ROW2PTR
-    lda #>text_buffer_row2
-    sta ROW2PTR+1
-    
-    Word_Add_Word(ROW1PTR, text_offset, ROW1PTR)
-    Word_Add_Word(ROW2PTR, text_offset, ROW2PTR)
-    
+	    
 	ldy #0
-	lda (ROW1PTR),y
+	lda (ZP_SCROLL_ROW1PTR),y
 	sta screen_row1+39
-	lda (ROW2PTR),y
+	lda (ZP_SCROLL_ROW2PTR),y
 	sta screen_row2+39
 	
 cont:

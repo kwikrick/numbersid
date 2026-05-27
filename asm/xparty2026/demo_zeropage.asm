@@ -13,8 +13,16 @@
 .const ZP_IRQ5 = $20
 .const ZP_IRQ6 = $21
 
+// used by bobs
 .const ZP_CLEAR_PIXEL_PTR    = $24
 .const ZP_CLEAR_PIXEL_PTR_h  = $25
+
+// use by text scroll
+.const ZP_SCROLL_ROW1PTR = $26
+.const ZP_SCROLL_ROW1PTR_h = $27
+.const ZP_SCROLL_ROW2PTR = $28
+.const ZP_SCROLL_ROW2PTR_h = $29
+	
 
 
 
