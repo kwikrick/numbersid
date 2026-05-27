@@ -176,9 +176,10 @@ apply_note:
 	// ZP_FREE byte used to index scale, add offset and clip to size of scale array
 	Word_Add_Value(w_note, SCALE_MIDDLE_INDEX, w_note)
 	lda w_note+1
-	bmi note_negative		// skip negative index 
+	bmi skip_note		// skip negative index 
 	lda w_note	
-	and #SCALE_SIZE-1		// clip high index, assumed power of 2
+	cmp #SCALE_SIZE			// skip high index 
+	bcs skip_note
 	tay
 	lda (w_scale_ptr),y
 	sta w_note 				// Note: scale has only low byte for note/semitone
@@ -202,9 +203,10 @@ skip_scale:
 	// lookup in frequency table
 	Word_Add_Value(w_note, MIDDLE_C_INDEX, w_note)
 	lda w_note+1    
-	bmi note_negative   			// skip negative note index
+	bmi skip_note   			// skip negative note index
 	lda w_note
-	and #FREQ_TABLE_LENGTH-1		// clip high index, assumed power of 2 
+	cmp #FREQ_TABLE_LENGTH
+	bcs skip_note
 	asl  // word index
 	tax
 	lda freq_table,x
@@ -213,7 +215,7 @@ skip_scale:
 	lda freq_table+1,x
 	ldy #SID_FREQ_H
 	sta (ZP_SIDDATA_PTR),y
-note_negative:
+skip_note:
  	rts
  }
  
