@@ -168,7 +168,8 @@ loop:
 	inx
 	cpx #39						// 39 columns
 	bne loop
-	    
+	
+	// copy chars from buffer to last column of screen
 	ldy #0
 	lda (ZP_SCROLL_ROW1PTR),y
 	sta screen_row1+39
