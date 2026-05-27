@@ -63,20 +63,15 @@ loop_character:
     //---  scale message  -----
     .const ROW1PTR = zp_free
     .const ROW2PTR = zp_free+2
+	.const DATAPTR = zp_in
+
+	Word_Store_Value(DATAPTR, text_data)
+	Word_Store_Value(ROW1PTR, text_buffer_row1)
+	Word_Store_Value(ROW2PTR, text_buffer_row2)
     
-    lda #<text_buffer_row1
-    sta ROW1PTR
-    lda #>text_buffer_row1
-    sta ROW1PTR+1
-    
-    lda #<text_buffer_row2
-    sta ROW2PTR
-    lda #>text_buffer_row2
-    sta ROW2PTR+1
-    
-    ldx #0
 loop_text:
-	lda text_data,x
+	ldy #0
+	lda (DATAPTR),y
 	asl
 	asl			// a=a*4
 	ldy #0
@@ -92,8 +87,8 @@ loop_text:
 	sta (ROW2PTR),y
 	Word_Add_Value(ROW1PTR,2,ROW1PTR)
 	Word_Add_Value(ROW2PTR,2,ROW2PTR)
-	inx
-	//cpx #256
+	Word_Inc(DATAPTR)
+	Word_Compare_Value_X(DATAPTR,text_data_end)
     bne loop_text
   
     

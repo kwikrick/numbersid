@@ -240,13 +240,14 @@ raster_irq_handler_endline:
 	bpl cont
 	
 	// reset scroll and increment text offset
+	.const text_buffer_size = (text_data_end - text_data)*2
 	lda #7
 	sta scroll_pos
 	Word_Inc(text_offset)
-	Word_Compare_Value_X(text_offset,512)
-	bne lt512
+	Word_Compare_Value_X(text_offset,text_buffer_size)
+	bne lt_text_length
 	Word_Store_Value(text_offset,0)
-lt512:
+lt_text_length:
 	
 	// scroll screen buffer
 	ldx #0
@@ -260,6 +261,7 @@ loop:
 	bne loop
 	
 	// copy text to last column on screen
+	// TODO: keep ROWPTRs in zero page, not to be used by routines?
 	.const ROW1PTR = ZP_IRQ
     .const ROW2PTR = ZP_IRQ+2
     

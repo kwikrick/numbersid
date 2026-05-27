@@ -3,8 +3,30 @@
 // max 256 chars (for now)
 text_data:
 .encoding "screencode_upper"
-.text "HELLO XPARTY! I GOT MY C64 ONLY TWO YEARS AGO AND FELL IN LOVE. THIS IS MY FIRST DEMO. PLEASE HAVE MERCY. FRACTAL MUSIC AND GRAPHICS COMPUTED REAL-TIME. MANY THANKS TO: ALL OF YOU KEEPING THE SCENE ALIVE. CODE BY KWIKRICK, UNAFFELIATED."
-.fill 256-(*-text_data), 32		// spaces
+//----"0123456789012345678"
+.text "== HELLO XPARTY! =="
+.text "                   "
+.text "I'M A NEWBE HERE. "
+.text "I GOT MY C64 ONLY TWO YEARS AGO AND FELL IN *LOVE*. "
+.text "THIS IS MY FIRST DEMO. PLEASE HAVE MERCY. "
+.text "FRACTAL MUSIC AND GRAPHICS COMPUTED REAL-TIME. "
+.text "MANY THANKS TO: ALL OF YOU KEEPING THE SCENE ALIVE! "
+.text "                   "
+.text "CODE BY KWIKRICK - UNAFFELIATED "
+.text "                   "
+.text "THIS THING WILL RUN UNIQUE PATTERNS FOR 32767 FRAMES... "
+.text "AND I MADE A TOOL TO GENERATE INFINITLY MORE DEMOS LIKE THIS. "
+.text "TERRIBLE IDEA FOR A FIRST DEMO -00-"
+.text "                   "
+.text "                   "
+.text "                   "
+.text "MAYBE THIS IS ENOUGH FOR NOW?"
+.text "                   "
+.text "                   "
+.text "                   "
+.text "OR MAYBE NOT. ENJOY! ;-P"
+.text "                   "
+text_data_end:
 
 text_gradient:
 .byte  9,  5,  5,  13 

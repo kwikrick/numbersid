@@ -1,13 +1,15 @@
 
 // --- vars----
 
+.const text_length = text_data_end - text_data
+
 // 512 chars (for now)
 text_buffer_row1:
-.fill 512, 32		// spaces
+.fill text_length*2, 32		// spaces
 
 // 512 chars (for now)
 text_buffer_row2:
-.fill 512, 32		// spaces
+.fill text_length*2, 32		// spaces
 
 text_offset: 
 .word 0
