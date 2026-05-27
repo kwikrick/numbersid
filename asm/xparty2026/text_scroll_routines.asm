@@ -88,7 +88,7 @@ loop_text:
 	Word_Add_Value(ROW1PTR,2,ROW1PTR)
 	Word_Add_Value(ROW2PTR,2,ROW2PTR)
 	Word_Inc(DATAPTR)
-	Word_Compare_Value_X(DATAPTR,text_data_end)
+	Word_Compare_Value_X(DATAPTR, text_data_end)
     bne loop_text
   
     
@@ -140,63 +140,22 @@ loop_clear:
 	rts
 }
 
-
-//    // ----
-//
-//    InstallRasterIRQ_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
-//
-//	WaitKey()
-//	
-//	RestoreRasterIRQ_WithKernal()
-//	
-//	rts
-//}
-
-// -----------
-
-/*
-
-raster_irq_handler_startline:
+textscroll_update:
 {
-	RasterIRQBegin_WithKernal()	
-	
-	lda scroll_pos
-	and #VIC_MODE2_HSCROLL
-	sta VIC_MODE2
-	
-	RasterIRQNext_WithKernal(raster_irq_handler_endline, SCROLL_END_LINE)
-}
-
-raster_irq_handler_endline:
-{
-	RasterIRQBegin_WithKernal()	
-	
-	lda #4
-	and #VIC_MODE2_HSCROLL
-	sta VIC_MODE2
-	
-	RasterIRQNext_WithKernal(raster_irq_handler_compute, SCROLL_COMPUTE_LINE)
-}
-
-raster_irq_handler_compute:
-{
-	RasterIRQBegin_WithKernal()
-
-	inc $d020
-	
 	// udpate scroll position
 	dec scroll_pos
 	dec scroll_pos		// double speed
 	bpl cont
 	
 	// reset scroll and increment text offset
+	.const text_buffer_size = (text_data_end - text_data)*2
 	lda #7
 	sta scroll_pos
 	Word_Inc(text_offset)
-	Word_Compare_Value(text_offset,512)
-	bne lt512
+	Word_Compare_Value_X(text_offset,text_buffer_size)
+	bne lt_text_length
 	Word_Store_Value(text_offset,0)
-lt512:
+lt_text_length:
 	
 	// scroll screen buffer
 	ldx #0
@@ -210,8 +169,9 @@ loop:
 	bne loop
 	
 	// copy text to last column on screen
-	.const ROW1PTR = zp_free
-    .const ROW2PTR = zp_free+2
+	// TODO: keep ROWPTRs in zero page, not to be used by routines?
+	.const ROW1PTR = ZP_IRQ
+    .const ROW2PTR = ZP_IRQ+2
     
     lda #<text_buffer_row1
     sta ROW1PTR
@@ -233,13 +193,8 @@ loop:
 	sta screen_row2+39
 	
 cont:
-	
-	dec $d020
-
-	
-	RasterIRQNext_WithKernal(raster_irq_handler_startline, SCROLL_START_LINE)
+	rts
 }
-*/
 
 // ------------
 

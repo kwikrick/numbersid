@@ -234,57 +234,7 @@ raster_irq_handler_endline:
 
 	ChooseCharacterSet(BOB_CHARSET)		// default
 	
-	// udpate scroll position
-	dec scroll_pos
-	dec scroll_pos		// double speed
-	bpl cont
-	
-	// reset scroll and increment text offset
-	.const text_buffer_size = (text_data_end - text_data)*2
-	lda #7
-	sta scroll_pos
-	Word_Inc(text_offset)
-	Word_Compare_Value_X(text_offset,text_buffer_size)
-	bne lt_text_length
-	Word_Store_Value(text_offset,0)
-lt_text_length:
-	
-	// scroll screen buffer
-	ldx #0
-loop:
-	lda screen_row1+1,x
-	sta screen_row1,x
-	lda screen_row2+1,x
-	sta screen_row2,x
-	inx
-	cpx #39						// 39 columns
-	bne loop
-	
-	// copy text to last column on screen
-	// TODO: keep ROWPTRs in zero page, not to be used by routines?
-	.const ROW1PTR = ZP_IRQ
-    .const ROW2PTR = ZP_IRQ+2
-    
-    lda #<text_buffer_row1
-    sta ROW1PTR
-    lda #>text_buffer_row1
-    sta ROW1PTR+1
-    
-    lda #<text_buffer_row2
-    sta ROW2PTR
-    lda #>text_buffer_row2
-    sta ROW2PTR+1
-    
-    Word_Add_Word(ROW1PTR, text_offset, ROW1PTR)
-    Word_Add_Word(ROW2PTR, text_offset, ROW2PTR)
-    
-	ldy #0
-	lda (ROW1PTR),y
-	sta screen_row1+39
-	lda (ROW2PTR),y
-	sta screen_row2+39
-	
-cont:
+	jsr textscroll_update
 
 	.if (DEBUG_RASTER_IRQ_TIMES) {
 		dec $d020				
