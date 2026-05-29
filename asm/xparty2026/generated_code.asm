@@ -187,8 +187,8 @@ variable_changed_72:
    Apply_Variable_To_Sine_Parameter(72, 1, Sine_Param_amplitude)
    rts
 variable_changed_73:
-   Apply_Variable_To_Sine_Parameter(73, 3, Sine_Param_amplitude)
    Apply_Variable_To_Sine_Parameter(73, 2, Sine_Param_amplitude)
+   Apply_Variable_To_Sine_Parameter(73, 3, Sine_Param_amplitude)
    rts
 variable_changed_74:
    Apply_Variable_To_Sine_Parameter(74, 3, Sine_Param_phase)

@@ -39,7 +39,7 @@
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
 .const DEBUG_FRAME_COUNT = false
-.const DEBUG_RASTER_IRQ_TIMES = false
+.const DEBUG_RASTER_IRQ_TIMES = true
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -57,7 +57,7 @@ main:
 	
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	Fill(clear_mem_start, 16384, 0)		// compiler cannot compute, make a guess
+	Fill(clear_mem_start, 25378, 0)		// compiler cannot compute, make a guess
 
 	ClearScreen(screen, 32)
 	lda #0
@@ -86,8 +86,7 @@ main:
 	// init sinebobs
 	jsr sinebob_init_charset
 	jsr sinebob_init_history
-
-	
+	jsr sinebob_compute_tables
 
 	// for numbersid play
 
@@ -320,208 +319,24 @@ raster_irq_handler_sinebob:
 
 	// --- compute sines
 
-	ldy #0
-loop_compute:
-
-	// load counter
-	lda counters,y	
-	sta ZP_IRQ
-	lda counters+1,y	
-	sta ZP_IRQ+1
-	
-	// load freq
-	lda freqs,y	
-	sta ZP_IRQ+2
-	lda freqs+1,y	
-	sta ZP_IRQ+3
-	
-	// add freq to counter
-	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
-	
-	// store counter
-	lda ZP_IRQ
-	sta counters,y	
-	lda ZP_IRQ+1
-	sta counters+1,y
-
-	// get counter high byte and add phase
-	lda counters+1,y		// get counter high byte, divides by 256
-	adc phases,y			// add phase (low byte only)
-
-	// get sine value
-	tax
-	lda sine_256_256,x
-	sta ZP_IRQ
-	
-	// multiply by amplitude
-	lda amplitudes,y			// note: only using low byte of amplitude
-	sta ZP_IRQ+1
-
-	Word_Mul_LoHi(ZP_IRQ)		// multiply sine * amplitude
-	
-	// divide by 128
-	Unsigned_Shift_Right(ZP_IRQ, 7)
-	
-	// subtract amplitude
-	lda amplitudes,y
-	sta ZP_IRQ+2
-	lda #0
-	sta ZP_IRQ+3
-	Word_Neg(ZP_IRQ+2, ZP_IRQ+2)
-	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
-	
-	// // add offset
-	// lda offsets,y
-	// sta ZP_IRQ+2
-	// lda offsets+1,y
-	// sta ZP_IRQ+3
-	// Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
-	
-	// store
-	lda ZP_IRQ
-	sta positions,y
-	lda ZP_IRQ+1
-	sta positions+1,y
-	
-	iny
-	iny
-	cpy #NUM_SINES*2       // two bytes per sine
-	beq end_loop_compute
-	jmp loop_compute		// need long jump
-
-end_loop_compute:
-
-	//-----  add sines to compute X,Y for one bob ------ 
-	.const ZP_X = ZP_IRQ+5		// word
-	.const ZP_Y = ZP_IRQ+7		// word		
-
-	Word_Store_Value(ZP_X,20)		// TODO: needs to be configarable
-	Word_Store_Value(ZP_Y,13)
-
-	ldx #0
-
-loop_add_sines:
-
-	lda positions+0,x		    
-	sta ZP_IRQ
-	lda positions+1,x	
-	sta ZP_IRQ+1
-
-	Word_Add_Word(ZP_X,ZP_IRQ,ZP_X)
-
-	lda positions+2,x		    
-	sta ZP_IRQ
-	lda positions+3,x	
-	sta ZP_IRQ+1
-
-	Word_Add_Word(ZP_Y,ZP_IRQ,ZP_Y)
-	inx
-	inx
-	inx
-	inx
-	cpx #NUM_SINES*2		// two bytes per sine
-	bne loop_add_sines
-
-
-	// todo: check for negative step value (high byte of word!); fixed character selection
-	// increment bob step counter
-	lda bob_step_parameter_value
-	clc
-	adc sinebob_step_counter
-	//and #BOB_CHARSET_LENTGH-1		// just loop at 256
-	sta sinebob_step_counter
+	jsr sinebob_compute
 
 	// ----- drawing section
 
-	.if (DEBUG_RASTER_IRQ_TIMES) {
-		inc $D020
-	}
-	
-	// TODO: should be a separate IRQ handler, run after line 200
-	// note: compute time for sines is now unknown, determined by generated code)
-	
-	.const ZP_CELL = ZP_IRQ   		// word
-	.const ZP_CELL_H = ZP_IRQ+1   		// word
-	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
-	.const ZP_TEMP_H = ZP_IRQ+3
-
-	// ------- check screen bounds -------
-
-	// TODO: modulo 25 easy to compute?
-	Word_Compare_Value_Y(ZP_Y, 2)
-	bmi skip1
-	Word_Compare_Value_Y(ZP_Y, 25)
-	bpl skip1
-
-	// TODO: modulo 40 easy to compute?
-	Word_Compare_Value_Y(ZP_X, 0)
-	bmi skip1
-	Word_Compare_Value_Y(ZP_X, 40)
-	bpl skip1
-	
-	clc
-	bcc cont1
-	skip1:
-	jmp skip
-	cont1:
-
-	// ---- clear pixels from history
-
-	ldy #0
-	lda (ZP_CLEAR_PIXEL_PTR),y
-	sta ZP_CELL
-	iny
-	lda (ZP_CLEAR_PIXEL_PTR),y
-	sta ZP_CELL+1
-
-	lda #0					// clear pixel value
-	ldy #0
-	sta (ZP_CELL),y			// write to screen (assuming ZP_CELL is in screen ram, hopefully!)
-
-	// -------- draw to screen ---- 
-
-	// compute cell offset (relative to screen or color ram)
-	Word_Copy(ZP_Y,ZP_CELL)
-	Word_Mul_40(ZP_CELL)						// ZP_CELL(word) = 40*y		// NOTE: Mul_40 uses ZP_CELL+2,ZP_CELL+3
-	Word_Add_Word(ZP_CELL, ZP_X, ZP_CELL)		// ZP_CELL = 40*y+x  
-
-	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
-	
-	// write character to screen ram
-	lda sinebob_step_counter
-	lsr							// div by 2 so we compress 256 steps to 128 chars 
-	clc
-	adc #BOB_CHARSET_START 
-	ldy #0						// must be zero
-	sta (ZP_CELL),y				// store in screen ram
-
-	// store pixel adress in history
-	//ldy #0
-	lda ZP_CELL
-	sta (ZP_CLEAR_PIXEL_PTR),y
-	lda ZP_CELL+1
-	iny
-	sta (ZP_CLEAR_PIXEL_PTR),y
-
-	// increase pointer
-	Word_Add_Value(ZP_CLEAR_PIXEL_PTR, 2, ZP_CLEAR_PIXEL_PTR) 
-	Word_Compare_Value_X(ZP_CLEAR_PIXEL_PTR, clear_pixel_history+CLEAR_HISTORY_SIZE*2)
-	bmi history_ptr_in_bounds
-	Word_Store_Value(ZP_CLEAR_PIXEL_PTR, clear_pixel_history)
-history_ptr_in_bounds:
-
-	// write color to color ram
-	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
-	lda bob_color_parameter_value
-	ldy #0
-	sta (ZP_CELL),y				// store in color ram
-	
-skip:
+	// TODO: should be a separate IRQ handler to avoid screen tearing; run after line 200
+	// because compute time can vary depending on number of sinebobs
 
 	.if (DEBUG_RASTER_IRQ_TIMES) {
 		inc $D020
 	}
+
+	jsr sinebob_draw
+	
 	// ----- update charset
+
+	.if (DEBUG_RASTER_IRQ_TIMES) {
+		inc $D020
+	}
 
 	jsr sinebob_update_transitions
 

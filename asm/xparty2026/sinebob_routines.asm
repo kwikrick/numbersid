@@ -124,3 +124,252 @@ sinebob_init_history:
 
     rts
 }
+
+sinebob_compute_tables:
+{
+    .const SINE_TABLE_PTR = ZP_FREE
+    .const SINE_TABLE_PTR_h = ZP_FREE+1
+    .const SINE_VALUE_L = ZP_FREE+2
+    .const SINE_VALUE_H = ZP_FREE+3
+    .const AMPLITUDE = ZP_FREE+4
+    
+    Word_Store_Value(SINE_TABLE_PTR, sine_tables)
+    
+    ldx #0
+loop_x:
+    ldy #0              
+loop_y:
+    lda sine_256_256,y
+    sta SINE_VALUE_L
+
+    txa
+    clc          
+    sta AMPLITUDE
+    asl             
+    sta SINE_VALUE_H
+    
+    txa
+    pha
+    tya
+    pha
+    Word_Mul_LoHi(SINE_VALUE_L)
+    pla
+    tay
+    pla
+    tax
+
+
+    lda SINE_VALUE_H
+    sec
+    sbc AMPLITUDE
+
+    sta (SINE_TABLE_PTR),y
+    
+    iny
+    //cpy #0      // 256 times
+    bne loop_y
+
+    Word_Add_Value(SINE_TABLE_PTR,256,SINE_TABLE_PTR)
+    
+    inx
+    cpx #32     // 32 times 
+    bne loop_x
+
+    rts
+}
+
+sinebob_compute:
+{
+
+    .const SINE_TABLE_PTR = ZP_IRQ+5		// word
+	
+	ldx #0
+loop_compute:
+	// load amplitude
+    // Note: only low byte (TODO: handle sign? if negative, add half cycle to phase?)
+    // limit between 0 and 31
+	lda amplitudes,x	
+	and #31
+    sta ZP_IRQ
+
+    // compute SINE_TABLE_PTR from amplitude
+    // adding low byte of amplitude to high byte of sine_table_ptr; 256 bytes for each amplitude
+    Word_Store_Value(SINE_TABLE_PTR, sine_tables)
+    lda SINE_TABLE_PTR+1
+    clc
+    adc ZP_IRQ
+    sta SINE_TABLE_PTR+1           
+
+	// load counter
+	lda counters,x
+	sta ZP_IRQ
+	lda counters+1,x	
+	sta ZP_IRQ+1
+	
+	// load freq
+	lda freqs,x
+	sta ZP_IRQ+2
+	lda freqs+1,x	
+	sta ZP_IRQ+3
+	
+	// add freq to counter
+	Word_Add_Word(ZP_IRQ,ZP_IRQ+2,ZP_IRQ)
+	
+	// store counter
+	lda ZP_IRQ
+	sta counters,x
+	lda ZP_IRQ+1
+	sta counters+1,x
+
+	// get counter high byte and add phase
+	lda counters+1,x		// get counter high byte, divides by 256
+	adc phases,x			// add phase (low byte only)
+                            // TODO: low byte of phase is wrong when negative?
+
+	// get sine value
+	tay
+	lda (SINE_TABLE_PTR),y
+    
+    // store
+    //  TODO: sine value is a signed byte, but positions is signed word. 
+    //  Waste of memory, but no perormance inpact?
+    sta positions,x     
+	//lda #0
+	//sta positions+1,x
+	
+	inx
+	inx
+	cpx #NUM_SINES*2       // two bytes per sine
+	beq end_loop_compute
+	jmp loop_compute		// need long jump
+
+end_loop_compute:
+
+    // --- add sines to position_x, poistion_y ----
+    lda #20             // center; TODO: make configurable per bob?
+    sta position_x
+    lda #13 
+    sta position_y
+
+	ldx #0              
+loop_add_sines:
+
+	lda positions+0,x		    
+	clc
+    adc position_x
+    sta position_x
+
+	lda positions+2,x		    
+	clc
+    adc position_y
+    sta position_y
+
+	inx
+	inx
+	inx
+	inx
+	cpx #NUM_SINES*2		// two bytes per sine
+	bne loop_add_sines
+
+    // ---- update step counter (which character to write to screen)---
+
+	// TODO: check for negative step value (high byte of word!); fixed character selection
+	// increment bob step counter
+	lda bob_step_parameter_value
+	clc
+	adc sinebob_step_counter
+	//and #BOB_CHARSET_LENTGH-1		// just loop at 256
+	sta sinebob_step_counter
+
+    rts
+}
+
+sinebob_draw:
+{
+	.const ZP_CELL = ZP_IRQ   		    // word
+	.const ZP_CELL_H = ZP_IRQ+1   		// word
+	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
+	.const ZP_TEMP_H = ZP_IRQ+3
+
+    .const ZP_X = ZP_IRQ+5		        // word
+	.const ZP_Y = ZP_IRQ+7		        // word		
+
+    // load position, convert from byte to word 
+    Word_Store_Signed_Byte(ZP_X, position_x)
+    Word_Store_Signed_Byte(ZP_Y, position_y)
+
+	// ------- check screen bounds -------
+
+	// TODO: modulo 25 easy to compute?
+	Word_Compare_Value_Y(ZP_Y, 2)
+	bmi skip1
+	Word_Compare_Value_Y(ZP_Y, 25)
+	bpl skip1
+
+	// TODO: modulo 40 easy to compute?
+	Word_Compare_Value_Y(ZP_X, 0)
+	bmi skip1
+	Word_Compare_Value_Y(ZP_X, 40)
+	bpl skip1
+	
+	clc
+	bcc cont1
+	skip1:
+	jmp skip
+	cont1:
+
+	// ---- clear pixels from history
+
+	ldy #0
+	lda (ZP_CLEAR_PIXEL_PTR),y
+	sta ZP_CELL
+	iny
+	lda (ZP_CLEAR_PIXEL_PTR),y
+	sta ZP_CELL+1
+
+	lda #0					// clear pixel value
+	ldy #0
+	sta (ZP_CELL),y			// write to screen (assuming ZP_CELL is in screen ram, hopefully!)
+
+	// -------- draw to screen ---- 
+
+	// compute cell offset (relative to screen or color ram)
+	Word_Copy(ZP_Y,ZP_CELL)
+	Word_Mul_40(ZP_CELL)						// ZP_CELL(word) = 40*y		// NOTE: Mul_40 uses ZP_CELL+2,ZP_CELL+3
+	Word_Add_Word(ZP_CELL, ZP_X, ZP_CELL)		// ZP_CELL = 40*y+x  
+
+	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
+	
+	// write character to screen ram
+	lda sinebob_step_counter
+	lsr							// div by 2 so we compress 256 steps to 128 chars 
+	clc
+	adc #BOB_CHARSET_START 
+	ldy #0						// must be zero
+	sta (ZP_CELL),y				// store in screen ram
+
+	// store pixel adress in history
+	//ldy #0
+	lda ZP_CELL
+	sta (ZP_CLEAR_PIXEL_PTR),y
+	lda ZP_CELL+1
+	iny
+	sta (ZP_CLEAR_PIXEL_PTR),y
+
+	// increase pointer
+	Word_Add_Value(ZP_CLEAR_PIXEL_PTR, 2, ZP_CLEAR_PIXEL_PTR) 
+	Word_Compare_Value_X(ZP_CLEAR_PIXEL_PTR, clear_pixel_history+CLEAR_HISTORY_SIZE*2)
+	bmi history_ptr_in_bounds
+	Word_Store_Value(ZP_CLEAR_PIXEL_PTR, clear_pixel_history)
+history_ptr_in_bounds:
+
+	// write color to color ram
+	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
+	lda bob_color_parameter_value
+	ldy #0
+	sta (ZP_CELL),y				// store in color ram
+	
+skip:
+
+    rts
+}

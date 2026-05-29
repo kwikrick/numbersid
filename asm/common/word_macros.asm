@@ -91,12 +91,12 @@
 	lda addr+1
 	php
 	bpl pos
-	Word_Neg(addr,addr)
+	Word_Neg(addr)
 pos:
     Unsigned_Shift_Right(addr, shift_value)
     plp
     bpl done
-	Word_Neg(addr,addr)
+	Word_Neg(addr)
 done:
 }
 
@@ -313,8 +313,8 @@ skip:
     sta tgt
 }
 
-// Negative of word value (2s complement)
-.macro Word_Neg(src, tgt)
+// Negate of word value (2s complement)
+.macro Word_Neg(src)
 {
     lda src+1
     eor #$FF
@@ -596,4 +596,15 @@ done:
     lda addr+1
     adc #0
     sta addr+1
+}
+
+ .macro Word_Store_Signed_Byte(word, byte)
+ {
+    lda #0
+    sta word+1 
+    lda byte
+    sta word
+    bpl done
+    Word_Neg(word)
+done:
 }

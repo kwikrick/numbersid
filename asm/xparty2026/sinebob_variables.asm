@@ -27,7 +27,7 @@ amplitudes:
 phases:
 .fillword NUM_SINES,0
 
-// computed: for each bob
+// computed: for each bob; a full sine cycle is 65536 counts
 counters:
 .fillword NUM_SINES,0
 
@@ -37,6 +37,12 @@ counters:
 // into differnt bobs?
 positions:
 .fillword NUM_SINES, 0
+
+// position of bob; TODO: make arrays for multiple bob
+position_x: 
+.byte 0
+position_y: 
+.byte 0
 
 // offset in the charset where transitions are to be updated
 // note: offset in bytes, so 8 bytes per char, increase insteps of 8 
@@ -53,6 +59,6 @@ sinebob_step_counter:
 clear_pixel_history:
 .fillword 1024,CLEAR_HISTORY_SIZE
 
-// pointer to current place in history
-//clear_pixel_ptr: 
-//.word 0 
+// 32 sine tables, scale 1-32 
+sine_tables:
+.fill 32*256, 0
