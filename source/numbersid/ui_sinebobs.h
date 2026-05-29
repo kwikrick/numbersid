@@ -1,6 +1,6 @@
 #pragma once
 /*#
-    # ui_sines.h
+    # ui_sinebobs.h
 
     Visualization for numbersid sound sines.
 
@@ -27,8 +27,8 @@
         - sequencer.h
         - ui_util.h
 
-    All strings provided to ui_sines_init() must remain alive until
-    ui_sines_discard() is called!
+    All strings provided to ui_sinebobs_init() must remain alive until
+    ui_sinebobs_discard() is called!
 
     ## zlib/libpng license
 
@@ -57,18 +57,18 @@
 extern "C" {
 #endif
 
-/* setup sines for ui_sines_init()
-    NOTE: all string data must remain alive until ui_sines_discard()!
+/* setup desc for ui_sinebobs_init()
+    NOTE: all string data must remain alive until ui_sinebobs_discard()!
 */
-typedef struct ui_sines_desc_t {
+typedef struct ui_sinebobs_desc_t {
     const char* title;          /* window title */
     sequencer_t* sequencer;      /* object to show and edit */
     int x, y;                   /* initial window position */
     int w, h;                   /* initial window size (or default size of 0) */
     bool open;                  /* initial window open state */
-} ui_sines_desc_t;
+} ui_sinebobs_desc_t;
 
-typedef struct ui_sines_t {
+typedef struct ui_sinebobs_t {
     const char* title;
     sequencer_t* sequencer;
     float init_x, init_y;
@@ -76,13 +76,13 @@ typedef struct ui_sines_t {
     bool open;
     bool last_open;
     bool valid;
-} ui_sines_t;
+} ui_sinebobs_t;
 
-void ui_sines_init(ui_sines_t* win, const ui_sines_desc_t* desc);
-void ui_sines_discard(ui_sines_t* win);
-void ui_sines_draw(ui_sines_t* win);
-void ui_sines_save_settings(ui_sines_t* win, ui_settings_t* settings);
-void ui_sines_load_settings(ui_sines_t* win, const ui_settings_t* settings);
+void ui_sinebobs_init(ui_sinebobs_t* win, const ui_sinebobs_desc_t* desc);
+void ui_sinebobs_discard(ui_sinebobs_t* win);
+void ui_sinebobs_draw(ui_sinebobs_t* win);
+void ui_sinebobs_save_settings(ui_sinebobs_t* win, ui_settings_t* settings);
+void ui_sinebobs_load_settings(ui_sinebobs_t* win, const ui_settings_t* settings);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -100,12 +100,12 @@ void ui_sines_load_settings(ui_sines_t* win, const ui_settings_t* settings);
 #endif
 
 
-// ------- ui_sines_t implementation -------
+// ------- ui_sinebobs_t implementation -------
 
-void ui_sines_init(ui_sines_t* win, const ui_sines_desc_t* desc) {
+void ui_sinebobs_init(ui_sinebobs_t* win, const ui_sinebobs_desc_t* desc) {
     CHIPS_ASSERT(win && desc);
     CHIPS_ASSERT(desc->title);
-    memset(win, 0, sizeof(ui_sines_t));
+    memset(win, 0, sizeof(ui_sinebobs_t));
     win->title = desc->title;
     win->sequencer = desc->sequencer;
     win->init_x = (float) desc->x;
@@ -116,7 +116,7 @@ void ui_sines_init(ui_sines_t* win, const ui_sines_desc_t* desc) {
     win->valid = true;
 }
 
-void ui_sines_discard(ui_sines_t* win) {
+void ui_sinebobs_discard(ui_sinebobs_t* win) {
     CHIPS_ASSERT(win && win->valid);
     win->valid = false;
 }
@@ -164,7 +164,7 @@ static void _draw_bob(bob_t* bob)
     if (ImGui::BeginTable("##orbits", bob->num_orbits + 1, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
         for (int i = 0; i < bob->num_orbits; i++) {
-            char col_name[16];
+            char col_name[20];
             snprintf(col_name, sizeof(col_name), "Orbit %d", i + 1);
             ImGui::TableSetupColumn(col_name, ImGuiTableColumnFlags_WidthFixed, cw);
         }
@@ -242,7 +242,7 @@ static void _draw_bob(bob_t* bob)
     ImGui::PopStyleVar(1);
 }
 
-static void _ui_sines_draw_state(ui_sines_t* win) {
+static void _ui_sinebobs_draw_state(ui_sinebobs_t* win) {
 
     sequencer_t* sequencer = win->sequencer;
 
@@ -268,7 +268,7 @@ static void _ui_sines_draw_state(ui_sines_t* win) {
     }
 }
 
-void ui_sines_draw(ui_sines_t* win) {
+void ui_sinebobs_draw(ui_sinebobs_t* win) {
     CHIPS_ASSERT(win && win->valid);
     ui_util_handle_window_open_dirty(&win->open, &win->last_open);
     if (!win->open) {
@@ -278,18 +278,18 @@ void ui_sines_draw(ui_sines_t* win) {
     ImGui::SetNextWindowSize(ImVec2(win->init_w, win->init_h), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(win->title, &win->open)) {
         ImGui::BeginChild("##sequencer_state", ImVec2(0, 0), true);
-        _ui_sines_draw_state(win);
+        _ui_sinebobs_draw_state(win);
         ImGui::EndChild();
     }
     ImGui::End();
 }
 
-void ui_sines_save_settings(ui_sines_t* win, ui_settings_t* settings) {
+void ui_sinebobs_save_settings(ui_sinebobs_t* win, ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     ui_settings_add(settings, win->title, win->open);
 }
 
-void ui_sines_load_settings(ui_sines_t* win, const ui_settings_t* settings) {
+void ui_sinebobs_load_settings(ui_sinebobs_t* win, const ui_settings_t* settings) {
     CHIPS_ASSERT(win && settings);
     win->open = ui_settings_isopen(settings, win->title);
 }

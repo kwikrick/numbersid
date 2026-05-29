@@ -46,7 +46,7 @@
 
 #include "ui_timecontrol.h"     // TODO: need all of these here?
 #include "ui_parameters.h"
-#include "ui_sines.h"
+#include "ui_sinebobs.h"
 #include "ui_variables.h"
 #include "ui_arrays.h"
 #include "ui_scales.h"
@@ -355,37 +355,43 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
         //update_variables(sequencer, frame);
         update_variables(&sequencer, t);
 
-        /*
-        int dx=0;
-        int dy=0;
-        for (int sinenr = 0;sinenr < sequencer.num_sines; sinenr++) {
-            sine_t* sine = &sequencer.sines[sinenr];
-            int freq = varonum_eval(&sine->freq, &sequencer);
-            int amp = varonum_eval(&sine->amplitude, &sequencer);
-            int phase = varonum_eval(&sine->phase, &sequencer);
-            double phi = M_PI * 2 * (double)(freq * t + phase*256) / 65536.0;     // todo rounding like sine lut
-            int v = (int)floor(sin(phi)*amp); // range -amp , amp
-            if (sinenr % 2 == 0) {
-                dx+=v;
+        for (int bobnr=0; bobnr < sequencer.num_bobs; bobnr++)
+        {
+            bob_t* bob = &sequencer.bobs[bobnr];
+            
+            int dx=0;
+            int dy=0;
+
+            for (int orbitnr = 0;orbitnr < bob->num_orbits; orbitnr++) {
+                orbit_t* orbit = &bob->orbits[orbitnr];
+                int freq_x = varonum_eval(&orbit->freq_x, &sequencer);
+                int amp_x = varonum_eval(&orbit->amplitude_x, &sequencer);
+                int phase_x = varonum_eval(&orbit->phase_x, &sequencer);
+                double phi_x = M_PI * 2 * (double)(freq_x * t + phase_x*256) / 65536.0;     // todo rounding like demo lut
+                int v_x = (int)floor(sin(phi_x)*amp_x); // range -amp , amp
+
+                int freq_y = varonum_eval(&orbit->freq_y, &sequencer);
+                int amp_y = varonum_eval(&orbit->amplitude_y, &sequencer);
+                int phase_y = varonum_eval(&orbit->phase_y, &sequencer);
+                double phi_y = M_PI * 2 * (double)(freq_y * t + phase_y*256) / 65536.0;     // todo rounding like demo lut
+                int v_y = (int)floor(sin(phi_y)*amp_y); // range -amp , amp
+
+                dx += v_x;
+                dy += v_y;
             }
-            else {
-                dy+=v;
-            }
+
+            // draw sine bob
+            static int sizes[8] = {1,3,5,7,5,3,2,1};
+            int step = varonum_eval(&bob->step,&sequencer);
+            // if step < 0, use fixed size, else one of the 256 rotating sizes (mapped to 128 chars on C64 by dividing step by 2) 
+            int size = step < 0 ? sizes[floor_mod(step,8)] : sizes[floor_mod(t*step+sequencer.frame,256) / 32];
+            int x = (dx + 20) * 8;          // centering offset hardcoded in c64 demo
+            int y = (dy + 12) * 8;
+            if (x<0 || x>=40*8 || y <0 || y>=25*8) continue;         // TODO smaller bounds for extra border for scroll?
+            fillrect(offset_x+x,offset_y+y,8,8,bg_color,framebuffer,info);
+            int color = floor_mod(varonum_eval(&bob->color,&sequencer),16);                           // clear cell
+            fillrect(offset_x+x+4-size/2,offset_y+y+4-size/2,size,size,color,framebuffer,info);     // draw bob
         }
-
-        // draw sine bob
-        static int sizes[8] = {1,3,5,7,5,3,2,1};
-        int step = varonum_eval(&sequencer.bob.step,&sequencer);
-        // if step < 0, use fixed size, else one of the 256 rotating sizes (mapped to 128 chars on C64 by dividing step by 2) 
-        int size = step < 0 ? sizes[floor_mod(step,8)] : sizes[floor_mod(t*step+sequencer.frame,256) / 32];
-        int x = (dx + 20) * 8;          // centering offset hardcoded in c64 demo
-        int y = (dy + 12) * 8;
-        if (x<0 || x>=40*8 || y <0 || y>=25*8) continue;         // TODO smaller bounds for extra border for scroll?
-        fillrect(offset_x+x,offset_y+y,8,8,bg_color,framebuffer,info);
-        int color = floor_mod(varonum_eval(&sequencer.bob.color,&sequencer),16);                           // clear cell
-        fillrect(offset_x+x+4-size/2,offset_y+y+4-size/2,size,size,color,framebuffer,info);     // draw bob
-
-        */
     }
 }
 

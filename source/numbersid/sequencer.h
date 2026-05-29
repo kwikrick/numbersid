@@ -28,7 +28,6 @@ extern "C" {
 #define SCALE_SIZE      12
 #define NUM_CHANNELS    3    // SID hardware channels
 
-#define MAX_SINES            128
 #define MAX_BOBS             8
 #define MAX_ORBITS_PER_BOB   8
 
@@ -79,14 +78,6 @@ typedef struct {
 
 
 // --- video
-
-
-typedef struct {
-    var_or_number_t freq;
-    var_or_number_t amplitude;
-    var_or_number_t phase;
-} sine_t;
-
 
 typedef struct {
     var_or_number_t freq_x;
@@ -152,9 +143,7 @@ typedef struct {
     int16_t values[MAX_VARIABLES];
     // gate states
     bool gate_states[NUM_CHANNELS];
-    //
-    //uint8_t num_sines;
-    //sine_t sines[MAX_BOBS];
+    // sinebobs
     int num_bobs;
     bob_t bobs[MAX_BOBS];
 } sequencer_t;
@@ -709,18 +698,24 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
         pos += export_uint16(encoded, "scale", &buffer[pos],size-pos);   
     }
 
-    /*
-    pos += export_uint8(sequencer->num_sines, "num_sines", &buffer[pos],size-pos);
-    for (int v=0; v<sequencer->num_sines; v++) {
-        sine_t* sine = &sequencer->sines[v];
-        pos += varonum_export(&sine->freq, "freq", &buffer[pos],size-pos);
-        pos += varonum_export(&sine->amplitude, "amplitude", &buffer[pos],size-pos);
-        pos += varonum_export(&sine->phase, "phase", &buffer[pos],size-pos);
+    pos += export_uint8(sequencer->num_bobs, "num_bobs", &buffer[pos],size-pos);
+    for (int bobnr=0; bobnr<sequencer->num_bobs; bobnr++) {  
+        bob_t* bob = &sequencer->bobs[bobnr];
+        pos += varonum_export(&bob->color, "bob color", &buffer[pos],size-pos);
+        pos += varonum_export(&bob->step, "bob step", &buffer[pos],size-pos);
+       
+        pos += export_uint8(bob->num_orbits, "num_orbits", &buffer[pos],size-pos);
+        for (int v=0; v<bob->num_orbits; v++) {
+            orbit_t* orbit = &bob->orbits[v];
+            pos += varonum_export(&orbit->freq_x, "freq_x", &buffer[pos],size-pos);
+            pos += varonum_export(&orbit->amplitude_x, "amplitude_x", &buffer[pos],size-pos);
+            pos += varonum_export(&orbit->phase_x, "phase_x", &buffer[pos],size-pos);
+            pos += varonum_export(&orbit->freq_y, "freq_y", &buffer[pos],size-pos);
+            pos += varonum_export(&orbit->amplitude_y, "amplitude_y", &buffer[pos],size-pos);
+            pos += varonum_export(&orbit->phase_y, "phase_y", &buffer[pos],size-pos);
+        }
+
     }
-    
-    pos += varonum_export(&sequencer->bob.color, "bob color", &buffer[pos],size-pos);
-    pos += varonum_export(&sequencer->bob.step, "bob step", &buffer[pos],size-pos);
-    */
 
     // terminate string
     assert(pos<size);
@@ -895,19 +890,26 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         decode_scale(encoded,sequencer->scales[s]); 
     }
 
-    /*
-    if(!import_uint8(&sequencer->num_sines, buffer, &pos)) return false;
-    if (sequencer->num_sines > MAX_SINES) sequencer->num_sines = MAX_SINES;
-    for (int v=0; v<sequencer->num_sines; v++) {
-        sine_t* sine = &sequencer->sines[v];
-        if(!varonum_import(&sine->freq, buffer, &pos)) return false;
-        if(!varonum_import(&sine->amplitude, buffer, &pos)) return false;
-        if(!varonum_import(&sine->phase, buffer, &pos)) return false;
-    }
+       
+    if(!import_uint8(&sequencer->num_bobs, buffer, &pos)) return false;
+    if (sequencer->num_bobs > MAX_BOBS) sequencer->num_bobs = MAX_BOBS;
+    for (int bobnr=0; bobnr<sequencer->num_bobs; bobnr++) {
+        bob_t* bob = &sequencer->bobs[bobnr];
+        if(!varonum_import(&bob->color, buffer, &pos)) return false;
+        if(!varonum_import(&bob->step, buffer, &pos)) return false;
+        if(!import_uint8(&bob->num_orbits, buffer, &pos)) return false;
+        if (bob->num_orbits > MAX_ORBITS_PER_BOB) bob->num_orbits = MAX_ORBITS_PER_BOB;
+        for (int v=0; v<bob->num_orbits; v++) {
+            orbit_t* orbit = &bob->orbits[v];
+            if(!varonum_import(&orbit->freq_x, buffer, &pos)) return false;
+            if(!varonum_import(&orbit->amplitude_x, buffer, &pos)) return false;
+            if(!varonum_import(&orbit->phase_x, buffer, &pos)) return false;
+            if(!varonum_import(&orbit->freq_y, buffer, &pos)) return false;
+            if(!varonum_import(&orbit->amplitude_y, buffer, &pos)) return false;
+            if(!varonum_import(&orbit->phase_y, buffer, &pos)) return false;
+        }
 
-    if(!varonum_import(&sequencer->bob.color, buffer, &pos)) return false;
-    if(!varonum_import(&sequencer->bob.step, buffer, &pos)) return false;
-    */
+    }
 
     return true;
 }
