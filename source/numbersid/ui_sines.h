@@ -121,9 +121,9 @@ void ui_sines_discard(ui_sines_t* win) {
     win->valid = false;
 }
 
-void draw_sine_columns(sequencer_t* sequencer, size_t param_offset, const char* id_str) {
-     for (int i = 0; i < sequencer->num_sines; i++) {
-        var_or_number_t* varonum = (var_or_number_t*) ((uint8_t*)(&sequencer->sines[i]) + param_offset);
+void draw_orbit_columns(bob_t* bob, size_t param_offset, const char* id_str) {
+     for (int i = 0; i < bob->num_orbits; i++) {
+        var_or_number_t* varonum = (var_or_number_t*) ((uint8_t*)(&bob->orbits[i]) + param_offset);
         ImGui::PushID(i);
         draw_varonum(varonum, id_str);
         ImGui::PopID();
@@ -131,53 +131,74 @@ void draw_sine_columns(sequencer_t* sequencer, size_t param_offset, const char* 
     }
 }
 
-static void _ui_sines_draw_state(ui_sines_t* win) {
 
-    sequencer_t* sequencer = win->sequencer;
-
-    const float cw0 = 84.0f;
-    const float cw = 64.0f;
-   
+static void _draw_bob(bob_t* bob)
+{
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2,2));
     
-    if (ImGui::BeginTable("##sines", sequencer->num_sines + 1, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
+    const float cw0 = 84.0f;
+    const float cw = 64.0f;
+
+    if (ImGui::BeginTable("##bob", 2, ImGuiTableFlags_SizingFixedFit)) {
+        ImGui::TableSetupColumn("PARAM", ImGuiTableColumnFlags_WidthFixed, cw0);
+        ImGui::TableSetupColumn("VAL", ImGuiTableColumnFlags_WidthFixed, cw);
+        ImGui::TableHeadersRow();
+        ImGui::TableNextColumn();
+        
+        ImGui::Text("COLOR");
+        ImGui::SetItemTooltip("Color: 0-15");
+        ImGui::TableNextColumn();
+        draw_varonum(&bob->color, "##bobcolor");
+        ImGui::TableNextColumn();
+
+        ImGui::Text("STEP");
+        ImGui::SetItemTooltip("Step: 0-255 for animated character step; negative for fixed character (-1..-8)");
+        ImGui::TableNextColumn();
+        draw_varonum(&bob->step, "##bobstep");
+        ImGui::TableNextColumn();
+        
+        ImGui::EndTable();
+    }
+   
+   
+    if (ImGui::BeginTable("##orbits", bob->num_orbits + 1, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
-        for (int i = 0; i < sequencer->num_sines; i++) {
+        for (int i = 0; i < bob->num_orbits; i++) {
             char col_name[16];
-            snprintf(col_name, sizeof(col_name), "Sine %d", i + 1);
+            snprintf(col_name, sizeof(col_name), "Orbit %d", i + 1);
             ImGui::TableSetupColumn(col_name, ImGuiTableColumnFlags_WidthFixed, cw);
         }
         ImGui::TableHeadersRow();
         ImGui::TableNextColumn();
 
         // row for buttons
-        if (sequencer->num_sines > 0) {
+        if (bob->num_orbits > 0) {
             if (ImGui::Button("-")) {
-                sequencer->num_sines--;
+                bob->num_orbits--;
             }
         }
         ImGui::SameLine();
-        if (sequencer->num_sines < MAX_SINES) {
+        if (bob->num_orbits < MAX_ORBITS_PER_BOB) {
             if (ImGui::Button("+")) {
-                sequencer->num_sines++;
+                bob->num_orbits++;
             }
         }
         ImGui::TableNextColumn();
-        for (int i = 0; i < sequencer->num_sines; i++) {
+        for (int i = 0; i < bob->num_orbits; i++) {
             ImGui::PushID(i);
             if (ImGui::ArrowButton("<", ImGuiDir_Left)) {
-                    int j=floor_mod(i-1, sequencer->num_sines);
-                    sine_t temp = sequencer->sines[j];
-                    sequencer->sines[j] = sequencer->sines[i];
-                    sequencer->sines[i] = temp;
+                    int j=floor_mod(i-1, bob->num_orbits);
+                    orbit_t temp = bob->orbits[j];
+                    bob->orbits[j] = bob->orbits[i];
+                    bob->orbits[i] = temp;
                 
             }
             ImGui::SameLine();
             if (ImGui::ArrowButton(">", ImGuiDir_Right)) {
-                    int j=floor_mod(i+1, sequencer->num_sines);
-                    sine_t temp = sequencer->sines[j];
-                    sequencer->sines[j] = sequencer->sines[i];
-                    sequencer->sines[i] = temp;
+                    int j=floor_mod(i+1, bob->num_orbits);
+                    orbit_t temp = bob->orbits[j];
+                    bob->orbits[j] = bob->orbits[i];
+                    bob->orbits[i] = temp;
             }
             ImGui::PopID();
             ImGui::TableNextColumn();
@@ -185,48 +206,66 @@ static void _ui_sines_draw_state(ui_sines_t* win) {
         
 
         //ImGui::TableNextColumn();
-        ImGui::Text("FREQ"); 
+        ImGui::Text("FREQ X"); 
         ImGui::SetItemTooltip("Frequency: 0-65536; freq/256 cycles per 256 frames");
         ImGui::TableNextColumn();
-        draw_sine_columns(sequencer, offsetof(sine_t, freq), "##gate");
+        draw_orbit_columns(bob, offsetof(orbit_t, freq_x), "##freq_x");
 
-        ImGui::Text("AMP");
-        ImGui::SetItemTooltip("Amplitude; in sceen characters; 0 - 255"); 
+        ImGui::Text("FREQ Y"); 
+        ImGui::SetItemTooltip("Frequency: 0-65536; freq/256 cycles per 256 frames");
         ImGui::TableNextColumn();
-        draw_sine_columns(sequencer, offsetof(sine_t, amplitude), "##note");
+        draw_orbit_columns(bob, offsetof(orbit_t, freq_y), "##freq_y");
 
-        ImGui::Text("PHASE");
+        ImGui::Text("AMP X");
+        ImGui::SetItemTooltip("Amplitude; in sceen characters; 0 - 31"); 
+        ImGui::TableNextColumn();
+        draw_orbit_columns(bob, offsetof(orbit_t, amplitude_x), "##amp_x");
+
+         ImGui::Text("AMP Y");
+        ImGui::SetItemTooltip("Amplitude; in sceen characters; 0 - 31"); 
+        ImGui::TableNextColumn();
+        draw_orbit_columns(bob, offsetof(orbit_t, amplitude_y), "##amp_y");
+
+        ImGui::Text("PHASE X");
         ImGui::SetItemTooltip("Phase: 0-255");
         ImGui::TableNextColumn();
-        draw_sine_columns(sequencer, offsetof(sine_t, phase), "##scale");
+        draw_orbit_columns(bob, offsetof(orbit_t, phase_x), "##phase_x");
+
+         ImGui::Text("PHASE Y");
+        ImGui::SetItemTooltip("Phase: 0-255");
+        ImGui::TableNextColumn();
+        draw_orbit_columns(bob, offsetof(orbit_t, phase_y), "##phase_y");
             
         ImGui::EndTable();
     }
 
-
-    if (ImGui::BeginTable("##bob", 2, ImGuiTableFlags_SizingFixedFit)) {
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cw0);
-        ImGui::TableSetupColumn("BOB", ImGuiTableColumnFlags_WidthFixed, cw);
-        ImGui::TableHeadersRow();
-        ImGui::TableNextColumn();
-        
-        ImGui::Text("COLOR");
-        ImGui::SetItemTooltip("Color: 0-15");
-        ImGui::TableNextColumn();
-        draw_varonum(&sequencer->bob.color, "##bobcolor");
-        ImGui::TableNextColumn();
-
-        ImGui::Text("STEP");
-        ImGui::SetItemTooltip("Step: 0-255 for animated character step; negative for fixed character (-1..-8)");
-        ImGui::TableNextColumn();
-        draw_varonum(&sequencer->bob.step, "##bobsetp");
-        ImGui::TableNextColumn();
-        
-        ImGui::EndTable();
-    }
-   
     ImGui::PopStyleVar(1);
-    
+}
+
+static void _ui_sines_draw_state(ui_sines_t* win) {
+
+    sequencer_t* sequencer = win->sequencer;
+
+    // buttons for adding/removing bob
+    if (sequencer->num_bobs > 0) {
+        if (ImGui::Button("-")) {
+            sequencer->num_bobs--;
+        }
+    }
+    ImGui::SameLine();
+    if (sequencer->num_bobs < MAX_BOBS) {
+        if (ImGui::Button("+")) {
+            sequencer->num_bobs++;
+        }
+    }
+
+    for (int bobnr = 0; bobnr < sequencer->num_bobs; ++bobnr) {
+        char bob_name[16];
+        snprintf(bob_name, sizeof(bob_name), "Bob %d", bobnr + 1);
+        if (ImGui::CollapsingHeader(bob_name)) {
+            _draw_bob(&sequencer->bobs[bobnr]);
+        }
+    }
 }
 
 void ui_sines_draw(ui_sines_t* win) {

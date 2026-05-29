@@ -18,6 +18,24 @@ extern "C" {
 #include <stdlib.h>
 #include <ctype.h>
 
+
+#define MAX_SEQUENCES   64
+#define MAX_VARIABLES   26    // A-Z
+#define MAX_ARRAYS      16
+#define MAX_ARRAY_SIZE  16
+#define MAX_VOICES      16
+#define MAX_SCALES      16
+#define SCALE_SIZE      12
+#define NUM_CHANNELS    3    // SID hardware channels
+
+#define MAX_SINES            128
+#define MAX_BOBS             8
+#define MAX_ORBITS_PER_BOB   8
+
+#define NUM_PREVIEW_ROWS    50
+#define MAX_PREVIEW_COLS    32
+#define MAX_HIGHLIGHTERS    8
+
 typedef struct {
     char variable;           // if 0, then number
     int16_t number;
@@ -71,16 +89,21 @@ typedef struct {
 
 
 typedef struct {
-    var_or_number_t sines;
+    var_or_number_t freq_x;
+    var_or_number_t freq_y;
+    var_or_number_t amplitude_x;
+    var_or_number_t amplitude_y;
+    var_or_number_t phase_x;
+    var_or_number_t phase_y;
+} orbit_t;
+
+
+typedef struct {
+    int num_orbits;
+    orbit_t orbits[MAX_ORBITS_PER_BOB];
     var_or_number_t color;
     var_or_number_t step;
 } bob_t;
-
-#define MAX_SINES          8
-#define MAX_BOBS           8
-#define NUM_PREVIEW_ROWS    50
-#define MAX_PREVIEW_COLS    32
-#define MAX_HIGHLIGHTERS    8
 
 typedef struct {
     int value;
@@ -100,14 +123,6 @@ typedef struct {
     int num_highlighters;
 } preview_t;
 
-#define MAX_SEQUENCES   64
-#define MAX_VARIABLES   26    // A-Z
-#define MAX_ARRAYS      16
-#define MAX_ARRAY_SIZE  16
-#define MAX_VOICES      16
-#define MAX_SCALES      16
-#define SCALE_SIZE      12
-#define NUM_CHANNELS    3    // SID hardware channels
 
 typedef struct {
     // time control
@@ -138,9 +153,10 @@ typedef struct {
     // gate states
     bool gate_states[NUM_CHANNELS];
     //
-    uint8_t num_sines;
-    sine_t sines[MAX_SINES];
-    bob_t bob;
+    //uint8_t num_sines;
+    //sine_t sines[MAX_BOBS];
+    int num_bobs;
+    bob_t bobs[MAX_BOBS];
 } sequencer_t;
 
 #define SEQUENCER_SNAPSHOT_VERSION (2)
@@ -213,7 +229,17 @@ void sequencer_init(sequencer_t* sequencer) {
     }
     // add a column to the preview
     sequencer->preview.num_columns = 4;
-
+    // add a bob
+    sequencer->num_bobs = 1;
+    sequencer->bobs[0].color = (var_or_number_t){.number = 1};
+    sequencer->bobs[0].step = (var_or_number_t){.number = 1};
+    sequencer->bobs[0].num_orbits = 1;
+    sequencer->bobs[0].orbits[0].freq_x = (var_or_number_t){.number = 256};
+    sequencer->bobs[0].orbits[0].freq_y = (var_or_number_t){.number = 256};
+    sequencer->bobs[0].orbits[0].amplitude_x = (var_or_number_t){.number = 18};
+    sequencer->bobs[0].orbits[0].amplitude_y = (var_or_number_t){.number = 11};
+    sequencer->bobs[0].orbits[0].phase_x = (var_or_number_t){.number = 0};
+    sequencer->bobs[0].orbits[0].phase_y = (var_or_number_t){.number = 64};
 }
 
 int16_t floor_mod(int16_t value, int16_t mod) {
@@ -683,6 +709,7 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
         pos += export_uint16(encoded, "scale", &buffer[pos],size-pos);   
     }
 
+    /*
     pos += export_uint8(sequencer->num_sines, "num_sines", &buffer[pos],size-pos);
     for (int v=0; v<sequencer->num_sines; v++) {
         sine_t* sine = &sequencer->sines[v];
@@ -693,7 +720,7 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
     
     pos += varonum_export(&sequencer->bob.color, "bob color", &buffer[pos],size-pos);
     pos += varonum_export(&sequencer->bob.step, "bob step", &buffer[pos],size-pos);
-    
+    */
 
     // terminate string
     assert(pos<size);
@@ -868,7 +895,7 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         decode_scale(encoded,sequencer->scales[s]); 
     }
 
-
+    /*
     if(!import_uint8(&sequencer->num_sines, buffer, &pos)) return false;
     if (sequencer->num_sines > MAX_SINES) sequencer->num_sines = MAX_SINES;
     for (int v=0; v<sequencer->num_sines; v++) {
@@ -880,6 +907,7 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
 
     if(!varonum_import(&sequencer->bob.color, buffer, &pos)) return false;
     if(!varonum_import(&sequencer->bob.step, buffer, &pos)) return false;
+    */
 
     return true;
 }

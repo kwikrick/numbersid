@@ -355,6 +355,7 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
         //update_variables(sequencer, frame);
         update_variables(&sequencer, t);
 
+        /*
         int dx=0;
         int dy=0;
         for (int sinenr = 0;sinenr < sequencer.num_sines; sinenr++) {
@@ -383,6 +384,8 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
         fillrect(offset_x+x,offset_y+y,8,8,bg_color,framebuffer,info);
         int color = floor_mod(varonum_eval(&sequencer.bob.color,&sequencer),16);                           // clear cell
         fillrect(offset_x+x+4-size/2,offset_y+y+4-size/2,size,size,color,framebuffer,info);     // draw bob
+
+        */
     }
 }
 
