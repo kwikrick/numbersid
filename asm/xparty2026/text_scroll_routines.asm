@@ -17,9 +17,8 @@
 
 // -------- routines
 
-textscroll_init: 
+textscroll_init_charset: 
 {
- 	
     // ---- copy charset ----
     
     // disable timer interrupts from CIA1
@@ -87,9 +86,22 @@ loop_text:
 	Word_Inc(DATAPTR)
 	Word_Compare_Value_X(DATAPTR, text_data_end)
     bne loop_text
-  
+	
+	// --- reset variables
+	
+	// ensures that on first update will be offset 0
+	Word_Store_Value(ZP_SCROLL_ROW1PTR, text_buffer_row1-1)
+	Word_Store_Value(ZP_SCROLL_ROW2PTR, text_buffer_row2-1)
+
+	lda #0
+	sta scroll_pos
     
-    // ---- setup VIC-II ----
+	rts
+}
+
+textscroll_init_screen:
+{
+	// ---- setup VIC-II ----
     
     // hide first and last column (clear bit 4 of vic-ii control register 2)
     lda VIC_MODE2
@@ -97,10 +109,10 @@ loop_text:
     sta VIC_MODE2
     
     // choose charset addr using bit 1-3 VIC_ADDR (note bit 0 is always 1)
-    lda VIC_ADDR
-    and #~$F   	// clear low nybble
-    ora #SCROLL_CHARSET*2+1
-    sta VIC_ADDR
+    //lda VIC_ADDR
+    //and #~$F   	// clear low nybble
+    //ora #SCROLL_CHARSET*2+1
+    //sta VIC_ADDR
     
     // --- clear two rows of screen
     
@@ -126,16 +138,7 @@ loop_clear:
 	inx
 	cpx #20
 	bne color_loop   
-	
-	// --- reset variables
-	
-	// ensures that on first update will be offset 0
-	Word_Store_Value(ZP_SCROLL_ROW1PTR, text_buffer_row1-1)
-	Word_Store_Value(ZP_SCROLL_ROW2PTR, text_buffer_row2-1)
 
-	lda #0
-	sta scroll_pos
-    
 	rts
 }
 

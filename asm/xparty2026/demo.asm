@@ -31,8 +31,8 @@
 
 #import "sinebob_macros.asm"
 
-.const NUMBERSID_RASTER_LINE   = 100
-.const SINEBOB_COMPUTE_RASTER_LINE = 150
+.const NUMBERSID_RASTER_LINE   = 90
+.const SINEBOB_COMPUTE_RASTER_LINE = 110
 .const SINEBOB_DRAW_RASTER_LINE   = 200
 
 .const NUM_FRAMES = 64		// must be power of 2 and <=256
@@ -58,15 +58,9 @@ main:
 	
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	Fill(clear_mem_start, 25378, 0)		// compiler cannot compute, make a guess
+	Fill(clear_mem_start, 23000, 0)		// compiler cannot compute, make a guess
 
-	ClearScreen(screen, 32)
-	lda #0
-	sta $d020			// fg color
-	lda #0
-	sta $d021			// border color
-
-	jsr textscroll_init
+	jsr textscroll_init_charset
 
 	// for debug print, copy orginal charset to bob_charset
 	.if (DEBUG_FRAME_COUNT) {
@@ -153,6 +147,16 @@ loop_init_voices:
 	// run first update of sequences to apply initial parameter values to sid data
 	// jsr update_sequences
 	
+	// ---- setup screen last moment
+
+	ClearScreen(screen, 32)
+	lda #0
+	sta $d020			// fg color
+	lda #0
+	sta $d021			// border color
+
+	jsr textscroll_init_screen 
+
 	// --------------
 
 	// start the raster interrupt handler
