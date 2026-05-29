@@ -422,6 +422,7 @@ def generate_header(data: NumberSidData) -> str:
     s+=f".const SCALE_SIZE = {scale_size}\n"
     s+=f".const SCALE_MIDDLE_INDEX = {scale_middle_index}\n"
     s+=f".const NUM_SINES = {len(data.sines)}\n"
+    s+=f".const NUM_BOBS = {len(data.bobs)}\n"
     
     return s
 
@@ -539,9 +540,27 @@ def generate(data: NumberSidData) -> str:
              if param_varonum.type() == "Number":
                 value = param_varonum.number
                 label = f"{param_name}s"
-                offset = sinenr * 2
+                offset = sinenr * 2             # note word sized parameter arrays
                 if value != 0:
                     s += f"   // sine {sinenr} {param_name}\n"
+                    s += f"   lda #<{value}\n"
+                    s += f"   sta {label}+{offset}\n"
+                    if (value > 255):
+                        s += f"   lda #>{value}\n"
+                        s += f"   sta {label}+1+{offset}\n"
+    s+= "   rts\n"
+
+    # generatate code for init_bob_parameter_values:
+    s += "init_bob_parameter_values:\n"
+    for bobnr, bob in enumerate(data.bobs):
+        for paramnr, param_name in enumerate(bob.parameters):
+             param_varonum = getattr(bob, param_name)
+             if param_varonum.type() == "Number":
+                value = param_varonum.number
+                label = f"bob_{param_name}s"
+                offset = bobnr    # note: just one byte per bob parameter
+                if value != 0:
+                    s += f"   // bob {bobnr} {param_name}\n"
                     s += f"   lda #<{value}\n"
                     s += f"   sta {label}+{offset}\n"
                     if (value > 255):
@@ -571,7 +590,11 @@ def generate(data: NumberSidData) -> str:
     if len(data.scales) > 0:
         for index,scale in enumerate(data.scales):
             s+=f"   .word scales_decoded + {index} * SCALE_SIZE\n"
-    
+
+    s+=f"bob_num_orbits:\n"    
+    for bob in data.bobs:
+        s+=f".byte {len(bob.orbits)}\n"
+
     return s
 
 

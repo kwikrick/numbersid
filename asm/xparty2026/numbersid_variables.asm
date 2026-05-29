@@ -26,6 +26,6 @@ volume_parameter_value: .word 0
 
 // TODO: i'd like to move this to sinebob_variables.asm, 
 // but needs to be adjacent to other global parameters. For now...
-bob_color_parameter_value: .word 0
-bob_step_parameter_value: .word 0
+//bob_color_parameter_value: .word 0
+//bob_step_parameter_value: .word 0
 

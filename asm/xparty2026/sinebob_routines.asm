@@ -246,58 +246,106 @@ loop_compute:
 end_loop_compute:
 
     // --- add sines to position_x, poistion_y ----
+
+    .const SINE_VALUE_PTR = ZP_IRQ+5		// word
+    .const ZP_ORBIT = ZP_IRQ+7
+
+    Word_Store_Value(SINE_VALUE_PTR, positions)
+    
+.break
+    ldx #0
+loop_bob:
+
     lda #20             // center; TODO: make configurable per bob?
-    sta position_x
+    sta bob_xs,x
     lda #13 
-    sta position_y
+    sta bob_ys,x
 
-	ldx #0              
-loop_add_sines:
-
-	lda positions+0,x		    
+    lda bob_num_orbits,x
+    sta ZP_ORBIT
+loop_orbits:
+    ldy #0
+ 	lda (SINE_VALUE_PTR),y	    
 	clc
-    adc position_x
-    sta position_x
+    adc bob_xs,x
+    sta bob_xs,x
 
-	lda positions+2,x		    
+    iny
+    iny
+    lda (SINE_VALUE_PTR),y
 	clc
-    adc position_y
-    sta position_y
+    adc bob_ys,x
+    sta bob_ys,x
 
-	inx
-	inx
-	inx
-	inx
-	cpx #NUM_SINES*2		// two bytes per sine
-	bne loop_add_sines
+    Word_Add_Value(SINE_VALUE_PTR,4,SINE_VALUE_PTR)
 
-    // ---- update step counter (which character to write to screen)---
+    dec ZP_ORBIT
+    bne loop_orbits
 
-	// TODO: check for negative step value (high byte of word!); fixed character selection
-	// increment bob step counter
-	lda bob_step_parameter_value
-	clc
-	adc sinebob_step_counter
+    // increment bob step counter
+	lda bob_steps,x
+    clc
+	adc sinebob_step_counters,x
 	//and #BOB_CHARSET_LENTGH-1		// just loop at 256
-	sta sinebob_step_counter
+	sta sinebob_step_counters,x
+
+    inx
+    cpx #NUM_BOBS
+    bne loop_bob
 
     rts
 }
 
+
+.const ZP_X = ZP_IRQ+4		        // word
+.const ZP_Y = ZP_IRQ+6		        // word	
+.const ZP_COLOR = ZP_IRQ+8
+.const ZP_COUNTER = ZP_IRQ+9
+
 sinebob_draw:
+{ 
+    .break
+    ldx #0
+    loop_bob:
+
+    // load position, convert from byte to word
+    lda bob_xs,x
+    sta ZP_IRQ          // TODO: intermediate not needed, make a y-indexed version of singed byte->word conversion 
+    Word_Store_Signed_Byte(ZP_X, ZP_IRQ)
+    
+    lda bob_ys,x
+    sta ZP_IRQ 
+    Word_Store_Signed_Byte(ZP_Y, ZP_IRQ)
+
+    lda bob_colors,x
+    sta ZP_COLOR
+
+    lda sinebob_step_counters,x
+    sta ZP_COUNTER
+
+    txa
+    pha 
+    jsr sinebob_draw_one
+    pla
+    tax
+
+    inx
+    cpx #NUM_BOBS
+    bne loop_bob
+
+    rts
+}
+
+
+
+sinebob_draw_one:
 {
 	.const ZP_CELL = ZP_IRQ   		    // word
 	.const ZP_CELL_H = ZP_IRQ+1   		// word
 	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
 	.const ZP_TEMP_H = ZP_IRQ+3
-
-    .const ZP_X = ZP_IRQ+5		        // word
-	.const ZP_Y = ZP_IRQ+7		        // word		
-
-    // load position, convert from byte to word 
-    Word_Store_Signed_Byte(ZP_X, position_x)
-    Word_Store_Signed_Byte(ZP_Y, position_y)
-
+    
+    
 	// ------- check screen bounds -------
 
 	// TODO: modulo 25 easy to compute?
@@ -341,7 +389,7 @@ sinebob_draw:
 	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
 	
 	// write character to screen ram
-	lda sinebob_step_counter
+	lda ZP_COUNTER              // TODO: per bob
 	lsr							// div by 2 so we compress 256 steps to 128 chars 
 	clc
 	adc #BOB_CHARSET_START 
@@ -365,7 +413,7 @@ history_ptr_in_bounds:
 
 	// write color to color ram
 	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
-	lda bob_color_parameter_value
+	lda ZP_COLOR
 	ldy #0
 	sta (ZP_CELL),y				// store in color ram
 	

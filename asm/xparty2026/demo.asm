@@ -87,9 +87,8 @@ main:
 	jsr sinebob_init_charset
 	jsr sinebob_init_history
 	jsr sinebob_compute_tables
-
-	// for numbersid play
-
+	
+	// TODO: needed? avoids pop at start?
 	SidReset()	
 	
 	// Set initial parameter values for voices and global parameters
@@ -97,6 +96,8 @@ main:
 	jsr init_voice_parameter_values
 	jsr init_global_parameter_values
 	jsr init_sine_parameter_values
+	jsr init_bob_parameter_values
+
 	
 	// apply all initial parameter values
 	// TODO do for all voices; loop should not be hardcoded

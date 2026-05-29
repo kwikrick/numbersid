@@ -35,8 +35,8 @@
 
 // ------ to be used by generated code ------
 
-.const Global_Param_bob_color = global_param_count++
-.const Global_Param_bob_step = global_param_count++
+//.const Global_Param_bob_color = global_param_count++
+//.const Global_Param_bob_step = global_param_count++
 
 .const Sine_Param_freq = 0
 .const Sine_Param_amplitude = 1
@@ -71,4 +71,31 @@
         //sta phases+1,x
     }
 }
+
+
+.const Bob_Param_step = 0
+.const Bob_Param_color = 1
+
+.macro Apply_Variable_To_Bob_Parameter(variable, bob, parameter) {
+	.print "Apply_Variable_To_Bob_Parameter(" + variable + " " + bob + " " + parameter +")"
+
+    // TODO: this is 16 bytes, but pretty fast; compare with  Apply_Variable_To_Voice_Parameter, is 12 bytes, but slower
+
+    ldx #((variable-'A')*2)
+    ldy #bob*2
+    .if (parameter == Bob_Param_step) {
+        lda variable_values,x
+        sta bob_steps,y
+        //lda variable_values+1,x
+        //sta bob_steps+1,y
+    }
+    .if (parameter == Bob_Param_color)
+    {
+        lda variable_values,x               // Note: only 1 byte needed
+        sta bob_colors
+        //lda values+1,x
+        //sta amplitudes+1,x
+    }
+}
+
 
