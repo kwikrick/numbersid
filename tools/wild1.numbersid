@@ -196,18 +196,28 @@ Q // count
 0 // num_arrays
 1 // num_scales
 1354 // scale
-4 // num_sines
-256 // freq
-H // amplitude
-0 // phase
-256 // freq
-H // amplitude
-64 // phase
-4096 // freq
-I // amplitude
-0 // phase
-4096 // freq
-I // amplitude
-J // phase
+2 // num_bobs
 1 // bob color
 1 // bob step
+2 // num_orbits
+256 // freq_x
+H // amplitude_x
+0 // phase_x
+256 // freq_y
+H // amplitude_y
+64 // phase_y
+4096 // freq_x
+I // amplitude_x
+0 // phase_x
+4096 // freq_y
+I // amplitude_y
+J // phase_y
+Q // bob color
+1 // bob step
+1 // num_orbits
+2040 // freq_x
+20 // amplitude_x
+0 // phase_x
+32 // freq_y
+11 // amplitude_y
+0 // phase_y

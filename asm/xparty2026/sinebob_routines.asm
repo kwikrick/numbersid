@@ -252,7 +252,6 @@ end_loop_compute:
 
     Word_Store_Value(SINE_VALUE_PTR, positions)
     
-.break
     ldx #0
 loop_bob:
 
@@ -304,7 +303,6 @@ loop_orbits:
 
 sinebob_draw:
 { 
-    .break
     ldx #0
     loop_bob:
 
