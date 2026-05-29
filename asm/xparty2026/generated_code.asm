@@ -11,7 +11,11 @@ eval_seq_0_finish:
 eval_seq_1:
    Load_Accumulator(Variable,83)
    Eval_Base(Number,2)
+   Compare_Accumulator(65)
+   beq eval_seq_1_finish
    Store_Accumulator(65)
+   jsr variable_changed_65
+eval_seq_1_finish:
    rts
 sequence_eval_count:
   .byte 2
@@ -23,6 +27,10 @@ variable_changed_84:
    rts
 variable_changed_83:
    Mark_Sequence_Dirty(1)
+   Apply_Variable_To_Bob_Parameter(83, 1, Bob_Param_color)
+   rts
+variable_changed_65:
+   Apply_Variable_To_Bob_Parameter(65, 0, Bob_Param_step)
    rts
 init_voice_parameter_values:
    // voice 0 waveform
@@ -85,17 +93,17 @@ init_sine_parameter_values:
    lda #<64
    sta phases+6
    // sine 4 freq
-   lda #<800
+   lda #<832
    sta freqs+8
-   lda #>800
+   lda #>832
    sta freqs+1+8
    // sine 4 amplitude
    lda #<5
    sta amplitudes+8
    // sine 5 freq
-   lda #<900
+   lda #<944
    sta freqs+10
-   lda #>900
+   lda #>944
    sta freqs+1+10
    // sine 5 amplitude
    lda #<5
@@ -105,15 +113,9 @@ init_sine_parameter_values:
    sta phases+10
    rts
 init_bob_parameter_values:
-   // bob 0 step
-   lda #<1
-   sta bob_steps+0
    // bob 0 color
    lda #<1
    sta bob_colors+0
-   // bob 1 color
-   lda #<4
-   sta bob_colors+1
    rts
 scales_decoded:
 scales_ptr_array:

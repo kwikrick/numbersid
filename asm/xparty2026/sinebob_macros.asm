@@ -82,7 +82,7 @@
     // TODO: this is 16 bytes, but pretty fast; compare with  Apply_Variable_To_Voice_Parameter, is 12 bytes, but slower
 
     ldx #((variable-'A')*2)
-    ldy #bob*2
+    ldy #bob        // # note: byte arrays
     .if (parameter == Bob_Param_step) {
         lda variable_values,x
         sta bob_steps,y
@@ -92,7 +92,7 @@
     .if (parameter == Bob_Param_color)
     {
         lda variable_values,x               // Note: only 1 byte needed
-        sta bob_colors
+        sta bob_colors,y
         //lda values+1,x
         //sta amplitudes+1,x
     }

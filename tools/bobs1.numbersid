@@ -111,7 +111,7 @@ S // count
 0 // num_scales
 2 // num_bobs
 1 // bob color
-1 // bob step
+A // bob step
 2 // num_orbits
 256 // freq_x
 18 // amplitude_x
@@ -125,12 +125,12 @@ S // count
 32 // freq_y
 4 // amplitude_y
 64 // phase_y
-4 // bob color
+S // bob color
 0 // bob step
 1 // num_orbits
-800 // freq_x
+832 // freq_x
 5 // amplitude_x
 0 // phase_x
-900 // freq_y
+944 // freq_y
 5 // amplitude_y
 64 // phase_y

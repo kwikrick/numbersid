@@ -188,12 +188,9 @@ class VariableUsage:
         self.variable = variable
         self.sequence_indices = set()         # indices of sequences that use this variable
         self.voice_parameters = set()         # use of this variable in a voice parameter (voicenr, param_name)
-        self.sine_parameters = set()          # use of this variable in a sine parameter (sinenr, param_name)
         self.global_parameters = set()        # use of this variable in a global parameter (param_name)     
-        #self.filter_mode = False          # use of this variable as cutoff
-        #self.filter_cutoff = False       # use of this variable as frequency
-        #self.filter_resonance = False          # use of this variable as volume
-        #self.volume = False
+        self.sine_parameters = set()          # use of this variable in a sine parameter (sinenr, param_name)
+        self.bob_parameters = set()            # use of this variable in a global parameter (param_name)     
 
 class Sine:
     def __init__(self):
@@ -312,6 +309,14 @@ class NumberSidData:
                     if param_varonum.variable not in self.variable_to_usage:
                         self.variable_to_usage[param_varonum.variable] = VariableUsage(param_varonum.variable)
                     self.variable_to_usage[param_varonum.variable].sine_parameters.add((sinenr, param_name))
+
+        for bobnr, bob in enumerate(self.bobs):
+            for param_name in bob.parameters:
+                param_varonum = getattr(bob, param_name)
+                if param_varonum.type() == "Variable":
+                    if param_varonum.variable not in self.variable_to_usage:
+                        self.variable_to_usage[param_varonum.variable] = VariableUsage(param_varonum.variable)
+                    self.variable_to_usage[param_varonum.variable].bob_parameters.add((bobnr, param_name))
         
     def map_global_parameter_usage(self, parameter_name):
         varonum = getattr(self,parameter_name)
@@ -358,8 +363,10 @@ class NumberSidData:
             s += f"variable {chr(variable)} used in:"
             s += f"  sequences {usage.sequence_indices}"
             s += f"  voice parameters {usage.voice_parameters}\n"
-            s += f"  sine parameters {usage.sine_parameters}\n"
             s += f"  global parameters {usage.global_parameters}\n"
+            s += f"  sine parameters {usage.sine_parameters}\n"
+            s += f"  bob parameters {usage.sine_parameters}\n"
+
             
         return s
 
@@ -498,6 +505,8 @@ def generate(data: NumberSidData) -> str:
             s+= f"   Apply_Variable_To_Global_Parameter({variable}, Global_Param_{global_param})\n"
         for sine_param in usage.sine_parameters:
             s+= f"   Apply_Variable_To_Sine_Parameter({variable}, {sine_param[0]}, Sine_Param_{sine_param[1]})\n"
+        for bob_param in usage.bob_parameters:
+            s+= f"   Apply_Variable_To_Bob_Parameter({variable}, {bob_param[0]}, Bob_Param_{bob_param[1]})\n"
         s += f"   rts\n"
 
     # generatate code for init_voice-parameter_values:
