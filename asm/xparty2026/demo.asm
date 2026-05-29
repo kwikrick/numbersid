@@ -31,8 +31,9 @@
 
 #import "sinebob_macros.asm"
 
-.const NUMBERSID_RASTER_LINE = 100
-.const SINEBOB_RASTER_IRQ_LINE=150
+.const NUMBERSID_RASTER_LINE   = 100
+.const SINEBOB_COMPUTE_RASTER_LINE = 150
+.const SINEBOB_DRAW_RASTER_LINE   = 200
 
 .const NUM_FRAMES = 64		// must be power of 2 and <=256
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
@@ -302,10 +303,10 @@ wait_for_new_frame:
         	dec $d020
 		}
 
-		RasterIRQNext_NoKernal(raster_irq_handler_sinebob, SINEBOB_RASTER_IRQ_LINE)
+		RasterIRQNext_NoKernal(raster_irq_handler_sinebob_compute, SINEBOB_COMPUTE_RASTER_LINE)
 }
 
-raster_irq_handler_sinebob:
+raster_irq_handler_sinebob_compute:
 {
 	RasterIRQBegin_NoKernal()
 
@@ -318,22 +319,26 @@ raster_irq_handler_sinebob:
 		inc $D020
 	}
 
-	// --- compute sines
-
 	jsr sinebob_compute
 
-	// ----- drawing section
 
-	// TODO: should be a separate IRQ handler to avoid screen tearing; run after line 200
-	// because compute time can vary depending on number of sinebobs
+    .if (DEBUG_RASTER_IRQ_TIMES) {
+		dec $D020
+	}
+		
+	RasterIRQNext_NoKernal(raster_irq_handler_sinebob_draw, SINEBOB_DRAW_RASTER_LINE)
+}
+
+
+raster_irq_handler_sinebob_draw:
+{
+	RasterIRQBegin_NoKernal()
 
 	.if (DEBUG_RASTER_IRQ_TIMES) {
 		inc $D020
 	}
 
 	jsr sinebob_draw
-	
-	// ----- update charset
 
 	.if (DEBUG_RASTER_IRQ_TIMES) {
 		inc $D020
@@ -341,10 +346,8 @@ raster_irq_handler_sinebob:
 
 	jsr sinebob_update_transitions
 
-	// -----
 
     .if (DEBUG_RASTER_IRQ_TIMES) {
-		dec $D020
 		dec $D020
 		dec $D020
 	}
