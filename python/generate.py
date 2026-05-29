@@ -212,9 +212,53 @@ class Sine:
 
     def __str__(self):
         s = "Sine\n"
-        s += f"  freq = {self.freq}\n"
-        s += f"  amplitude = {self.amplitude}\n"
-        s += f"  phase = {self.amplitude}\n"
+        s += f"        freq = {self.freq}\n"
+        s += f"        amplitude = {self.amplitude}\n"
+        s += f"        phase = {self.amplitude}\n"
+        return s
+
+class Orbit:
+    def __init__(self):
+        self.x = 0          # reference to sine index
+        self.y = 0
+
+    @staticmethod
+    def read_from(input_file):
+        orbit = Orbit()
+        orbit.x = Sine.read_from(input_file)
+        orbit.y = Sine.read_from(input_file)
+        return orbit
+
+    def __str__(self):
+        s = "Orbit\n"
+        s += f"     x = {self.x}"
+        s += f"     y = {self.y}"
+        return s
+
+class Bob:
+    def __init__(self):
+        self.orbits = []
+        self.color = None
+        self.steps = None
+        self.parameters = ["step", "color"]
+
+    @staticmethod
+    def read_from(input_file):
+        bob = Bob()
+        bob.color = Varonum.parse(read_line_stripped(input_file))
+        bob.step = Varonum.parse(read_line_stripped(input_file))
+        num_orbits = int(read_line_stripped(input_file))
+        for i in range(num_orbits):
+            orbit = Orbit.read_from(input_file)
+            bob.orbits.append(orbit)
+        return bob
+    
+    def __str__(self):
+        s = "Bob\n"
+        s += f"  step = {self.steps}\n"
+        s += f"  color = {self.color}\n"
+        for i,orbit in enumerate(self.orbits): 
+            s += f"  orbit {i} = {orbit}"
         return s
 
 
@@ -230,10 +274,11 @@ class NumberSidData:
         self.arrays = []
         self.scales = []
         self.variable_to_usage = {}
-        self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume","bob_color","bob_step"]
+        self.global_parameter_names = ["filter_mode","filter_cutoff","filter_resonance", "volume"]
         self.sines = []
-        self.bob_color_varomum = None
-        self.bob_step_varomum = None
+        self.bobs = []
+        #self.bob_color_varomum = None
+        #self.bob_step_varomum = None
 
     def map_variable_usage(self):
         for i, seq in enumerate(self.sequences):
@@ -305,8 +350,10 @@ class NumberSidData:
         for i, scale in enumerate(self.scales):
             s += f"scale {i}: {scale}\n"
         s += f"{len(self.sines)} sines\n"
-        for i, sine in enumerate(self.sines):
-            s += f"sine {i}: {sine}\n"
+        #for i, sine in enumerate(self.sines):
+        #    s += f"sine {i}: {sine}\n"
+        for i, bob in enumerate(self.bobs):
+            s += f"bob {i}: {bob}"
         for variable, usage in self.variable_to_usage.items():
             s += f"variable {chr(variable)} used in:"
             s += f"  sequences {usage.sequence_indices}"
@@ -349,14 +396,17 @@ class NumberSidData:
         for i in range(num_scales):
             scale = int(read_line_stripped(input_file))
             data.scales.append(scale)
-        # sines parameters
-        num_sines = int(read_line_stripped(input_file))
-        for i in range(num_sines):
-            sine = Sine.read_from(input_file)
-            data.sines.append(sine)
-         # bob parameters
-        data.bob_color = Varonum.parse(read_line_stripped(input_file))
-        data.bob_step = Varonum.parse(read_line_stripped(input_file))
+        # sinbobs
+        num_bobs = int(read_line_stripped(input_file))
+        for i in range(num_bobs):
+            bob = Bob.read_from(input_file)
+            data.bobs.append(bob)
+        # make linear seq of sines
+        for bob in data.bobs:
+            for orbit in bob.orbits:
+                data.sines.append(orbit.x)
+                data.sines.append(orbit.y)
+                
         # ----
         return data
     
