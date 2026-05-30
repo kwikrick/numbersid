@@ -33,7 +33,7 @@
 
 .const NUMBERSID_RASTER_LINE   = 90
 .const SINEBOB_COMPUTE_RASTER_LINE = 110
-.const SINEBOB_DRAW_RASTER_LINE   = 200
+.const SINEBOB_DRAW_RASTER_LINE   = 250
 
 .const NUM_FRAMES = 64		// must be power of 2 and <=256
 .const FRAME_SIZE = 32		// bytes, must be power of 2 and <=256
