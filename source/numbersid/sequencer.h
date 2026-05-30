@@ -90,7 +90,7 @@ typedef struct {
 
 
 typedef struct {
-    int num_orbits;
+    uint8_t num_orbits;
     orbit_t orbits[MAX_ORBITS_PER_BOB];
     var_or_number_t color;
     var_or_number_t step;
@@ -144,7 +144,7 @@ typedef struct {
     // gate states
     bool gate_states[NUM_CHANNELS];
     // sinebobs
-    int num_bobs;
+    uint8_t num_bobs;
     bob_t bobs[MAX_BOBS];
 } sequencer_t;
 
