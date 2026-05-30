@@ -261,10 +261,28 @@ static void _ui_sinebobs_draw_state(ui_sinebobs_t* win) {
 
     for (int bobnr = 0; bobnr < sequencer->num_bobs; ++bobnr) {
         char bob_name[16];
+        ImGui::PushID(bobnr);
+        if (ImGui::ArrowButton("#up",ImGuiDir_Up)) {
+            int tgtnr = floor_mod(bobnr-1,sequencer->num_bobs);
+            bob_t src_bob = sequencer->bobs[bobnr];  //copy
+            bob_t tgt_bob = sequencer->bobs[tgtnr];  //copy
+            sequencer->bobs[tgtnr] = src_bob;   // copy      
+            sequencer->bobs[bobnr] = tgt_bob;   // copy
+        }
+        ImGui::SameLine();
+        if (ImGui::ArrowButton("#down",ImGuiDir_Down)) {
+            int tgtnr = floor_mod(bobnr+1,sequencer->num_bobs);
+            bob_t src_bob = sequencer->bobs[bobnr];  //copy
+            bob_t tgt_bob = sequencer->bobs[tgtnr];  //copy
+            sequencer->bobs[tgtnr] = src_bob;   // copy      
+            sequencer->bobs[bobnr] = tgt_bob;   // copy
+        }
+        ImGui::SameLine();
         snprintf(bob_name, sizeof(bob_name), "Bob %d", bobnr + 1);
-        if (ImGui::CollapsingHeader(bob_name)) {
+        if (ImGui::CollapsingHeader(bob_name, ImGuiTreeNodeFlags_DefaultOpen)) {
             _draw_bob(&sequencer->bobs[bobnr]);
         }
+        ImGui::PopID();
     }
 }
 
