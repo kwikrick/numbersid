@@ -440,14 +440,7 @@ void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
             continue;
         };
         voice_t* voice = &sequencer->voices[voice_index];
-    
-        // ctrl
-        int16_t gate = varonum_eval(&voice->gate, sequencer);
-        int16_t sync = varonum_eval(&voice->sync, sequencer);
-        int16_t ring = varonum_eval(&voice->ring, sequencer);
-        int16_t wave = varonum_eval(&voice->waveform, sequencer);
-        _m6581_set_ctrl(&sid->voice[channel], (gate&1) + ((sync&1)<<1) + ((ring&1)<<2 ) + ((wave&15)<<4));
-        
+
         // freq
         float freq = compute_freq(sequencer, voice_index);
         int16_t sid_freq_value = freq_to_sid_value_pal(freq);
@@ -464,8 +457,18 @@ void sequencer_update_sid(sequencer_t* sequencer, m6581_t* sid)
         int16_t decay = varonum_eval(&voice->decay, sequencer);
         int16_t sustain = varonum_eval(&voice->sustain, sequencer);
         int16_t release = varonum_eval(&voice->release, sequencer);
-        _m6581_set_atkdec(&sid->voice[channel], ((attack&15)<<4) + (decay&15));
-        _m6581_set_susrel(&sid->voice[channel], ((sustain&15)<<4) + (release&15));
+        uint8_t atkdec = ((attack&15)<<4) + (decay&15);
+        uint8_t susrel = ((sustain&15)<<4) + (release&15);
+        _m6581_set_atkdec(&sid->voice[channel], atkdec );
+        _m6581_set_susrel(&sid->voice[channel], susrel);
+        
+        // ctrl (should be set after envelope) 
+        int16_t gate = varonum_eval(&voice->gate, sequencer);
+        int16_t sync = varonum_eval(&voice->sync, sequencer);
+        int16_t ring = varonum_eval(&voice->ring, sequencer);
+        int16_t wave = varonum_eval(&voice->waveform, sequencer);
+        uint8_t ctrl = (gate&1) + ((sync&1)<<1) + ((ring&1)<<2 ) + ((wave&15)<<4);
+        _m6581_set_ctrl(&sid->voice[channel],ctrl);
 
         // save filter setting for this channel
         channel_filter[channel] = varonum_eval(&voice->filter, sequencer);

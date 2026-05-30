@@ -289,13 +289,15 @@ raster_irq_handler_numbersid:
 		Word_Shift_Left(ZP_IRQ, FRAME_SIZE_SHIFT)
 		Word_Add_Value(ZP_IRQ, sid_frames, ZP_IRQ)
 
-		ldy #0
+		ldy #25
 sid_frame_copy_loop:
+		dey
+		bmi end_sid_frame_copy_loop
 		lda (ZP_IRQ),y
 		sta SID_BASE,y
-		iny
-		cpy #25 
-		bne sid_frame_copy_loop
+		clc
+		bcc sid_frame_copy_loop
+end_sid_frame_copy_loop:
 
 wait_for_frame_zero:
 
