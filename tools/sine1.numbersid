@@ -1,6 +1,6 @@
 3 // num_voices
-S // gate
-A // note
+0 // gate
+0 // note
 0 // scale
 0 // transpose
 0 // pitch
@@ -13,7 +13,7 @@ A // note
 15 // sustain
 0 // release
 0 // filter
-A // gate
+0 // gate
 0 // note
 0 // scale
 0 // transpose
@@ -52,7 +52,19 @@ A // gate
 S // variable
 T // count
 0 // add1
-10 // div1
+16 // div1
+0 // mul1
+0 // mod1
+0 // base
+0 // mod2
+0 // mul2
+0 // div2
+0 // add2
+0 // array
+R // variable
+S // count
+0 // add1
+16 // div1
 0 // mul1
 0 // mod1
 0 // base
@@ -62,40 +74,28 @@ T // count
 0 // add2
 0 // array
 A // variable
-S // count
+R // count
 0 // add1
 0 // div1
-0 // mul1
+63 // mul1
 0 // mod1
 2 // base
 0 // mod2
-0 // mul2
+64 // mul2
 0 // div2
-0 // add2
+256 // add2
 0 // array
 B // variable
-S // count
-0 // add1
-8 // div1
-0 // mul1
-0 // mod1
-0 // base
-0 // mod2
-0 // mul2
-0 // div2
-0 // add2
-0 // array
-0 // variable
-0 // count
+R // count
 0 // add1
 0 // div1
-0 // mul1
+127 // mul1
 0 // mod1
-0 // base
+2 // base
 0 // mod2
-0 // mul2
+64 // mul2
 0 // div2
-0 // add2
+4096 // add2
 0 // array
 2 // num_arrays
 4 // array_size
@@ -104,18 +104,24 @@ S // count
 0 // element
 0 // element
 4 // array_size
-1 // element
-2 // element
-3 // element
-4 // element
-1 // num_scales
-2741 // scale 1
-2 // num_sines
-256  // sine 1(x) freq
-18   // sine 1(x) amp
-0    // phase 
-256  // sine 2(x) freq
-11   // sine 2(x) amp
-64    // phase 
-1   // bob color
-1   // bob_step
+0 // element
+0 // element
+0 // element
+0 // element
+0 // num_scales
+1 // num_bobs
+1 // bob color
+1 // bob step
+2 // num_orbits
+A // freq_x
+14 // amplitude_x
+0 // phase_x
+A // freq_y
+6 // amplitude_y
+64 // phase_y
+B // freq_x
+5 // amplitude_x
+0 // phase_x
+B // freq_y
+5 // amplitude_y
+64 // phase_y
