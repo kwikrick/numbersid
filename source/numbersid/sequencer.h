@@ -94,6 +94,9 @@ typedef struct {
     orbit_t orbits[MAX_ORBITS_PER_BOB];
     var_or_number_t color;
     var_or_number_t step;
+    var_or_number_t position_x;
+    var_or_number_t position_y;
+    var_or_number_t enable;
 } bob_t;
 
 typedef struct {
@@ -222,6 +225,7 @@ void sequencer_init(sequencer_t* sequencer) {
     sequencer->num_bobs = 1;
     sequencer->bobs[0].color = (var_or_number_t){.number = 1};
     sequencer->bobs[0].step = (var_or_number_t){.number = 1};
+    sequencer->bobs[0].enable = (var_or_number_t){.number = 1};
     sequencer->bobs[0].num_orbits = 1;
     sequencer->bobs[0].orbits[0].freq_x = (var_or_number_t){.number = 256};
     sequencer->bobs[0].orbits[0].freq_y = (var_or_number_t){.number = 256};
@@ -706,7 +710,10 @@ void sequencer_export_data(sequencer_t* sequencer, char* buffer, int size)
         bob_t* bob = &sequencer->bobs[bobnr];
         pos += varonum_export(&bob->color, "bob color", &buffer[pos],size-pos);
         pos += varonum_export(&bob->step, "bob step", &buffer[pos],size-pos);
-       
+        pos += varonum_export(&bob->position_x, "position_x", &buffer[pos],size-pos);
+        pos += varonum_export(&bob->position_y, "position_y", &buffer[pos],size-pos);
+        pos += varonum_export(&bob->enable, "enable", &buffer[pos],size-pos);
+    
         pos += export_uint8(bob->num_orbits, "num_orbits", &buffer[pos],size-pos);
         for (int v=0; v<bob->num_orbits; v++) {
             orbit_t* orbit = &bob->orbits[v];
@@ -900,7 +907,11 @@ bool sequencer_import_data(sequencer_t* sequencer, char* buffer)
         bob_t* bob = &sequencer->bobs[bobnr];
         if(!varonum_import(&bob->color, buffer, &pos)) return false;
         if(!varonum_import(&bob->step, buffer, &pos)) return false;
+        if(!varonum_import(&bob->position_x, buffer, &pos)) return false;
+        if(!varonum_import(&bob->position_y, buffer, &pos)) return false;
+        if(!varonum_import(&bob->enable, buffer, &pos)) return false;
         if(!import_uint8(&bob->num_orbits, buffer, &pos)) return false;
+
         if (bob->num_orbits > MAX_ORBITS_PER_BOB) bob->num_orbits = MAX_ORBITS_PER_BOB;
         for (int v=0; v<bob->num_orbits; v++) {
             orbit_t* orbit = &bob->orbits[v];

@@ -358,6 +358,12 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
         for (int bobnr=0; bobnr < sequencer.num_bobs; bobnr++)
         {
             bob_t* bob = &sequencer.bobs[bobnr];
+
+            int16_t enable  = varonum_eval(&bob->enable, &sequencer);
+            if (floor_mod(enable,2) == 0) continue;
+
+            int16_t position_x = varonum_eval(&bob->position_x, &sequencer);
+            int16_t position_y = varonum_eval(&bob->position_y, &sequencer);
             
             int dx=0;
             int dy=0;
@@ -385,14 +391,22 @@ void update_sinebob_framebuffer(uint8_t* framebuffer, chips_display_info_t info)
             int step = varonum_eval(&bob->step,&sequencer);
             // if step < 0, use fixed size, else one of the 256 rotating sizes (mapped to 128 chars on C64 by dividing step by 2) 
             int size = step < 0 ? sizes[floor_mod(step,8)] : sizes[floor_mod(t*step+sequencer.frame,256) / 32];
-            int x = (dx + 20) * 8;          // centering offset hardcoded in c64 demo
-            int y = (dy + 12) * 8;
+            int x = (20 + position_x + dx) * 8;          // centering offset hardcoded in c64 demo
+            int y = (13 + position_y + dy) * 8;
             if (x<0 || x>=40*8 || y <0 || y>=25*8) continue;         // TODO smaller bounds for extra border for scroll?
             fillrect(offset_x+x,offset_y+y,8,8,bg_color,framebuffer,info);
             int color = floor_mod(varonum_eval(&bob->color,&sequencer),16);                           // clear cell
             fillrect(offset_x+x+4-size/2,offset_y+y+4-size/2,size,size,color,framebuffer,info);     // draw bob
         }
     }
+
+    // first and last column are blanked
+    fillrect(offset_x+0*8,offset_y+0*8,1*8,25*8,bg_color,framebuffer,info);
+    fillrect(offset_x+39*8,offset_y+0*8,1*8,25*8,bg_color,framebuffer,info);
+    // scroll text blocks first two rows
+    fillrect(offset_x+0*8,offset_y+0*8,40*8,2*8,bg_color,framebuffer,info);
+    
+    
 }
 
 void app_frame(void) {

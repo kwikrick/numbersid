@@ -156,6 +156,24 @@ static void _draw_bob(bob_t* bob)
         ImGui::TableNextColumn();
         draw_varonum(&bob->step, "##bobstep");
         ImGui::TableNextColumn();
+
+        ImGui::Text("POS X");
+        ImGui::SetItemTooltip("Position on X axis, 0 for center, negative for left, positive for right.");
+        ImGui::TableNextColumn();
+        draw_varonum(&bob->position_x, "##positionx");
+        ImGui::TableNextColumn();
+
+        ImGui::Text("POS Y");
+        ImGui::SetItemTooltip("Position on Y axis, 0 for center, negative for up, positive for down.");
+        ImGui::TableNextColumn();
+        draw_varonum(&bob->position_y, "##positiony");
+        ImGui::TableNextColumn();
+
+        ImGui::Text("ENABLE");
+        ImGui::SetItemTooltip("If bit 0 == 1 -> enabled, else disabled");
+        ImGui::TableNextColumn();
+        draw_varonum(&bob->enable, "##enable");
+        ImGui::TableNextColumn();
         
         ImGui::EndTable();
     }
