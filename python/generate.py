@@ -237,13 +237,19 @@ class Bob:
         self.orbits = []
         self.color = None
         self.steps = None
-        self.parameters = ["step", "color"]
+        self.position_x = None
+        self.position_y = None
+        self.enable = None
+        self.parameters = ["step", "color", "position_x", "position_y", "enable"]
 
     @staticmethod
     def read_from(input_file):
         bob = Bob()
         bob.color = Varonum.parse(read_line_stripped(input_file))
         bob.step = Varonum.parse(read_line_stripped(input_file))
+        bob.position_x = Varonum.parse(read_line_stripped(input_file))
+        bob.position_y = Varonum.parse(read_line_stripped(input_file))
+        bob.enable = Varonum.parse(read_line_stripped(input_file))
         num_orbits = int(read_line_stripped(input_file))
         for i in range(num_orbits):
             orbit = Orbit.read_from(input_file)
@@ -254,6 +260,10 @@ class Bob:
         s = "Bob\n"
         s += f"  step = {self.steps}\n"
         s += f"  color = {self.color}\n"
+        s += f"  position_x = {self.position_x}\n"
+        s += f"  position_y = {self.position_y}\n"
+        s += f"  enable = {self.enable}\n"
+        
         for i,orbit in enumerate(self.orbits): 
             s += f"  orbit {i} = {orbit}"
         return s
