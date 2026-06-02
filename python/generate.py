@@ -577,7 +577,7 @@ def generate(data: NumberSidData) -> str:
              if param_varonum.type() == "Number":
                 value = param_varonum.number
                 label = f"bob_{param_name}s"
-                offset = bobnr    # note: just one byte per bob parameter
+                offset = bobnr * 2   # note word sized parameter arrays
                 if value != 0:
                     s += f"   // bob {bobnr} {param_name}\n"
                     s += f"   lda #<{value}\n"

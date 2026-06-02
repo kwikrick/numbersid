@@ -281,8 +281,11 @@ loop_orbits:
     dec ZP_ORBIT
     bne loop_orbits
 
-    // increment bob step counter
-	lda bob_steps,x
+    // increment bob step counter; note parameter is word, but counter is byte!
+    txa
+    asl
+    tay
+	lda bob_steps,y
     clc
 	adc sinebob_step_counters,x
 	//and #BOB_CHARSET_LENTGH-1		// just loop at 256
@@ -342,7 +345,7 @@ sinebob_draw:
     sta ZP_IRQ+1
     Word_Add_Word(ZP_Y, ZP_IRQ, ZP_Y)
 
-    lda bob_colors,x
+    lda bob_colors,y
     sta ZP_COLOR
 
     lda sinebob_step_counters,x
