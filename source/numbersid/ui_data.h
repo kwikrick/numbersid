@@ -55,6 +55,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "fs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -146,6 +148,26 @@ static void _ui_data_draw_state(ui_data_t* win) {
     };
     if (ImGui::Button("Export")) {
         sequencer_export_data(sequencer, buffer, sizeof(buffer));
+    }
+    if (ImGui::Button("Quick Save")) {
+        sequencer_export_data(sequencer, buffer, sizeof(buffer));
+        FILE* fp = fopen("/home/rick/tmp/quicksave.numbersid", "wt");
+        if (fp) {
+            fwrite(buffer, strlen(buffer)+1, 1, fp);
+            fclose(fp);
+        }
+    };
+    if (ImGui::Button("Quick Load")) {
+        
+        FILE* fp = fopen("/home/rick/tmp/quicksave.numbersid", "rt");
+        if (fp) {
+            fread(buffer,sizeof(buffer),1,fp);
+            fclose(fp);
+        }
+        bool result = sequencer_import_data(sequencer, buffer);
+        if (!result) {
+            ImGui::OpenPopup("Import Error");
+        }
     }
 
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
