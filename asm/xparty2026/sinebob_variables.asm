@@ -67,7 +67,7 @@ sinebob_step_counters:
 
 // a history of screen adresses to clear
 clear_pixel_history:
-.fillword 1024,CLEAR_HISTORY_SIZE
+.fillword CLEAR_HISTORY_SIZE_MAX, 0
 
 // 32 sine tables, scale 1-32 
 sine_tables:

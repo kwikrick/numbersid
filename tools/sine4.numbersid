@@ -1,6 +1,6 @@
 3 // num_voices
-1 // gate
-A // note
+0 // gate
+0 // note
 0 // scale
 0 // transpose
 0 // pitch
@@ -73,11 +73,11 @@ S // count
 0 // div2
 0 // add2
 0 // array
-B // variable
-S // count
+0 // variable
+0 // count
 0 // add1
-8 // div1
-32 // mul1
+0 // div1
+0 // mul1
 0 // mod1
 0 // base
 0 // mod2
@@ -109,4 +109,28 @@ S // count
 0 // element
 0 // element
 0 // num_scales
-0 // num_bobs
+2 // num_bobs
+6 // bob color
+32 // bob step
+0 // position_x
+0 // position_y
+1 // enable
+1 // num_orbits
+4128 // freq_x
+18 // amplitude_x
+0 // phase_x
+32 // freq_y
+11 // amplitude_y
+64 // phase_y
+1 // bob color
+1 // bob step
+0 // position_x
+0 // position_y
+1 // enable
+1 // num_orbits
+256 // freq_x
+18 // amplitude_x
+0 // phase_x
+256 // freq_y
+11 // amplitude_y
+64 // phase_y
