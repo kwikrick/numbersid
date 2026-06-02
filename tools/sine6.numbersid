@@ -112,6 +112,9 @@ S // count
 1 // num_bobs
 1 // bob color
 1 // bob step
+0 // position x
+0 // position y
+1 // enable
 1 // num_orbits
 A // freq_x
 18 // amplitude_x

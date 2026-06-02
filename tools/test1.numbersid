@@ -161,6 +161,9 @@ C // count
 2 // num_bobs
 P // bob color
 1 // bob step
+0 // position x
+0 // position y
+1 // enable
 1 // num_orbits
 2048 // freq_x
 P // amplitude_x
@@ -170,6 +173,9 @@ P // amplitude_y
 64 // phase_y
 2 // bob color
 8 // bob step
+0 // position x
+0 // position y
+1 // enable
 1 // num_orbits
 32 // freq_x
 19 // amplitude_x

@@ -199,6 +199,9 @@ Q // count
 2 // num_bobs
 1 // bob color
 1 // bob step
+0 // position x
+0 // position y
+1 // enable
 2 // num_orbits
 256 // freq_x
 H // amplitude_x
@@ -214,6 +217,9 @@ I // amplitude_y
 J // phase_y
 Q // bob color
 1 // bob step
+0 // position x
+0 // position y
+1 // enable
 1 // num_orbits
 2040 // freq_x
 20 // amplitude_x
