@@ -58,7 +58,7 @@ main:
 	
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
-	Fill(clear_mem_start, 23000, 0)		// compiler cannot compute, make a guess
+	Fill(clear_mem_start, 24*1024, 0)		// compiler cannot compute, make a guess
 
 	jsr textscroll_init_charset
 

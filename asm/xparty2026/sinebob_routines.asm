@@ -255,7 +255,7 @@ end_loop_compute:
     ldx #0
 loop_bob:
 
-    lda #20             // center; TODO: make configurable per bob?
+    lda #20
     sta bob_xs,x
     lda #13 
     sta bob_ys,x
@@ -306,14 +306,41 @@ sinebob_draw:
     ldx #0
     loop_bob:
 
-    // load position, convert from byte to word
+    txa
+    asl
+    tay     // Y=2*X
+
+    // enabled parameter?
+    lda bob_enables,y
+    and #1
+    bne enabled_draw
+    jmp skip_draw
+
+    enabled_draw:
+
+    // load x sum of sines, convert from byte to word
     lda bob_xs,x
-    sta ZP_IRQ          // TODO: intermediate not needed, make a y-indexed version of singed byte->word conversion 
+    sta ZP_IRQ          // TODO: intermediate not needed, make a x-indexed version of singed byte->word conversion 
     Word_Store_Signed_Byte(ZP_X, ZP_IRQ)
     
+    // add x position parameter
+    lda bob_position_xs,y
+    sta ZP_IRQ
+    lda bob_position_xs+1,y
+    sta ZP_IRQ+1
+    Word_Add_Word(ZP_X, ZP_IRQ, ZP_X)
+    
+    // load x sum of sines, convert from byte to word
     lda bob_ys,x
     sta ZP_IRQ 
     Word_Store_Signed_Byte(ZP_Y, ZP_IRQ)
+
+    // add y position parameter
+    lda bob_position_ys,y
+    sta ZP_IRQ
+    lda bob_position_ys+1,y
+    sta ZP_IRQ+1
+    Word_Add_Word(ZP_Y, ZP_IRQ, ZP_Y)
 
     lda bob_colors,x
     sta ZP_COLOR
@@ -327,9 +354,14 @@ sinebob_draw:
     pla
     tax
 
+skip_draw:
+
     inx
     cpx #NUM_BOBS
-    bne loop_bob
+    beq end_loop_bob
+    jmp loop_bob
+
+end_loop_bob:
 
     rts
 }

@@ -564,7 +564,7 @@ def generate(data: NumberSidData) -> str:
                     s += f"   // sine {sinenr} {param_name}\n"
                     s += f"   lda #<{value}\n"
                     s += f"   sta {label}+{offset}\n"
-                    if (value > 255):
+                    if (value > 255 or value < 0):
                         s += f"   lda #>{value}\n"
                         s += f"   sta {label}+1+{offset}\n"
     s+= "   rts\n"
@@ -582,7 +582,7 @@ def generate(data: NumberSidData) -> str:
                     s += f"   // bob {bobnr} {param_name}\n"
                     s += f"   lda #<{value}\n"
                     s += f"   sta {label}+{offset}\n"
-                    if (value > 255):
+                    if (value > 255 or value < 0):
                         s += f"   lda #>{value}\n"
                         s += f"   sta {label}+1+{offset}\n"
     s+= "   rts\n"

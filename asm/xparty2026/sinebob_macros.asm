@@ -58,6 +58,7 @@
     }
     .if (parameter == Sine_Param_amplitude)
     {
+        // TODO: negative values ok?
         lda variable_values,x               // Note: only 1 byte needed
         sta amplitudes,y
         //lda variable_values+1,x
@@ -65,8 +66,9 @@
     }
     .if (parameter == Sine_Param_phase)
     {
+        // TODO: negative values ok?
         lda variable_values,x              // Note: only 1 byte needed
-        sta phases,y
+        sta phases,y                
         //lda variable_values+1,x
         //sta phases+1,x
     }
@@ -75,6 +77,9 @@
 
 .const Bob_Param_step = 0
 .const Bob_Param_color = 1
+.const Bob_Param_position_x = 2
+.const Bob_Param_position_y = 3
+.const Bob_Param_enable = 5
 
 .macro Apply_Variable_To_Bob_Parameter(variable, bob, parameter) {
 	.print "Apply_Variable_To_Bob_Parameter(" + variable + " " + bob + " " + parameter +")"
@@ -82,8 +87,10 @@
     // TODO: this is 16 bytes, but pretty fast; compare with  Apply_Variable_To_Voice_Parameter, is 12 bytes, but slower
 
     ldx #((variable-'A')*2)
-    ldy #bob        // # note: byte arrays
+    ldy #bob*2
+  
     .if (parameter == Bob_Param_step) {
+         // TODO: negative values ok?
         lda variable_values,x
         sta bob_steps,y
         //lda variable_values+1,x
@@ -91,11 +98,32 @@
     }
     .if (parameter == Bob_Param_color)
     {
+         // TODO: negative values ok?
         lda variable_values,x               // Note: only 1 byte needed
         sta bob_colors,y
         //lda values+1,x
         //sta amplitudes+1,x
     }
+    .if (parameter == Bob_Param_enable) {
+         // TODO: negative values ok?
+        lda variable_values,x               // Note: only 1 byte needed
+        sta bob_enables,y
+        //lda values+1,x
+        //sta bob_enables+1,x
+    }
+    .if (parameter == Bob_Param_position_x) {       
+        lda variable_values,x
+        sta bob_position_xs,y
+        lda variable_values+1,x
+        sta bob_position_xs+1,y
+    }
+    .if (parameter == Bob_Param_position_y) {
+        lda variable_values,x
+        sta bob_position_ys,y
+        lda variable_values+1,x
+        sta bob_position_ys+1,y
+    }
+    
 }
 
 
