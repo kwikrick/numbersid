@@ -19,7 +19,7 @@
 .const  NUM_CHANNELS    = 3    // SID hardware channels
 
 // for frequency table
-.const FREQ_TABLE_LENGTH = 64
+.const FREQ_TABLE_LENGTH = 128
 .const HIGHEST_SEMITONE = 38
 .const LOWEST_SEMITONE = HIGHEST_SEMITONE-FREQ_TABLE_LENGTH
 .const MIDDLE_C_INDEX = -LOWEST_SEMITONE
