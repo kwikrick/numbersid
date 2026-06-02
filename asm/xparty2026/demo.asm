@@ -409,7 +409,7 @@ raster_irq_handler_sinebob_draw:
 // note: this is a virtual segment
 // code should reset all to zero (or other default values)
 
-clear_mem_start:
+.label clear_mem_start = scroll_charset_addr
 
 // ---- Charset data --- 
 

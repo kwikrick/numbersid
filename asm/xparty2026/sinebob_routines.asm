@@ -233,9 +233,9 @@ loop_compute:
     // store
     //  TODO: sine value is a signed byte, but positions is signed word. 
     //  Waste of memory, but no perormance inpact?
-    sta positions,x     
+    sta sine_values,x     
 	//lda #0
-	//sta positions+1,x
+	//sta sine_values+1,x
 	
 	inx
 	inx
@@ -250,7 +250,7 @@ end_loop_compute:
     .const SINE_VALUE_PTR = ZP_IRQ+5		// word
     .const ZP_ORBIT = ZP_IRQ+7
 
-    Word_Store_Value(SINE_VALUE_PTR, positions)
+    Word_Store_Value(SINE_VALUE_PTR, sine_values)
     
     ldx #0
 loop_bob:

@@ -2,6 +2,9 @@
 
 #import "demo_zeropage.asm"
 
+.const MAX_BOBS = 8
+.const MAX_SINES = 32
+
 .const BOB_CHARSET = 7
 .label bob_charset_addr = BOB_CHARSET*$0800
 .print "BOB CHARSET ADDR = "+bob_charset_addr
