@@ -45,14 +45,15 @@ counters:
 .fillword MAX_SINES,0
 
 // for each sine, the position/value of sine.
+// note: space for words, but only lower byte used (interpreted as signed too!) 
 sine_values:
 .fillword MAX_SINES, 0
 
 // positions of bobs (note: byte values, not like parameters!)
 bob_xs: 
-.byte MAX_BOBS,0
+.fill MAX_BOBS,0
 bob_ys: 
-.byte MAX_BOBS,0
+.fill MAX_BOBS,0
 
 // offset in the charset where transitions are to be updated
 // note: offset in bytes, so 8 bytes per char, increase insteps of 8 
