@@ -1,6 +1,7 @@
 // numbersid generated code
 eval_seq_0:
    Load_Accumulator(Variable,84)
+   Eval_Add(Number,64)
    Eval_Div(Number,8)
    Compare_Accumulator(83)
    beq eval_seq_0_finish
@@ -75,7 +76,6 @@ eval_seq_7:
    Eval_Mul(Number,15)
    Eval_Base(Number,2)
    Eval_Mul(Number,128)
-   Eval_Add(Variable,83)
    Compare_Accumulator(76)
    beq eval_seq_7_finish
    Store_Accumulator(76)
@@ -87,7 +87,6 @@ eval_seq_8:
    Eval_Mul(Number,31)
    Eval_Base(Number,2)
    Eval_Mul(Number,128)
-   Eval_Add(Variable,84)
    Compare_Accumulator(77)
    beq eval_seq_8_finish
    Store_Accumulator(77)
@@ -98,6 +97,8 @@ eval_seq_9:
    Load_Accumulator(Variable,81)
    Eval_Mul(Number,31)
    Eval_Base(Number,2)
+   Eval_Mul(Number,64)
+   Eval_Add(Number,256)
    Compare_Accumulator(72)
    beq eval_seq_9_finish
    Store_Accumulator(72)
@@ -108,6 +109,8 @@ eval_seq_10:
    Load_Accumulator(Variable,81)
    Eval_Mul(Number,63)
    Eval_Base(Number,2)
+   Eval_Mul(Number,64)
+   Eval_Add(Number,256)
    Compare_Accumulator(73)
    beq eval_seq_10_finish
    Store_Accumulator(73)
@@ -117,18 +120,43 @@ eval_seq_10_finish:
 eval_seq_11:
    Load_Accumulator(Variable,81)
    Eval_Div(Number,8)
-   Eval_Mul(Number,1341)
-   Eval_Mod(Number,8)
-   Eval_Mul(Number,32)
-   Eval_Add(Number,64)
+   Eval_Mul(Number,1)
+   Eval_Base(Number,2)
+   Eval_Mul(Number,4)
+   Eval_Add(Number,4128)
    Compare_Accumulator(74)
    beq eval_seq_11_finish
    Store_Accumulator(74)
    jsr variable_changed_74
 eval_seq_11_finish:
    rts
+eval_seq_12:
+   Load_Accumulator(Variable,81)
+   Eval_Div(Number,8)
+   Eval_Mod(Number,3)
+   Compare_Accumulator(78)
+   beq eval_seq_12_finish
+   Store_Accumulator(78)
+   jsr variable_changed_78
+eval_seq_12_finish:
+   rts
+eval_seq_13:
+   Load_Accumulator(Variable,78)
+   Eval_Add(Number,1)
+   Compare_Accumulator(79)
+   beq eval_seq_13_finish
+   Store_Accumulator(79)
+   jsr variable_changed_79
+eval_seq_13_finish:
+   rts
+eval_seq_14:
+   Load_Accumulator(Variable,81)
+   Eval_Div(Number,8)
+   Eval_Base(Number,2)
+   Store_Accumulator(80)
+   rts
 sequence_eval_count:
-  .byte 12
+  .byte 15
 sequence_eval_table:
   .word eval_seq_0-1
   .word eval_seq_1-1
@@ -142,9 +170,11 @@ sequence_eval_table:
   .word eval_seq_9-1
   .word eval_seq_10-1
   .word eval_seq_11-1
+  .word eval_seq_12-1
+  .word eval_seq_13-1
+  .word eval_seq_14-1
 variable_changed_84:
    Mark_Sequence_Dirty(0)
-   Mark_Sequence_Dirty(8)
    rts
 variable_changed_83:
    Mark_Sequence_Dirty(1)
@@ -152,7 +182,6 @@ variable_changed_83:
    Mark_Sequence_Dirty(3)
    Mark_Sequence_Dirty(4)
    Mark_Sequence_Dirty(5)
-   Mark_Sequence_Dirty(7)
    rts
 variable_changed_82:
    Mark_Sequence_Dirty(8)
@@ -163,19 +192,32 @@ variable_changed_81:
    Mark_Sequence_Dirty(9)
    Mark_Sequence_Dirty(10)
    Mark_Sequence_Dirty(11)
-   Apply_Variable_To_Bob_Parameter(81, 1, Bob_Param_color)
+   Mark_Sequence_Dirty(12)
+   Mark_Sequence_Dirty(14)
+   Apply_Variable_To_Sine_Parameter(81, 9, Sine_Param_phase)
+   Apply_Variable_To_Sine_Parameter(81, 7, Sine_Param_phase)
+   rts
+variable_changed_78:
+   Mark_Sequence_Dirty(13)
+   Apply_Variable_To_Bob_Parameter(78, 2, Bob_Param_enable)
+   Apply_Variable_To_Bob_Parameter(78, 0, Bob_Param_enable)
+   Apply_Variable_To_Bob_Parameter(78, 1, Bob_Param_enable)
    rts
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    rts
 variable_changed_75:
    Apply_Variable_To_Voice_Parameter(75, 0, Voice_Param_pulsewidth)
+   Apply_Variable_To_Sine_Parameter(75, 7, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(75, 6, Sine_Param_freq)
    rts
 variable_changed_66:
    Apply_Variable_To_Voice_Parameter(66, 1, Voice_Param_note)
    rts
 variable_changed_76:
    Apply_Variable_To_Voice_Parameter(76, 1, Voice_Param_pulsewidth)
+   Apply_Variable_To_Sine_Parameter(76, 9, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(76, 8, Sine_Param_freq)
    rts
 variable_changed_67:
    Apply_Variable_To_Voice_Parameter(67, 2, Voice_Param_note)
@@ -183,16 +225,19 @@ variable_changed_67:
 variable_changed_77:
    Apply_Variable_To_Voice_Parameter(77, 2, Voice_Param_pulsewidth)
    rts
+variable_changed_74:
+   Apply_Variable_To_Sine_Parameter(74, 0, Sine_Param_freq)
+   rts
 variable_changed_72:
-   Apply_Variable_To_Sine_Parameter(72, 0, Sine_Param_amplitude)
-   Apply_Variable_To_Sine_Parameter(72, 1, Sine_Param_amplitude)
+   Apply_Variable_To_Sine_Parameter(72, 2, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(72, 5, Sine_Param_freq)
    rts
 variable_changed_73:
-   Apply_Variable_To_Sine_Parameter(73, 3, Sine_Param_amplitude)
-   Apply_Variable_To_Sine_Parameter(73, 2, Sine_Param_amplitude)
+   Apply_Variable_To_Sine_Parameter(73, 4, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(73, 3, Sine_Param_freq)
    rts
-variable_changed_74:
-   Apply_Variable_To_Sine_Parameter(74, 3, Sine_Param_phase)
+variable_changed_79:
+   Apply_Variable_To_Bob_Parameter(79, 3, Bob_Param_enable)
    rts
 init_voice_parameter_values:
    // voice 0 gate
@@ -264,60 +309,74 @@ init_global_parameter_values:
    sta volume_parameter_value
    rts
 init_sine_parameter_values:
-   // sine 0 freq
-   lda #<256
-   sta freqs+0
-   lda #>256
-   sta freqs+1+0
+   // sine 0 amplitude
+   lda #<19
+   sta amplitudes+0
    // sine 1 freq
-   lda #<256
+   lda #<32
    sta freqs+2
-   lda #>256
-   sta freqs+1+2
+   // sine 1 amplitude
+   lda #<11
+   sta amplitudes+2
    // sine 1 phase
    lda #<64
    sta phases+2
-   // sine 2 freq
-   lda #<4096
-   sta freqs+4
-   lda #>4096
-   sta freqs+1+4
-   // sine 3 freq
-   lda #<4096
-   sta freqs+6
-   lda #>4096
-   sta freqs+1+6
-   // sine 4 freq
-   lda #<2040
-   sta freqs+8
-   lda #>2040
-   sta freqs+1+8
+   // sine 2 amplitude
+   lda #<20
+   sta amplitudes+4
+   // sine 3 amplitude
+   lda #<11
+   sta amplitudes+6
    // sine 4 amplitude
    lda #<20
    sta amplitudes+8
-   // sine 5 freq
-   lda #<32
-   sta freqs+10
    // sine 5 amplitude
    lda #<11
    sta amplitudes+10
+   // sine 6 amplitude
+   lda #<13
+   sta amplitudes+12
+   // sine 6 phase
+   lda #<64
+   sta phases+12
+   // sine 7 amplitude
+   lda #<7
+   sta amplitudes+14
+   // sine 8 amplitude
+   lda #<5
+   sta amplitudes+16
+   // sine 8 phase
+   lda #<64
+   sta phases+16
+   // sine 9 amplitude
+   lda #<5
+   sta amplitudes+18
    rts
 init_bob_parameter_values:
    // bob 0 step
-   lda #<1
+   lda #<32
    sta bob_steps+0
    // bob 0 color
-   lda #<1
+   lda #<9
    sta bob_colors+0
-   // bob 0 enable
-   lda #<1
-   sta bob_enables+0
    // bob 1 step
-   lda #<1
+   lda #<253
    sta bob_steps+2
-   // bob 1 enable
+   // bob 1 color
+   lda #<5
+   sta bob_colors+2
+   // bob 2 step
+   lda #<3
+   sta bob_steps+4
+   // bob 2 color
+   lda #<3
+   sta bob_colors+4
+   // bob 3 step
    lda #<1
-   sta bob_enables+2
+   sta bob_steps+6
+   // bob 3 color
+   lda #<13
+   sta bob_colors+6
    rts
 scales_decoded:
    // scale #0 = 1354
@@ -325,5 +384,7 @@ scales_decoded:
 scales_ptr_array:
    .word scales_decoded + 0 * SCALE_SIZE
 bob_num_orbits:
-.byte 2
 .byte 1
+.byte 1
+.byte 1
+.byte 2
