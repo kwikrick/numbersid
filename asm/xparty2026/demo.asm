@@ -40,7 +40,7 @@
 .const FRAME_SIZE_SHIFT = 5	// must match frame size
 
 .const DEBUG_FRAME_COUNT = false
-.const DEBUG_RASTER_IRQ_TIMES = true
+.const DEBUG_RASTER_IRQ_TIMES = false
 
 // -----------------------------------------
 // -------------- Main section -------------
@@ -55,7 +55,7 @@ BasicUpstart2(main)
 *=* "Main"
 
 main:
-	
+
 	// clear memory for variables, sequences, arrays, voice data, global data, etc.
 	//Fill(clear_mem_start, clear_mem_end-clear_mem_start, 0)
 	Fill(clear_mem_start, 24*1024, 0)		// compiler cannot compute, make a guess
@@ -75,7 +75,6 @@ main:
 		lda IO_DATA
 		ora #4
 		sta IO_DATA
-
 	}
 	
 	// init sinebobs
@@ -147,15 +146,33 @@ loop_init_voices:
 	// run first update of sequences to apply initial parameter values to sid data
 	// jsr update_sequences
 	
-	// ---- setup screen last moment
+	// ---- show title
 
-	ClearScreen(screen, 32)
+	.const TITLE_OFFSET = (title_data - text_data) * 2
+	.const TITLE_COLOR1 = 13
+	.const TITLE_COLOR2 = 5
+	
+	ChooseCharacterSet(SCROLL_CHARSET)
+	
+	ClearScreen(screen, 32*4)
 	lda #0
 	sta $d020			// fg color
 	lda #0
 	sta $d021			// border color
 
-	jsr textscroll_init_screen 
+	ldx #0
+loop_copy_title:
+	lda text_buffer_row1+TITLE_OFFSET,x
+	sta screen+12*40,x
+	lda text_buffer_row2+TITLE_OFFSET,x
+	sta screen+13*40,x
+	lda #TITLE_COLOR1
+	sta screen_colors+12*40,x
+	lda #TITLE_COLOR2 
+	sta screen_colors+13*40,x 
+	inx
+	cpx #40
+	bne loop_copy_title
 
 	// --------------
 
@@ -215,13 +232,15 @@ sid_frame_copy_loop:
 raster_irq_handler_startline:
 {
 	RasterIRQBegin_NoKernal()	
+	
+	ChooseCharacterSet(SCROLL_CHARSET)
+
 	lda scroll_pos
 	and #VIC_MODE2_HSCROLL
 	sta VIC_MODE2
 
-	ChooseCharacterSet(SCROLL_CHARSET)
-
 	RasterIRQNext_NoKernal(raster_irq_handler_endline, SCROLL_END_LINE)
+
 }
 
 raster_irq_handler_endline:
@@ -232,6 +251,9 @@ raster_irq_handler_endline:
 		inc $d020
 	}
 
+	lda title_frame_counter
+	bne showing_title
+	
 	// reset VIC hscroll to default
 	lda #7
 	and #VIC_MODE2_HSCROLL
@@ -244,7 +266,8 @@ raster_irq_handler_endline:
 	.if (DEBUG_RASTER_IRQ_TIMES) {
 		dec $d020				
 	}
-	
+
+showing_title:
 	RasterIRQNext_NoKernal(raster_irq_handler_numbersid, NUMBERSID_RASTER_LINE)
 
 }
@@ -340,6 +363,9 @@ raster_irq_handler_sinebob_draw:
 {
 	RasterIRQBegin_NoKernal()
 
+	lda title_frame_counter
+	bne showing_title
+
 	.if (DEBUG_RASTER_IRQ_TIMES) {
 		inc $D020
 	}
@@ -357,7 +383,20 @@ raster_irq_handler_sinebob_draw:
 		dec $D020
 		dec $D020
 	}
-		
+	
+	clc
+	beq finish
+
+showing_title:
+	dec title_frame_counter
+	bne finish
+
+
+	ClearScreen(screen_colors,0)
+	ClearScreen(screen,32)
+	jsr textscroll_init_screen
+	
+finish:
 	RasterIRQNext_NoKernal(raster_irq_handler_startline, SCROLL_START_LINE)
 }
 
@@ -393,6 +432,17 @@ raster_irq_handler_sinebob_draw:
 *=* "Bob Charset data"
 
 #import "character_data.asm"
+
+*=* "Demo Data"
+
+title_frame_counter:
+.byte 200
+
+//title_string:
+//.encoding "screencode_upper"
+//.text "FUGUE - BY KWIKRICK - UNAFFELIATED"
+//.byte 0
+
 
 // -------------------------------------
 // ----------- generated code -----------

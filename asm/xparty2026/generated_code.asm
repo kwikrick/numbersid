@@ -199,25 +199,25 @@ variable_changed_81:
    rts
 variable_changed_78:
    Mark_Sequence_Dirty(13)
+   Apply_Variable_To_Bob_Parameter(78, 1, Bob_Param_enable)
    Apply_Variable_To_Bob_Parameter(78, 2, Bob_Param_enable)
    Apply_Variable_To_Bob_Parameter(78, 0, Bob_Param_enable)
-   Apply_Variable_To_Bob_Parameter(78, 1, Bob_Param_enable)
    rts
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    rts
 variable_changed_75:
    Apply_Variable_To_Voice_Parameter(75, 0, Voice_Param_pulsewidth)
-   Apply_Variable_To_Sine_Parameter(75, 7, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(75, 6, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(75, 7, Sine_Param_freq)
    rts
 variable_changed_66:
    Apply_Variable_To_Voice_Parameter(66, 1, Voice_Param_note)
    rts
 variable_changed_76:
    Apply_Variable_To_Voice_Parameter(76, 1, Voice_Param_pulsewidth)
-   Apply_Variable_To_Sine_Parameter(76, 9, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(76, 8, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(76, 9, Sine_Param_freq)
    rts
 variable_changed_67:
    Apply_Variable_To_Voice_Parameter(67, 2, Voice_Param_note)
@@ -233,8 +233,8 @@ variable_changed_72:
    Apply_Variable_To_Sine_Parameter(72, 5, Sine_Param_freq)
    rts
 variable_changed_73:
-   Apply_Variable_To_Sine_Parameter(73, 4, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(73, 3, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(73, 4, Sine_Param_freq)
    rts
 variable_changed_79:
    Apply_Variable_To_Bob_Parameter(79, 3, Bob_Param_enable)
