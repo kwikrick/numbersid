@@ -501,5 +501,5 @@ masks0:
 	rts
 
 eval_base:
-	Base_Sum(ZP_ACCUMULATOR, ZP_OPERAND)					// TODO: jsr to save space
+	Base_Sum(ZP_ACCUMULATOR, ZP_OPERAND)
 	rts
