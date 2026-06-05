@@ -309,7 +309,6 @@ loop_orbits:
 
 sinebob_draw:
 { 
-.break
     ldx #0
     loop_bob:
 
