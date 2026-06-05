@@ -329,7 +329,7 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
         value = value / div1;
     }
 
-    if (mul1 != 0) {
+    if (sequence->mul1.variable!=0 || mul1 != 0) {
         value = value * mul1;
     }
     
@@ -343,7 +343,7 @@ void update_sequence(sequence_t* sequence, sequencer_t* sequencer) {
         value = floor_mod(value,mod2); 
     }
     
-    if (mul2 != 0) {
+    if (sequence->mul2.variable!=0 || mul2 != 0) {
         value = value * mul2;
     }
     
