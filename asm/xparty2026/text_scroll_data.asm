@@ -4,7 +4,7 @@
 text_data:
 .encoding "screencode_upper"
 //----"0123456789012345678"
-.text "== HELLO XPARTY! =="
+.text "== HELLO X'2026! =="
 .text "                   "
 .text "I'M A NEWBE HERE.  "
 .text "I GOT MY C64 ONLY TWO YEARS AGO AND FELL IN LOVE. "
@@ -14,7 +14,7 @@ text_data:
 .text "                   "
 .text "GREETINGS TO: ALL OF YOU KEEPING THE SCENE ALIVE! "
 .text "                   "
-.text "FRACTAL MUSIC AND GRAPHICS COMPUTED IN REAL TIME... "
+.text "MUSIC AND GRAPHICS COMPUTED FROM NUMER SEQUENCES... "
 .text "THIS THING WILL RUN CHANGING PATTERNS FOR 32767 FRAMES... "
 .text "AND I MADE A TOOL TO GENERATE INFINITELY MORE DEMOS LIKE THIS... "
 .text "WAY TOO COMPLICATED IDEA FOR A FIRST DEMO  ;-P"
