@@ -499,3 +499,7 @@ masks0:
  update_sequences:
 	UpdateSequences()
 	rts
+
+eval_base:
+	Base_Sum(ZP_ACCUMULATOR, ZP_OPERAND)					// TODO: jsr to save space
+	rts

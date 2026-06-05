@@ -159,7 +159,8 @@ zero:
 
 .macro Eval_Base(type,varonum) {
 	Load_Operand(type, varonum)
-	Base_Sum(ZP_ACCUMULATOR, ZP_OPERAND)					// TODO: jsr to save space
+	jsr eval_base
+	//Base_Sum(ZP_ACCUMULATOR, ZP_OPERAND)					// TODO: jsr to save space
 }
 
 .macro Store_Accumulator(variable) {
