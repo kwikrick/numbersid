@@ -298,7 +298,10 @@ loop_orbits:
     rts
 }
 
-
+.const ZP_CELL = ZP_IRQ   		    // word
+.const ZP_CELL_H = ZP_IRQ+1   		// word
+.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40, and as adress into color ram
+.const ZP_TEMP_H = ZP_IRQ+3
 .const ZP_X = ZP_IRQ+4		        // word
 .const ZP_Y = ZP_IRQ+6		        // word	
 .const ZP_COLOR = ZP_IRQ+8
@@ -306,20 +309,33 @@ loop_orbits:
 
 sinebob_draw:
 { 
+.break
     ldx #0
     loop_bob:
 
+    // ---- clear pixels from history
+
+	ldy #0
+	lda (ZP_CLEAR_PIXEL_PTR),y
+	sta ZP_CELL
+	iny
+	lda (ZP_CLEAR_PIXEL_PTR),y
+	sta ZP_CELL+1
+
+	lda #0					// clear pixel value
+	ldy #0
+	sta (ZP_CELL),y			// write to screen (assuming ZP_CELL is in screen ram, hopefully!)
+
+    // check enabled parameter
     txa
     asl
     tay     // Y=2*X
-
-    // enabled parameter?
     lda bob_enables,y
     and #1
     bne enabled_draw
     jmp skip_draw
 
-    enabled_draw:
+enabled_draw:
 
     // load x sum of sines, convert from byte to word
     lda bob_xs,x
@@ -357,7 +373,29 @@ sinebob_draw:
     pla
     tax
 
+    jmp end_draw
+
 skip_draw:
+
+    // set call to $C0C0, safe adress for off-screen pixels in history
+    lda #$C0
+    sta ZP_CELL
+    sta ZP_CELL+1
+
+end_draw:
+
+    // store pixel adress in history
+	// note: ZP_CELL is either set by draw_one or cleared to $C0C0
+    
+	lda ZP_CELL
+    ldy #0
+	sta (ZP_CLEAR_PIXEL_PTR),y
+	lda ZP_CELL+1
+	iny
+	sta (ZP_CLEAR_PIXEL_PTR),y
+
+    // next bob's history adress (256 words, 512 bytes per bob)
+    Word_Add_Value(ZP_CLEAR_PIXEL_PTR, 512, ZP_CLEAR_PIXEL_PTR) 
 
     inx
     cpx #NUM_BOBS
@@ -366,6 +404,17 @@ skip_draw:
 
 end_loop_bob:
 
+     // reset to first bob
+    Word_Add_Value(ZP_CLEAR_PIXEL_PTR, -512*NUM_BOBS, ZP_CLEAR_PIXEL_PTR) 
+
+
+    // increase pointer
+	Word_Add_Value(ZP_CLEAR_PIXEL_PTR, 2, ZP_CLEAR_PIXEL_PTR) 
+	Word_Compare_Value_X(ZP_CLEAR_PIXEL_PTR, clear_pixel_history+512)       // overflow at end of first bob's history 
+	bmi history_ptr_in_bounds
+	Word_Store_Value(ZP_CLEAR_PIXEL_PTR, clear_pixel_history)
+history_ptr_in_bounds:
+
     rts
 }
 
@@ -373,21 +422,14 @@ end_loop_bob:
 
 sinebob_draw_one:
 {
-	.const ZP_CELL = ZP_IRQ   		    // word
-	.const ZP_CELL_H = ZP_IRQ+1   		// word
-	.const ZP_TEMP = ZP_IRQ+2			// note: used by Word_Mul_40 too
-	.const ZP_TEMP_H = ZP_IRQ+3
-    
-    
+	
 	// ------- check screen bounds -------
 
-	// TODO: modulo 25 easy to compute?
 	Word_Compare_Value_Y(ZP_Y, 2)
 	bmi skip1
 	Word_Compare_Value_Y(ZP_Y, 25)
 	bpl skip1
 
-	// TODO: modulo 40 easy to compute?
 	Word_Compare_Value_Y(ZP_X, 0)
 	bmi skip1
 	Word_Compare_Value_Y(ZP_X, 40)
@@ -395,22 +437,28 @@ sinebob_draw_one:
 	
 	clc
 	bcc cont1
-	skip1:
+
+skip1:
+    // set call to $C0C0, safe adress for off-screen pixels in history
+    lda #$C0
+    sta ZP_CELL
+    sta ZP_CELL+1
+
 	jmp skip
-	cont1:
+cont1:
 
 	// ---- clear pixels from history
 
-	ldy #0
-	lda (ZP_CLEAR_PIXEL_PTR),y
-	sta ZP_CELL
-	iny
-	lda (ZP_CLEAR_PIXEL_PTR),y
-	sta ZP_CELL+1
+	// ldy #0
+	// lda (ZP_CLEAR_PIXEL_PTR),y
+	// sta ZP_CELL
+	// iny
+	// lda (ZP_CLEAR_PIXEL_PTR),y
+	// sta ZP_CELL+1
 
-	lda #0					// clear pixel value
-	ldy #0
-	sta (ZP_CELL),y			// write to screen (assuming ZP_CELL is in screen ram, hopefully!)
+	// lda #0					// clear pixel value
+	// ldy #0
+	// sta (ZP_CELL),y			// write to screen (assuming ZP_CELL is in screen ram, hopefully!)
 
 	// -------- draw to screen ---- 
 
@@ -422,33 +470,26 @@ sinebob_draw_one:
 	Word_Add_Value(ZP_CELL,screen,ZP_CELL)			// ZP_CELL = screen ram cell
 	
 	// write character to screen ram
-	lda ZP_COUNTER              // TODO: per bob
+	lda ZP_COUNTER
 	lsr							// div by 2 so we compress 256 steps to 128 chars 
 	clc
 	adc #BOB_CHARSET_START 
 	ldy #0						// must be zero
 	sta (ZP_CELL),y				// store in screen ram
 
-	// store pixel adress in history
-	//ldy #0
-	lda ZP_CELL
-	sta (ZP_CLEAR_PIXEL_PTR),y
-	lda ZP_CELL+1
-	iny
-	sta (ZP_CLEAR_PIXEL_PTR),y
-
-	// increase pointer
-	Word_Add_Value(ZP_CLEAR_PIXEL_PTR, 2, ZP_CLEAR_PIXEL_PTR) 
-	Word_Compare_Value_X(ZP_CLEAR_PIXEL_PTR, clear_pixel_history+CLEAR_HISTORY_SIZE*2)
-	bmi history_ptr_in_bounds
-	Word_Store_Value(ZP_CLEAR_PIXEL_PTR, clear_pixel_history)
-history_ptr_in_bounds:
+	// // store pixel adress in history
+	// //ldy #0
+	// lda ZP_CELL
+	// sta (ZP_CLEAR_PIXEL_PTR),y
+	// lda ZP_CELL+1
+	// iny
+	// sta (ZP_CLEAR_PIXEL_PTR),y
 
 	// write color to color ram
-	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_CELL)	// ZP_CELL = color ram cell
+	Word_Add_Value(ZP_CELL, screen_colors - screen, ZP_TEMP)	// ZP_TEMP = color ram cell
 	lda ZP_COLOR
 	ldy #0
-	sta (ZP_CELL),y				// store in color ram
+	sta (ZP_TEMP),y				// store in color ram
 	
 skip:
 

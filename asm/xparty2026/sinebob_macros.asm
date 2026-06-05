@@ -17,8 +17,8 @@
 .const BOB_CHARSET_LENTGH = 128
 .const BOB_CHARSET_STEP = BOB_CHARSET_LENTGH / 8 
 
-.const CLEAR_HISTORY_SIZE = 256 * NUM_BOBS    // 2 bytes per history entry
-.const CLEAR_HISTORY_SIZE_MAX = 256 * MAX_BOBS    // 2 bytes per history entry
+.const CLEAR_HISTORY_SIZE = 256 * NUM_BOBS    // 256 words of history per bob
+.const CLEAR_HISTORY_SIZE_MAX = 256 * MAX_BOBS
 
 // .macro BOB_INIT_PHASES()
 // {
