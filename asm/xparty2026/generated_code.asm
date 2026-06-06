@@ -105,7 +105,7 @@ eval_seq_9:
 eval_seq_9_finish:
    rts
 eval_seq_10:
-   Load_Accumulator(Variable,81)
+   Load_Accumulator(Variable,82)
    Eval_Mul(Number,31)
    Eval_Base(Number,2)
    Eval_Mul(Number,64)
@@ -117,10 +117,10 @@ eval_seq_10:
 eval_seq_10_finish:
    rts
 eval_seq_11:
-   Load_Accumulator(Variable,81)
+   Load_Accumulator(Variable,82)
    Eval_Mul(Number,63)
    Eval_Base(Number,2)
-   Eval_Mul(Number,64)
+   Eval_Mul(Number,256)
    Eval_Add(Number,256)
    Compare_Accumulator(73)
    beq eval_seq_11_finish
@@ -258,13 +258,13 @@ variable_changed_83:
    rts
 variable_changed_82:
    Mark_Sequence_Dirty(2)
+   Mark_Sequence_Dirty(10)
+   Mark_Sequence_Dirty(11)
    Mark_Sequence_Dirty(12)
    Mark_Sequence_Dirty(13)
    Mark_Sequence_Dirty(14)
    rts
 variable_changed_81:
-   Mark_Sequence_Dirty(10)
-   Mark_Sequence_Dirty(11)
    Mark_Sequence_Dirty(6)
    rts
 variable_changed_78:
@@ -277,16 +277,16 @@ variable_changed_78:
    rts
 variable_changed_79:
    Mark_Sequence_Dirty(15)
-   Apply_Variable_To_Bob_Parameter(79, 3, Bob_Param_enable)
    Apply_Variable_To_Bob_Parameter(79, 2, Bob_Param_enable)
+   Apply_Variable_To_Bob_Parameter(79, 3, Bob_Param_enable)
    rts
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    rts
 variable_changed_68:
+   Apply_Variable_To_Voice_Parameter(68, 2, Voice_Param_transpose)
    Apply_Variable_To_Voice_Parameter(68, 0, Voice_Param_transpose)
    Apply_Variable_To_Voice_Parameter(68, 1, Voice_Param_transpose)
-   Apply_Variable_To_Voice_Parameter(68, 2, Voice_Param_transpose)
    rts
 variable_changed_69:
    Apply_Variable_To_Voice_Parameter(69, 0, Voice_Param_waveform)
@@ -313,8 +313,8 @@ variable_changed_77:
    Apply_Variable_To_Voice_Parameter(77, 2, Voice_Param_pulsewidth)
    rts
 variable_changed_74:
-   Apply_Variable_To_Sine_Parameter(74, 0, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(74, 3, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(74, 0, Sine_Param_freq)
    rts
 variable_changed_72:
    Apply_Variable_To_Sine_Parameter(72, 9, Sine_Param_freq)
@@ -323,9 +323,9 @@ variable_changed_72:
    Apply_Variable_To_Sine_Parameter(72, 8, Sine_Param_freq)
    rts
 variable_changed_73:
-   Apply_Variable_To_Sine_Parameter(73, 6, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(73, 10, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(73, 5, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(73, 6, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(73, 11, Sine_Param_freq)
    rts
 variable_changed_80:
@@ -447,13 +447,13 @@ init_bob_parameter_values:
    lda #<9
    sta bob_colors+2
    // bob 2 step
-   lda #<253
+   lda #<1
    sta bob_steps+4
    // bob 2 color
-   lda #<5
+   lda #<6
    sta bob_colors+4
    // bob 3 step
-   lda #<3
+   lda #<1
    sta bob_steps+6
    // bob 3 color
    lda #<3
