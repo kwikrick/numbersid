@@ -141,10 +141,12 @@ eval_seq_12:
 eval_seq_12_finish:
    rts
 eval_seq_13:
-   Load_Accumulator(Variable,81)
-   Eval_Add(Number,1)
-   Eval_Mod(Number,3)
-   Eval_Div(Number,2)
+   Load_Accumulator(Variable,82)
+   Eval_Add(Number,384)
+   Eval_Div(Number,4)
+   Eval_Mul(Number,7)
+   Eval_Base(Number,2)
+   Eval_Mod(Number,2)
    Compare_Accumulator(78)
    beq eval_seq_13_finish
    Store_Accumulator(78)
@@ -152,10 +154,12 @@ eval_seq_13:
 eval_seq_13_finish:
    rts
 eval_seq_14:
-   Load_Accumulator(Variable,81)
-   Eval_Add(Number,2)
-   Eval_Mod(Number,3)
-   Eval_Div(Number,2)
+   Load_Accumulator(Variable,82)
+   Eval_Add(Number,384)
+   Eval_Div(Number,4)
+   Eval_Mul(Number,15)
+   Eval_Base(Number,2)
+   Eval_Mod(Number,2)
    Compare_Accumulator(79)
    beq eval_seq_14_finish
    Store_Accumulator(79)
@@ -163,18 +167,60 @@ eval_seq_14:
 eval_seq_14_finish:
    rts
 eval_seq_15:
-   Load_Accumulator(Variable,81)
-   Eval_Add(Number,3)
-   Eval_Mod(Number,3)
-   Eval_Div(Number,2)
+   Load_Accumulator(Variable,78)
+   Eval_Add(Variable,79)
+   Eval_Mod(Number,2)
+   Eval_Add(Number,1)
    Compare_Accumulator(80)
    beq eval_seq_15_finish
    Store_Accumulator(80)
    jsr variable_changed_80
 eval_seq_15_finish:
    rts
+eval_seq_16:
+   Load_Accumulator(Variable,83)
+   Eval_Mul(Number,3)
+   Eval_Mod(Variable,78)
+   Eval_Base(Number,2)
+   Eval_Mod(Number,2)
+   Eval_Mul(Number,2)
+   Eval_Add(Number,2)
+   Compare_Accumulator(69)
+   beq eval_seq_16_finish
+   Store_Accumulator(69)
+   jsr variable_changed_69
+eval_seq_16_finish:
+   rts
+eval_seq_17:
+   Load_Accumulator(Variable,83)
+   Eval_Mul(Number,2)
+   Eval_Mod(Variable,78)
+   Eval_Base(Number,2)
+   Eval_Mod(Number,2)
+   Eval_Mul(Number,2)
+   Eval_Add(Number,2)
+   Compare_Accumulator(70)
+   beq eval_seq_17_finish
+   Store_Accumulator(70)
+   jsr variable_changed_70
+eval_seq_17_finish:
+   rts
+eval_seq_18:
+   Load_Accumulator(Variable,83)
+   Eval_Mul(Number,1)
+   Eval_Mod(Variable,78)
+   Eval_Base(Number,2)
+   Eval_Mod(Number,2)
+   Eval_Mul(Number,2)
+   Eval_Add(Number,2)
+   Compare_Accumulator(71)
+   beq eval_seq_18_finish
+   Store_Accumulator(71)
+   jsr variable_changed_71
+eval_seq_18_finish:
+   rts
 sequence_eval_count:
-  .byte 16
+  .byte 19
 sequence_eval_table:
   .word eval_seq_0-1
   .word eval_seq_1-1
@@ -192,6 +238,9 @@ sequence_eval_table:
   .word eval_seq_13-1
   .word eval_seq_14-1
   .word eval_seq_15-1
+  .word eval_seq_16-1
+  .word eval_seq_17-1
+  .word eval_seq_18-1
 variable_changed_84:
    Mark_Sequence_Dirty(0)
    rts
@@ -203,26 +252,44 @@ variable_changed_83:
    Mark_Sequence_Dirty(7)
    Mark_Sequence_Dirty(8)
    Mark_Sequence_Dirty(9)
+   Mark_Sequence_Dirty(16)
+   Mark_Sequence_Dirty(17)
+   Mark_Sequence_Dirty(18)
    rts
 variable_changed_82:
    Mark_Sequence_Dirty(2)
    Mark_Sequence_Dirty(12)
-   rts
-variable_changed_81:
-   Mark_Sequence_Dirty(6)
-   Mark_Sequence_Dirty(10)
-   Mark_Sequence_Dirty(11)
    Mark_Sequence_Dirty(13)
    Mark_Sequence_Dirty(14)
+   rts
+variable_changed_81:
+   Mark_Sequence_Dirty(10)
+   Mark_Sequence_Dirty(11)
+   Mark_Sequence_Dirty(6)
+   rts
+variable_changed_78:
+   Mark_Sequence_Dirty(16)
+   Mark_Sequence_Dirty(17)
+   Mark_Sequence_Dirty(18)
    Mark_Sequence_Dirty(15)
+   Apply_Variable_To_Bob_Parameter(78, 0, Bob_Param_enable)
+   Apply_Variable_To_Bob_Parameter(78, 1, Bob_Param_enable)
+   rts
+variable_changed_79:
+   Mark_Sequence_Dirty(15)
+   Apply_Variable_To_Bob_Parameter(79, 3, Bob_Param_enable)
+   Apply_Variable_To_Bob_Parameter(79, 2, Bob_Param_enable)
    rts
 variable_changed_65:
    Apply_Variable_To_Voice_Parameter(65, 0, Voice_Param_note)
    rts
 variable_changed_68:
+   Apply_Variable_To_Voice_Parameter(68, 0, Voice_Param_transpose)
    Apply_Variable_To_Voice_Parameter(68, 1, Voice_Param_transpose)
    Apply_Variable_To_Voice_Parameter(68, 2, Voice_Param_transpose)
-   Apply_Variable_To_Voice_Parameter(68, 0, Voice_Param_transpose)
+   rts
+variable_changed_69:
+   Apply_Variable_To_Voice_Parameter(69, 0, Voice_Param_waveform)
    rts
 variable_changed_75:
    Apply_Variable_To_Voice_Parameter(75, 0, Voice_Param_pulsewidth)
@@ -230,11 +297,17 @@ variable_changed_75:
 variable_changed_66:
    Apply_Variable_To_Voice_Parameter(66, 1, Voice_Param_note)
    rts
+variable_changed_70:
+   Apply_Variable_To_Voice_Parameter(70, 1, Voice_Param_waveform)
+   rts
 variable_changed_76:
    Apply_Variable_To_Voice_Parameter(76, 1, Voice_Param_pulsewidth)
    rts
 variable_changed_67:
    Apply_Variable_To_Voice_Parameter(67, 2, Voice_Param_note)
+   rts
+variable_changed_71:
+   Apply_Variable_To_Voice_Parameter(71, 2, Voice_Param_waveform)
    rts
 variable_changed_77:
    Apply_Variable_To_Voice_Parameter(77, 2, Voice_Param_pulsewidth)
@@ -245,23 +318,15 @@ variable_changed_74:
    rts
 variable_changed_72:
    Apply_Variable_To_Sine_Parameter(72, 9, Sine_Param_freq)
-   Apply_Variable_To_Sine_Parameter(72, 7, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(72, 4, Sine_Param_freq)
+   Apply_Variable_To_Sine_Parameter(72, 7, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(72, 8, Sine_Param_freq)
    rts
 variable_changed_73:
    Apply_Variable_To_Sine_Parameter(73, 6, Sine_Param_freq)
-   Apply_Variable_To_Sine_Parameter(73, 11, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(73, 10, Sine_Param_freq)
    Apply_Variable_To_Sine_Parameter(73, 5, Sine_Param_freq)
-   rts
-variable_changed_78:
-   Apply_Variable_To_Bob_Parameter(78, 0, Bob_Param_enable)
-   Apply_Variable_To_Bob_Parameter(78, 1, Bob_Param_enable)
-   rts
-variable_changed_79:
-   Apply_Variable_To_Bob_Parameter(79, 3, Bob_Param_enable)
-   Apply_Variable_To_Bob_Parameter(79, 2, Bob_Param_enable)
+   Apply_Variable_To_Sine_Parameter(73, 11, Sine_Param_freq)
    rts
 variable_changed_80:
    Apply_Variable_To_Bob_Parameter(80, 4, Bob_Param_enable)
@@ -273,9 +338,6 @@ init_voice_parameter_values:
    // voice 0 scale
    lda #<1
    sta voice_parameter_values+4
-   // voice 0 waveform
-   lda #<4
-   sta voice_parameter_values+10
    // voice 0 sustain
    lda #<15
    sta voice_parameter_values+22
@@ -285,9 +347,6 @@ init_voice_parameter_values:
    // voice 1 scale
    lda #<1
    sta voice_parameter_values+36
-   // voice 1 waveform
-   lda #<4
-   sta voice_parameter_values+42
    // voice 1 sustain
    lda #<15
    sta voice_parameter_values+54
@@ -297,9 +356,6 @@ init_voice_parameter_values:
    // voice 2 scale
    lda #<1
    sta voice_parameter_values+68
-   // voice 2 waveform
-   lda #<4
-   sta voice_parameter_values+74
    // voice 2 sustain
    lda #<15
    sta voice_parameter_values+86
@@ -313,11 +369,8 @@ init_global_parameter_values:
    sta filter_cutoff_parameter_value
    lda #>1000
    sta filter_cutoff_parameter_value+1
-   // filter_resonance
-   lda #<10
-   sta filter_resonance_parameter_value
    // volume
-   lda #<15
+   lda #<13
    sta volume_parameter_value
    rts
 init_sine_parameter_values:
